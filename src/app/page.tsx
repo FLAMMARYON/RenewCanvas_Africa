@@ -13,8 +13,9 @@ import {
   ChevronDown,
   Menu,
   X,
+  Truck,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -61,17 +62,35 @@ function Navigation({
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
 }) {
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      // Fade out when scrolling away from top (past 50px)
+      if (currentScrollY > 50) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "How It Works", href: "/how-it-works" },
     { name: "Marketplace", href: "/marketplace" },
     { name: "Artists", href: "/artists" },
     { name: "Impact", href: "/impact" },
+    { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+    <nav className={`fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -98,16 +117,16 @@ function Navigation({
           </div>
 
           {/* CTA Buttons */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="group hidden md:flex items-center gap-3">
             <a
               href="/login"
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-teal-600 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
             >
               Sign In
             </a>
             <a
               href="/register"
-              className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] group-hover:scale-105"
             >
               Get Started
             </a>
@@ -115,8 +134,11 @@ function Navigation({
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 text-gray-600"
+            type="button"
+            className="md:hidden p-2 text-gray-600 z-50 relative"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? (
               <X className="w-6 h-6" />
@@ -140,16 +162,16 @@ function Navigation({
                 {link.name}
               </a>
             ))}
-            <div className="pt-4 flex flex-col gap-2">
+            <div className="group pt-4 flex flex-col gap-2">
               <a
                 href="/login"
-                className="w-full py-2 text-center text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="w-full py-2 text-center text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
               >
                 Sign In
               </a>
               <a
                 href="/register"
-                className="w-full py-2 text-center text-white bg-teal-600 rounded-lg hover:bg-teal-700"
+                className="w-full py-2 text-center text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] group-hover:scale-105"
               >
                 Get Started
               </a>
@@ -222,38 +244,45 @@ function HeroSection() {
               tells a story of transformation.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center lg:justify-start">
               <a
                 href="/marketplace"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-all font-medium shadow-lg shadow-teal-600/30 hover:shadow-xl hover:shadow-teal-600/40"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg hover:bg-teal-700 [transition:all_0.4s_ease] font-medium shadow-lg shadow-teal-600/30 hover:shadow-xl hover:scale-105"
               >
                 Explore Artwork
                 <ArrowRight className="w-5 h-5" />
               </a>
               <a
                 href="/register?role=artist"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-teal-700 bg-teal-100 rounded-lg hover:bg-teal-200 transition-all font-medium"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-teal-700 bg-teal-100 rounded-lg hover:bg-teal-600 hover:text-white [transition:all_0.4s_ease] font-medium hover:scale-105"
               >
                 Join as Artist
                 <Palette className="w-5 h-5" />
               </a>
+              <a
+                href="/book-collection"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-500 hover:text-white [transition:all_0.4s_ease] font-medium hover:scale-105"
+              >
+                <Truck className="w-5 h-5" />
+                Book a Collection
+              </a>
             </div>
 
-            {/* Quick Stats */}
-            <div className="flex flex-wrap justify-center lg:justify-start gap-8 mt-12">
+            {/* Quick Stats - Will be populated with real data once launched */}
+            {/* <div className="flex flex-wrap justify-center lg:justify-start gap-8 mt-12">
               <div>
-                <p className="text-3xl font-bold text-gray-900">500+</p>
+                <p className="text-3xl font-bold text-gray-900">-</p>
                 <p className="text-sm text-gray-500">Kg Waste Diverted</p>
               </div>
               <div>
-                <p className="text-3xl font-bold text-gray-900">25+</p>
+                <p className="text-3xl font-bold text-gray-900">-</p>
                 <p className="text-sm text-gray-500">Artists Onboarded</p>
               </div>
               <div>
-                <p className="text-3xl font-bold text-gray-900">100+</p>
+                <p className="text-3xl font-bold text-gray-900">-</p>
                 <p className="text-sm text-gray-500">Artworks Created</p>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Right Content - Art Preview Collage */}
@@ -518,27 +547,27 @@ function HowItWorksSection() {
 function ImpactSection() {
   const stats = [
     {
-      value: "500+",
+      value: "-",
       label: "Kg Waste Diverted",
-      description: "Plastic, fabric, and materials saved from landfills",
+      description: "Recyclable materials transformed into art",
       icon: Recycle,
     },
     {
-      value: "25+",
-      label: "Artists Empowered",
-      description: "Talented creators earning sustainable income",
+      value: "-",
+      label: "Artists Onboarded",
+      description: "Talented creators joining our platform",
       icon: Users,
     },
     {
-      value: "100+",
+      value: "-",
       label: "Artworks Created",
       description: "Unique pieces with verified impact stories",
       icon: Palette,
     },
     {
-      value: "$5,000+",
-      label: "Artist Earnings",
-      description: "Income generated for local artists",
+      value: "75-80%",
+      label: "To Artists",
+      description: "Of each sale goes directly to creators",
       icon: TrendingUp,
     },
   ];
@@ -581,7 +610,7 @@ function ImpactSection() {
         <div className="text-center mt-12">
           <a
             href="/impact"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-teal-700 rounded-lg font-medium hover:bg-teal-50 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-teal-700 rounded-lg font-medium hover:bg-teal-600 hover:text-white [transition:all_0.4s_ease] hover:scale-105"
           >
             View Full Impact Report
             <ArrowRight className="w-5 h-5" />
@@ -645,11 +674,11 @@ function WhySection() {
           {reasons.map((reason, index) => (
             <div
               key={index}
-              className="flex gap-4 p-6 rounded-2xl border border-gray-100 hover:border-teal-200 hover:bg-teal-50/50 transition-all"
+              className="flex gap-4 p-6 rounded-2xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50/50 transition-all"
             >
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
-                  <reason.icon className="w-6 h-6 text-teal-600" />
+                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                  <reason.icon className="w-6 h-6 text-orange-600" />
                 </div>
               </div>
               <div>
@@ -682,17 +711,17 @@ function CTASection() {
           community.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="group flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="/marketplace"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-all font-medium shadow-lg shadow-teal-600/30 text-lg"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] font-medium shadow-lg shadow-teal-600/30 text-lg group-hover:scale-105"
           >
             Browse Artwork
             <ArrowRight className="w-5 h-5" />
           </a>
           <a
             href="/register?role=artist"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-white border-2 border-teal-200 rounded-lg hover:border-teal-400 hover:bg-teal-50 transition-all font-medium text-lg"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-white border-2 border-teal-200 rounded-lg group-hover:bg-teal-600 group-hover:text-white group-hover:border-teal-600 [transition:all_0.4s_ease] font-medium text-lg group-hover:scale-105"
           >
             Apply as Artist
             <Palette className="w-5 h-5" />
@@ -841,10 +870,11 @@ function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
           <p className="text-sm text-gray-500">
             &copy; {currentYear} RenewCanvas Africa. All rights reserved.
           </p>
+          <span className="hidden sm:inline text-gray-600">|</span>
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Leaf className="w-4 h-4 text-teal-500" />
             <span>Built for a sustainable future</span>

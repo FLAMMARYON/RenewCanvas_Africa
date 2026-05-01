@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import GoogleTranslate from "@/components/GoogleTranslate";
 
 export const metadata: Metadata = {
   title: "RenewCanvas Africa | Circular Art Platform",
@@ -34,7 +35,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <GoogleTranslate />
+      </body>
     </html>
   );
 }
