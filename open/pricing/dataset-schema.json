@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RenewCanvas Pricing Dataset Row",
+  "type": "object",
+  "required": [
+    "artworkId",
+    "category",
+    "materials",
+    "materialWeightKg",
+    "complexity",
+    "artistExperienceLevel",
+    "listedPriceRwf"
+  ],
+  "properties": {
+    "artworkId": { "type": "string" },
+    "category": { "type": "string" },
+    "materials": { "type": "array", "items": { "type": "string" } },
+    "materialWeightKg": { "type": "number", "exclusiveMinimum": 0 },
+    "dimensions": { "type": "string", "maxLength": 120 },
+    "complexity": { "type": "string" },
+    "artistExperienceLevel": { "type": "string" },
+    "hoursWorked": { "type": "number", "minimum": 0 },
+    "views": { "type": "integer", "minimum": 0 },
+    "wishlistCount": { "type": "integer", "minimum": 0 },
+    "listedPriceRwf": { "type": "number", "minimum": 0 },
+    "soldPriceRwf": { "type": "number", "minimum": 0 },
+    "soldAt": { "type": "string", "format": "date-time" },
+    "previousArtistSales": {
+      "type": "array",
+      "maxItems": 200,
+      "items": { "type": "number", "minimum": 0, "maximum": 5000000 }
+    }
+  }
+}
