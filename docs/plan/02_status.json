@@ -3,7 +3,7 @@
     "P0-foundations": "verified",
     "F01-pricing": "verified",
     "F03-impact-estimator": "verified",
-    "F08-ai-curator": "pending",
+    "F08-ai-curator": "verified",
     "P1-mvp": "pending",
     "F02-material-vision": "pending",
     "F06-listing-assistant": "pending",
@@ -16,5 +16,5 @@
     "F09-multilingual-accessibility": "pending",
     "P4-trust-scale": "pending"
   },
-  "lastUpdated": "2026-05-04T06:23:40+02:00"
+  "lastUpdated": "2026-05-04T07:28:03+02:00"
 }
