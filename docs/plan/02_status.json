@@ -2,7 +2,7 @@
   "units": {
     "P0-foundations": "verified",
     "F01-pricing": "verified",
-    "F03-impact-estimator": "pending",
+    "F03-impact-estimator": "verified",
     "F08-ai-curator": "pending",
     "P1-mvp": "pending",
     "F02-material-vision": "pending",
@@ -16,5 +16,5 @@
     "F09-multilingual-accessibility": "pending",
     "P4-trust-scale": "pending"
   },
-  "lastUpdated": "2026-05-04T05:13:00+02:00"
+  "lastUpdated": "2026-05-04T06:23:40+02:00"
 }
