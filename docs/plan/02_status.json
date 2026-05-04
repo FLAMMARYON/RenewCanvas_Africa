@@ -1,0 +1,20 @@
+{
+  "units": {
+    "P0-foundations": "pending",
+    "F01-pricing": "pending",
+    "F03-impact-estimator": "pending",
+    "F08-ai-curator": "pending",
+    "P1-mvp": "pending",
+    "F02-material-vision": "pending",
+    "F06-listing-assistant": "pending",
+    "F07-fraud-risk": "pending",
+    "P2-ml-verification": "pending",
+    "F04-smart-routing": "pending",
+    "F05-recommendations": "pending",
+    "P3-operational-intelligence": "pending",
+    "F10-impact-ledger": "pending",
+    "F09-multilingual-accessibility": "pending",
+    "P4-trust-scale": "pending"
+  },
+  "lastUpdated": "2026-05-04T00:00:00+02:00"
+}
