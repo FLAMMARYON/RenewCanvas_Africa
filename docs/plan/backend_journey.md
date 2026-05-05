@@ -1,0 +1,362 @@
+# Backend Integration Journey
+
+This plan divides backend implementation into sequential slices. Each phase should leave the product more operational without depending on unfinished later phases.
+
+## B0: Backend Foundations
+
+Goal: create the backend base safely.
+
+Deliver:
+
+- Choose database, likely PostgreSQL.
+- Add ORM and migrations, likely Prisma or Drizzle.
+- Add environment validation.
+- Add server-side error and logging helpers.
+- Add seed data for users, artists, and artworks.
+- Add API response conventions.
+- Add backend test setup.
+
+Done when:
+
+- App connects to the local database.
+- Migrations run cleanly.
+- Seed data loads.
+- Basic API health check passes.
+- Test command covers backend utilities.
+
+## B1: Auth And Sessions
+
+Goal: replace frontend-only auth with real accounts.
+
+Deliver:
+
+- User table.
+- Password hashing.
+- Register, login, and logout APIs.
+- Secure session cookie.
+- Password reset token model.
+- Email verification model, even if email sending is initially stubbed.
+- Server-side role checks for buyer, artist, and admin.
+- Dashboard route protection backed by real session state.
+
+Done when:
+
+- Login persists across refresh.
+- Logout clears the session.
+- Wrong-role users cannot access protected APIs or pages.
+- Password reset flow stores and validates real tokens.
+
+## B2: Profiles And Roles
+
+Goal: persist buyer, artist, and admin profile data.
+
+Deliver:
+
+- Buyer profile.
+- Artist profile.
+- Admin profile and permissions baseline.
+- Address book.
+- Profile update APIs.
+- Avatar/profile image upload placeholder or real storage.
+- Replace frontend `localStorage` profile saves.
+
+Done when:
+
+- Buyer and artist dashboards load real user data.
+- Artist profile edits survive refresh.
+- Role-specific pages use the real session user.
+
+## B3: Artwork Data And Media
+
+Goal: replace mock artwork data.
+
+Deliver:
+
+- Artwork table.
+- Artwork images table.
+- Artwork materials table.
+- Artist ownership.
+- Artwork create, edit, and delete APIs.
+- Draft, submitted, approved, rejected, listed, and sold states.
+- Image upload pipeline or signed upload abstraction.
+- Replace hardcoded marketplace, detail, and artist artwork data.
+
+Done when:
+
+- Artist can create artwork.
+- Admin can see submitted artwork.
+- Marketplace shows approved listed artwork only.
+- Artwork detail pages use real IDs.
+
+## B4: Marketplace, Search, And Wishlist
+
+Goal: make browsing real.
+
+Deliver:
+
+- Marketplace listing API.
+- Filtering by category, material, price, and availability.
+- Search by title, artist, category, and material.
+- Sorting and pagination.
+- Wishlist table and APIs.
+- Artwork view tracking.
+- Replace local wishlist state.
+
+Done when:
+
+- Marketplace filters and searches real data.
+- Buyer wishlist persists across devices.
+- Artwork view and wishlist counts are stored.
+
+## B5: Pricing And Impact Persistence
+
+Goal: connect existing pricing and impact engines to real records.
+
+Deliver:
+
+- Persist pricing recommendations.
+- Persist impact estimates.
+- Link pricing and impact records to artwork drafts.
+- Store engine inputs and explanations.
+- Recalculate on artwork changes.
+- Prevent manipulated demand inputs.
+- Admin and artist views for recommendation history.
+
+Done when:
+
+- Artist artwork creation calls pricing API and saves the result.
+- Artwork impact data is stored and visible.
+- Admin can review pricing and impact records.
+
+## B6: Admin Verification And Moderation
+
+Goal: make P1 admin verification operational.
+
+Deliver:
+
+- Verification review table.
+- Evidence attachment model.
+- Admin decision APIs.
+- Artist request-more-info flow.
+- Rejection and approval notes.
+- Audit log for every admin action.
+- Replace static admin verification queue with a real database-backed queue.
+
+Done when:
+
+- Admin can approve, reject, or request information.
+- Artist sees status changes.
+- Decisions are audit logged.
+- Approved artworks can become listed.
+
+## B7: Checkout And Orders
+
+Goal: real order creation before payment.
+
+Deliver:
+
+- Order table.
+- Order item table.
+- Order status lifecycle.
+- Address snapshot.
+- Price snapshot.
+- Artwork reservation during checkout.
+- Replace frontend local order storage.
+- Buyer, artist, and admin order dashboards backed by database records.
+
+Done when:
+
+- Buyer creates a real order.
+- Order confirmation loads by real order ID.
+- Sold or reserved inventory cannot be double-purchased.
+
+## B8: Payments
+
+Goal: collect money safely.
+
+Deliver:
+
+- Choose provider: Flutterwave, Paystack, Stripe, MTN MoMo, or another supported provider.
+- Payment intent/session creation.
+- Payment transaction table.
+- Webhook endpoint.
+- Webhook signature verification.
+- Idempotency handling.
+- Payment success/failure reconciliation.
+- Refund model baseline.
+
+Done when:
+
+- Checkout creates a provider payment.
+- Webhook marks order paid.
+- Failed payments do not mark orders paid.
+- Duplicate webhooks do not duplicate records.
+
+## B9: Shipping And Fulfillment
+
+Goal: operational delivery tracking.
+
+Deliver:
+
+- Shipment table.
+- Delivery address validation.
+- Delivery fee calculation.
+- Shipment status lifecycle.
+- Artist preparation flow.
+- Buyer delivery status.
+- Admin shipment controls.
+
+Done when:
+
+- Paid order moves into fulfillment.
+- Buyer, artist, and admin see the same shipment state.
+- Delivery status changes are persisted.
+
+## B10: Artist Payouts
+
+Goal: prepare marketplace economics.
+
+Deliver:
+
+- Platform fee and commission config.
+- Artist payout account.
+- Payout ledger.
+- Payout status lifecycle.
+- Manual payout approval or provider payout integration.
+- Payout reports.
+
+Done when:
+
+- Paid and delivered orders produce payout records.
+- Admin can mark payouts paid or failed.
+- Artist sees payout history.
+
+## B11: Notifications
+
+Goal: users get operational messages.
+
+Deliver:
+
+- Notification table.
+- Email provider.
+- Optional SMS or WhatsApp provider.
+- Templates for auth, orders, payment, moderation, shipment, and auction events.
+- Retry and failure logging.
+- User notification preferences.
+
+Done when:
+
+- Key events create notification records.
+- Emails send through the staging/dev provider.
+- Failed notification attempts are visible.
+
+## B12: Auctions
+
+Goal: make auction pages operational.
+
+Deliver:
+
+- Auction table.
+- Bid table.
+- Auction lifecycle.
+- Bid validation.
+- Anti-sniping rules if wanted.
+- Winner selection.
+- Winner payment flow.
+- Admin auction controls.
+
+Done when:
+
+- Admin can schedule, start, and end auctions.
+- Buyer can bid.
+- Highest valid bidder wins.
+- Winning order/payment flow is created.
+
+## B13: Virtual Room Backend
+
+Goal: make the 3D experience data-driven.
+
+Deliver:
+
+- Feed approved artworks into the virtual room.
+- Persist saved room and tour state server-side.
+- Shareable curation links.
+- User preferences.
+- Viewed artwork tracking.
+- Optional curation snapshot table.
+
+Done when:
+
+- Virtual room uses real approved artworks.
+- User can resume saved room or tour.
+- Shared room links work.
+
+## B14: Analytics And Reporting
+
+Goal: understand usage and impact.
+
+Deliver:
+
+- Analytics event API.
+- Event schema.
+- Track page views, artwork views, wishlist actions, checkout, payment, and virtual-room movement.
+- Aggregation jobs.
+- Admin reports.
+- Artist analytics from real data.
+
+Done when:
+
+- Dashboards use real analytics.
+- Funnel data exists.
+- Impact, revenue, and order reports are queryable.
+
+## B15: Security, Compliance, And Production Hardening
+
+Goal: make the backend production-safe.
+
+Deliver:
+
+- Rate limits on sensitive APIs.
+- CSRF protection if cookie auth is used.
+- Complete webhook signature checks.
+- Audit log review.
+- File upload scanning and validation.
+- Backup and restore process.
+- Monitoring and error tracking.
+- Data export and deletion.
+- Terms/privacy acceptance timestamps.
+- Security audit gate.
+
+Done when:
+
+- Staging behaves like production.
+- Backups are tested.
+- Sensitive flows are rate-limited.
+- Admin, audit, and payment logs are reliable.
+
+## Recommended Order
+
+1. B0 foundations
+2. B1 auth
+3. B2 profiles
+4. B3 artworks/media
+5. B4 marketplace/wishlist
+6. B5 pricing/impact persistence
+7. B6 admin verification
+8. B7 orders
+9. B8 payments
+10. B9 shipping
+11. B10 payouts
+12. B11 notifications
+13. B12 auctions
+14. B13 virtual room backend
+15. B14 analytics
+16. B15 production hardening
+
+## Sequencing Rules
+
+- Do not start payments before real orders exist.
+- Do not start orders before artwork inventory exists.
+- Do not start admin verification persistence before artist and artwork records exist.
+- Do not expand frontend `localStorage` as a backend substitute after B0 starts.
+- Each phase should include implementation, tests, documentation updates, and a fresh build before moving to the next phase.

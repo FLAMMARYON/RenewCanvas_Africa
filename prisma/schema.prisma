@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  buyer
+  artist
+  admin
+}
+
+enum AccountStatus {
+  active
+  pending_verification
+  suspended
+  deleted
+}
+
+enum ArtworkStatus {
+  draft
+  submitted
+  under_review
+  approved
+  rejected
+  listed
+  reserved
+  sold
+  archived
+}
+
+enum OrderStatus {
+  pending_payment
+  paid
+  processing
+  shipped
+  delivered
+  cancelled
+  refunded
+  failed
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String
+  role         UserRole
+  status       AccountStatus @default(active)
+  passwordHash String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  artistProfile ArtistProfile?
+  artworks      Artwork[]      @relation("ArtistArtworks")
+  orders        Order[]        @relation("BuyerOrders")
+  auditLogs     AuditLog[]     @relation("ActorAuditLogs")
+}
+
+model ArtistProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  bio                String?
+  location           String?
+  website            String?
+  verificationStatus String   @default("pending")
+  specialties        String[] @default([])
+  preferredMaterials String[] @default([])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Artwork {
+  id          String        @id @default(cuid())
+  artistId    String
+  slug        String        @unique
+  title       String
+  description String
+  category    String
+  status      ArtworkStatus @default(draft)
+  priceCents  Int
+  currency    String        @default("RWF")
+  kgDiverted  Decimal       @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  artist    User              @relation("ArtistArtworks", fields: [artistId], references: [id], onDelete: Restrict)
+  images    ArtworkImage[]
+  materials ArtworkMaterial[]
+  orderItems OrderItem[]
+}
+
+model ArtworkImage {
+  id        String   @id @default(cuid())
+  artworkId String
+  url       String
+  altText   String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  artwork Artwork @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+}
+
+model ArtworkMaterial {
+  id          String   @id @default(cuid())
+  artworkId   String
+  material    String
+  weightKg    Decimal
+  source      String?
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  artwork Artwork @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  buyerId         String
+  status          OrderStatus @default(pending_payment)
+  currency        String      @default("RWF")
+  subtotalCents   Int
+  deliveryCents   Int         @default(0)
+  totalCents      Int
+  deliveryAddress Json
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  buyer User        @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Restrict)
+  items OrderItem[]
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  artworkId  String
+  title      String
+  unitCents  Int
+  quantity   Int      @default(1)
+  createdAt  DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  artwork Artwork @relation(fields: [artworkId], references: [id], onDelete: Restrict)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  seedKey   String?  @unique
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  actor User? @relation("ActorAuditLogs", fields: [actorId], references: [id], onDelete: SetNull)
+}
