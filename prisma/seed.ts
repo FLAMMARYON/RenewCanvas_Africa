@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
 import "dotenv/config";
+import { createDatabaseClient } from "../src/lib/backend/db";
 
-const prisma = new PrismaClient();
+const prisma = createDatabaseClient();
 
 async function main() {
   const admin = await prisma.user.upsert({

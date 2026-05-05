@@ -6,21 +6,23 @@ This plan divides backend implementation into sequential slices. Each phase shou
 
 Goal: create the backend base safely.
 
+Current status: verified. PostgreSQL, Prisma, environment validation, the health route, seed script, backend tests, local schema push, seed execution, and build gates have passed.
+
 Deliver:
 
-- Choose database, likely PostgreSQL.
-- Add ORM and migrations, likely Prisma or Drizzle.
-- Add environment validation.
-- Add server-side error and logging helpers.
-- Add seed data for users, artists, and artworks.
-- Add API response conventions.
-- Add backend test setup.
+- PostgreSQL database target.
+- Prisma ORM, schema, generated client, and migration workflow.
+- Environment validation that allows frontend builds without a database but requires `DATABASE_URL` for database-backed operations.
+- Server-side database and health-check helpers.
+- Idempotent seed data for baseline users, artist profile, artwork, materials, and audit log.
+- API response conventions for backend health and later routes.
+- Backend test setup for config and health behavior.
 
 Done when:
 
 - App connects to the local database.
-- Migrations run cleanly.
-- Seed data loads.
+- `db:push` or `db:migrate` runs cleanly against PostgreSQL.
+- `db:seed` loads idempotent baseline data.
 - Basic API health check passes.
 - Test command covers backend utilities.
 
@@ -30,12 +32,11 @@ Goal: replace frontend-only auth with real accounts.
 
 Deliver:
 
-- User table.
+- Use the B0 `User` table for real account records.
+- Add any auth-specific tables not created in B0, including sessions, password reset tokens, and email verification tokens.
 - Password hashing.
 - Register, login, and logout APIs.
 - Secure session cookie.
-- Password reset token model.
-- Email verification model, even if email sending is initially stubbed.
 - Server-side role checks for buyer, artist, and admin.
 - Dashboard route protection backed by real session state.
 
@@ -72,10 +73,7 @@ Goal: replace mock artwork data.
 
 Deliver:
 
-- Artwork table.
-- Artwork images table.
-- Artwork materials table.
-- Artist ownership.
+- Use and extend the B0 artwork, image, material, and artist ownership schema where needed.
 - Artwork create, edit, and delete APIs.
 - Draft, submitted, approved, rejected, listed, and sold states.
 - Image upload pipeline or signed upload abstraction.
@@ -326,6 +324,7 @@ Deliver:
 - Data export and deletion.
 - Terms/privacy acceptance timestamps.
 - Security audit gate.
+- Production dependency-audit exception review for any unresolved transitive advisories.
 
 Done when:
 
@@ -333,6 +332,7 @@ Done when:
 - Backups are tested.
 - Sensitive flows are rate-limited.
 - Admin, audit, and payment logs are reliable.
+- Any unresolved dependency advisories have documented exposure assessment, compensating controls, owner sign-off, and review expiry.
 
 ## Recommended Order
 
@@ -355,6 +355,7 @@ Done when:
 
 ## Sequencing Rules
 
+- Do not start B1 until B0 has passed live PostgreSQL schema push or migration and seed verification.
 - Do not start payments before real orders exist.
 - Do not start orders before artwork inventory exists.
 - Do not start admin verification persistence before artist and artwork records exist.

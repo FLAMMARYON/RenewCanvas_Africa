@@ -1,4 +1,6 @@
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import { requireBackendConfig } from "./config";
 
 const globalForPrisma = globalThis as typeof globalThis & {
   renewCanvasPrisma?: PrismaClient;
@@ -9,15 +11,27 @@ export function getDatabaseClient(): PrismaClient {
     return globalForPrisma.renewCanvasPrisma;
   }
 
-  const client = new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
-  });
+  const client = createDatabaseClient();
 
   if (process.env.NODE_ENV !== "production") {
     globalForPrisma.renewCanvasPrisma = client;
   }
 
   return client;
+}
+
+export function createDatabaseClient(): PrismaClient {
+  const config = requireBackendConfig(process.env, { requireDatabase: true });
+  const databaseUrl = config.databaseUrl;
+
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL is required for database-backed backend operations.");
+  }
+
+  return new PrismaClient({
+    adapter: new PrismaPg(databaseUrl),
+    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
+  });
 }
 
 export async function checkDatabaseConnection(): Promise<{
