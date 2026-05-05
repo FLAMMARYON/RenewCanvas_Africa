@@ -14,12 +14,19 @@ import {
   Sparkles,
   Check,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  createFrontendSession,
+  dashboardPathForRole,
+  saveFrontendSession,
+  saveRegisteredUser,
+} from "@/lib/frontend/session";
 
 type UserRole = "buyer" | "artist";
 
-export default function RegisterPage() {
+function RegisterForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -32,6 +39,7 @@ export default function RegisterPage() {
   });
   const [role, setRole] = useState<UserRole>("buyer");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const roleParam = searchParams.get("role");
@@ -46,8 +54,30 @@ export default function RegisterPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle registration - will be connected to backend
-    console.log("Register submitted:", { ...formData, role });
+    setError("");
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords must match.");
+      return;
+    }
+
+    if (!agreedToTerms) {
+      setError("Accept the terms and privacy policy to create an account.");
+      return;
+    }
+
+    const session = createFrontendSession({
+      email: formData.email,
+      name: formData.fullName,
+      role,
+    });
+
+    saveRegisteredUser({
+      ...session,
+      phone: formData.phone.trim() || undefined,
+    });
+    saveFrontendSession(session);
+    router.push(dashboardPathForRole(session.role));
   };
 
   const roleOptions = [
@@ -103,7 +133,7 @@ export default function RegisterPage() {
               <Recycle className="w-7 h-7 text-white" />
             </div>
             <span className="text-2xl font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span>
+              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
             </span>
           </a>
 
@@ -167,6 +197,12 @@ export default function RegisterPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
               {/* Full Name */}
               <div>
                 <label
@@ -416,5 +452,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div></div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

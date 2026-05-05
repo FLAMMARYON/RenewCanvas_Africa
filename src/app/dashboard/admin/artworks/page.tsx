@@ -23,8 +23,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 
-// Mock artworks data
-const artworks = [
+const initialArtworks = [
   {
     id: "1",
     title: "Sunset Reflections",
@@ -173,6 +172,7 @@ export default function AdminArtworksPage() {
   const [expandedArtwork, setExpandedArtwork] = useState<string | null>(null);
   const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [artworks, setArtworks] = useState(initialArtworks);
 
   const filteredArtworks = artworks.filter((artwork) => {
     const matchesSearch =
@@ -199,11 +199,33 @@ export default function AdminArtworksPage() {
   };
 
   const handleApprove = (artworkId: string) => {
-    console.log("Approving artwork:", artworkId);
+    setArtworks((current) =>
+      current.map((artwork) =>
+        artwork.id === artworkId
+          ? {
+              ...artwork,
+              status: "approved",
+              reviewedAt: new Date().toISOString(),
+              rejectionReason: undefined,
+            }
+          : artwork
+      )
+    );
   };
 
   const handleReject = (artworkId: string) => {
-    console.log("Rejecting artwork:", artworkId, "Reason:", rejectionReason);
+    setArtworks((current) =>
+      current.map((artwork) =>
+        artwork.id === artworkId
+          ? {
+              ...artwork,
+              status: "rejected",
+              reviewedAt: new Date().toISOString(),
+              rejectionReason: rejectionReason.trim() || "Artwork requires clearer documentation.",
+            }
+          : artwork
+      )
+    );
     setShowRejectModal(null);
     setRejectionReason("");
   };

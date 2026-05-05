@@ -101,7 +101,7 @@ function Navigation({
               <Recycle className="w-6 h-6 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span>
+              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
             </span>
           </a>
 
@@ -970,7 +970,7 @@ function Footer() {
                 <Recycle className="w-6 h-6 text-white" />
               </div>
               <span className="text-xl font-bold text-white">
-                Renew<span className="text-teal-400">Canvas</span>
+                Renew<span className="text-teal-400">Canvas</span> <span className="text-amber-500">Africa</span>
               </span>
             </a>
             <p className="text-sm text-gray-400 mb-4">
@@ -1051,7 +1051,7 @@ function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
           <p className="text-sm text-gray-500">
-            &copy; {currentYear} RenewCanvas Africa. All rights reserved.
+            &copy; {currentYear} RenewCanvas <span className="text-amber-500">Africa</span>. All rights reserved.
           </p>
           <span className="hidden sm:inline text-gray-600">|</span>
           <div className="flex items-center gap-2 text-sm text-gray-500">

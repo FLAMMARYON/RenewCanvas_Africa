@@ -2,22 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Compass, Home, Map as MapIcon, Maximize2, RotateCcw, X } from "lucide-react";
+import { Compass, Home, Info, List, Map as MapIcon, Maximize2, RotateCcw, X } from "lucide-react";
 import * as THREE from "three";
 import { curateMuseum, type CurationArtworkInput, type CuratedMuseumRoom } from "@/lib/ml/curator";
 import type { ArtworkCategory, RecyclableMaterial } from "@/lib/ml/schemas";
+import { readVirtualRoomProgress, saveVirtualRoomProgress } from "@/lib/frontend/local-store";
+import { virtualRoomArtworks, type VirtualRoomArtwork } from "@/lib/frontend/virtual-room-data";
 
 type RoomKey = "entrance" | "main" | "left" | "right" | "court" | "corridor";
 
-type Artwork = {
-  id: number;
-  title: string;
-  artist: string;
-  category: ArtworkCategory;
-  price: number;
-  image: string;
-  materials: string[];
-  kgDiverted: number;
+type Artwork = VirtualRoomArtwork & {
   curationRoomTitle?: string;
   curationExplanation?: string;
 };
@@ -52,88 +46,7 @@ type ArtworkPlacement = {
   curationExplanation: string;
 };
 
-const artworks: Artwork[] = [
-  {
-    id: 1,
-    title: "Ocean Waves",
-    artist: "Marie Uwimana",
-    category: "Wall Art",
-    price: 45000,
-    image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=900",
-    materials: ["PET bottles", "fabric"],
-    kgDiverted: 2.5,
-  },
-  {
-    id: 2,
-    title: "Sunset Dreams",
-    artist: "Jean Baptiste",
-    category: "Mixed Media",
-    price: 38000,
-    image: "https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=900",
-    materials: ["cardboard", "paper"],
-    kgDiverted: 1.8,
-  },
-  {
-    id: 3,
-    title: "Forest Spirit",
-    artist: "Claudine Mukiza",
-    category: "Sculpture",
-    price: 52000,
-    image: "https://images.unsplash.com/photo-1549887534-1541e9326642?w=900",
-    materials: ["bottle caps", "metal"],
-    kgDiverted: 3.2,
-  },
-  {
-    id: 4,
-    title: "Urban Rhythm",
-    artist: "Patrick Nshimiye",
-    category: "Functional Art",
-    price: 41000,
-    image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=900",
-    materials: ["aluminum cans", "fabric"],
-    kgDiverted: 2.1,
-  },
-  {
-    id: 5,
-    title: "Mountain Echo",
-    artist: "Grace Ingabire",
-    category: "Installation",
-    price: 67000,
-    image: "https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=900",
-    materials: ["glass", "PET bottles"],
-    kgDiverted: 4.5,
-  },
-  {
-    id: 6,
-    title: "River Dance",
-    artist: "Emmanuel Habimana",
-    category: "Home Decor",
-    price: 35000,
-    image: "https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?w=900",
-    materials: ["fabric scraps", "cardboard"],
-    kgDiverted: 1.5,
-  },
-  {
-    id: 7,
-    title: "Golden Hour",
-    artist: "Alice Uwase",
-    category: "Jewelry",
-    price: 48000,
-    image: "https://images.unsplash.com/photo-1582201942988-13e60e4556ee?w=900",
-    materials: ["bottle caps", "paper"],
-    kgDiverted: 2.8,
-  },
-  {
-    id: 8,
-    title: "Serene Landscape",
-    artist: "David Mugabo",
-    category: "Wall Art",
-    price: 55000,
-    image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=900",
-    materials: ["PET bottles", "burlap"],
-    kgDiverted: 3.7,
-  },
-];
+const artworks: Artwork[] = virtualRoomArtworks;
 
 const WING_SPACING = 76;
 const ROOM_W = 14;
@@ -142,6 +55,7 @@ const WALL_H = 5.2;
 const CAMERA_Y = 1.72;
 const BRAND_TEAL = "#0f766e";
 const BRAND_ORANGE = "#f59e0b";
+const BRAND_DARK = "#101417";
 
 const roomStations: Station[] = [
   { key: "entrance", label: "Entrance Lobby", x: 0, z: 8, heading: 0 },
@@ -235,6 +149,45 @@ function stationFor(room: RoomKey, wing: number) {
   return { ...station, z: station.z - wing * WING_SPACING };
 }
 
+function isRoomKey(value: string | null): value is RoomKey {
+  return roomStations.some((station) => station.key === value);
+}
+
+function readInitialRouteState(): { room: RoomKey; wing: number } | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const routeRoom = params.get("room");
+  const routeWing = Number(params.get("wing") ?? "0");
+
+  if (isRoomKey(routeRoom)) {
+    return {
+      room: routeRoom,
+      wing: Number.isFinite(routeWing) && routeWing >= 0 ? Math.floor(routeWing) : 0,
+    };
+  }
+
+  const saved = readVirtualRoomProgress();
+  if (saved && isRoomKey(saved.room)) {
+    return { room: saved.room, wing: Math.max(0, Math.floor(saved.wing)) };
+  }
+
+  return null;
+}
+
+function writeRouteState(room: RoomKey, wing: number) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.set("room", room);
+  url.searchParams.set("wing", String(wing));
+  window.history.replaceState(null, "", url);
+}
+
 function normalizeCurationMaterials(materials: string[]): RecyclableMaterial[] {
   const normalized = materials
     .map((material) => materialAliases[material.trim().toLowerCase()] ?? "Other")
@@ -316,19 +269,117 @@ function createTextCanvas(title: string, subtitle: string, bg = "#f2eadc") {
   return canvas;
 }
 
+function createArtworkCanvas(artwork: Artwork) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 768;
+  canvas.height = 1024;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return canvas;
+
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, artwork.fallbackColor);
+  gradient.addColorStop(0.55, "#f2eadc");
+  gradient.addColorStop(1, BRAND_DARK);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.globalAlpha = 0.22;
+  for (let index = 0; index < 16; index += 1) {
+    ctx.beginPath();
+    ctx.arc(
+      120 + ((index * 137) % 540),
+      140 + ((index * 89) % 760),
+      42 + (index % 5) * 18,
+      0,
+      Math.PI * 2
+    );
+    ctx.fillStyle = index % 2 === 0 ? BRAND_TEAL : BRAND_ORANGE;
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = "rgba(16, 20, 23, 0.72)";
+  ctx.fillRect(48, 760, 672, 190);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 54px Arial";
+  ctx.fillText(artwork.title.slice(0, 22), 80, 835);
+  ctx.fillStyle = "#f7d083";
+  ctx.font = "34px Arial";
+  ctx.fillText(artwork.artist.slice(0, 26), 80, 892);
+  return canvas;
+}
+
+function createEnvironmentTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  sky.addColorStop(0, "#7fa7b8");
+  sky.addColorStop(0.45, "#c8d8d3");
+  sky.addColorStop(0.55, "#8b755c");
+  sky.addColorStop(1, "#171b1d");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "rgba(245, 158, 11, 0.32)";
+  ctx.beginPath();
+  ctx.arc(760, 118, 56, 0, Math.PI * 2);
+  ctx.fill();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function createFloorTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.fillStyle = "#6d6153";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let y = 0; y < 512; y += 64) {
+    for (let x = 0; x < 512; x += 128) {
+      ctx.fillStyle = (x + y) % 256 === 0 ? "#776b5c" : "#5f554a";
+      ctx.fillRect(x, y, 126, 62);
+      ctx.strokeStyle = "rgba(32, 25, 18, 0.42)";
+      ctx.strokeRect(x, y, 126, 62);
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(3, 4);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 function addBox(
   group: THREE.Group,
   size: [number, number, number],
   position: [number, number, number],
   color: string,
-  options?: { roughness?: number; metalness?: number }
+  options?: { roughness?: number; metalness?: number; map?: THREE.Texture | null; emissive?: string; emissiveIntensity?: number }
 ) {
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(...size),
-    new THREE.MeshStandardMaterial({
+    new THREE.MeshPhysicalMaterial({
       color,
+      map: options?.map ?? null,
       roughness: options?.roughness ?? 0.72,
       metalness: options?.metalness ?? 0,
+      clearcoat: 0.08,
+      clearcoatRoughness: 0.72,
+      emissive: options?.emissive ?? "#000000",
+      emissiveIntensity: options?.emissiveIntensity ?? 0,
     })
   );
   mesh.position.set(...position);
@@ -350,10 +401,13 @@ export default function VirtualRoomPage() {
   const wheelDeltaRef = useRef(0);
   const dragRef = useRef<{ x: number; yaw: number } | null>(null);
   const clickablesRef = useRef<THREE.Object3D[]>([]);
+  const routeStateHydratedRef = useRef(false);
   const [wing, setWing] = useState(0);
   const [room, setRoom] = useState<RoomKey>("entrance");
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [mapOpen, setMapOpen] = useState(true);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
 
   const currentStation = useMemo(() => stationFor(room, wing), [room, wing]);
   const currentDoors = doors[room];
@@ -369,8 +423,10 @@ export default function VirtualRoomPage() {
 
     const mount = mountRef.current;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#101417");
-    scene.fog = new THREE.Fog("#101417", 34, 120);
+    const environmentTexture = createEnvironmentTexture();
+    scene.background = new THREE.Color(BRAND_DARK);
+    scene.environment = environmentTexture;
+    scene.fog = new THREE.FogExp2(BRAND_DARK, 0.018);
 
     const camera = new THREE.PerspectiveCamera(72, mount.clientWidth / mount.clientHeight, 0.05, 260);
     camera.position.set(0, CAMERA_Y, 8);
@@ -379,6 +435,9 @@ export default function VirtualRoomPage() {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.xr.enabled = true;
@@ -388,7 +447,7 @@ export default function VirtualRoomPage() {
     const world = new THREE.Group();
     scene.add(world);
 
-    const ambient = new THREE.HemisphereLight("#ffffff", "#2e332f", 1.1);
+    const ambient = new THREE.HemisphereLight("#f7efe2", "#27322f", 1.28);
     scene.add(ambient);
 
     const sun = new THREE.DirectionalLight("#ffe1ac", 2.3);
@@ -398,6 +457,8 @@ export default function VirtualRoomPage() {
     scene.add(sun);
 
     const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin("anonymous");
+    const floorTexture = createFloorTexture();
 
     function addWallSegments(group: THREE.Group, z: number, color: string, doorCenter?: number) {
       const gap = doorCenter === undefined ? 0 : 3.5;
@@ -439,7 +500,7 @@ export default function VirtualRoomPage() {
       group.position.set(station.x, 0, station.z);
       world.add(group);
 
-      addBox(group, [ROOM_W + 0.4, 0.18, ROOM_D + 0.4], [0, -0.09, 0], palette.floor, { roughness: 0.42 });
+      addBox(group, [ROOM_W + 0.4, 0.18, ROOM_D + 0.4], [0, -0.09, 0], palette.floor, { roughness: 0.36, map: floorTexture });
       addBox(group, [ROOM_W + 0.2, 0.22, ROOM_D + 0.2], [0, WALL_H + 0.12, 0], "#2f2923", { roughness: 0.6 });
 
       const hasNorth = roomKey === "entrance" || roomKey === "main" || roomKey === "court" || roomKey === "corridor";
@@ -457,12 +518,36 @@ export default function VirtualRoomPage() {
       addBox(group, [ROOM_W + 0.1, 0.16, 0.18], [0, 3.55, ROOM_D / 2 - 0.05], palette.rail);
       addBox(group, [ROOM_W + 0.1, 0.16, 0.18], [0, 1.05, ROOM_D / 2 - 0.05], palette.rail);
 
+      addBox(group, [0.16, WALL_H + 0.12, 0.16], [-ROOM_W / 2 + 0.28, WALL_H / 2, -ROOM_D / 2 + 0.28], palette.trim, { roughness: 0.48 });
+      addBox(group, [0.16, WALL_H + 0.12, 0.16], [ROOM_W / 2 - 0.28, WALL_H / 2, -ROOM_D / 2 + 0.28], palette.trim, { roughness: 0.48 });
+      addBox(group, [0.16, WALL_H + 0.12, 0.16], [-ROOM_W / 2 + 0.28, WALL_H / 2, ROOM_D / 2 - 0.28], palette.trim, { roughness: 0.48 });
+      addBox(group, [0.16, WALL_H + 0.12, 0.16], [ROOM_W / 2 - 0.28, WALL_H / 2, ROOM_D / 2 - 0.28], palette.trim, { roughness: 0.48 });
+
+      const brandBand = addBox(group, [ROOM_W * 0.42, 0.32, 0.05], [0, 4.15, ROOM_D / 2 - 0.18], BRAND_TEAL, {
+        roughness: 0.35,
+        emissive: BRAND_TEAL,
+        emissiveIntensity: 0.05,
+      });
+      brandBand.name = `RenewCanvas Africa wall band ${roomKey}`;
+
+      const brandTexture = new THREE.CanvasTexture(
+        createTextCanvas("RenewCanvas Africa", `${wingName(wingIndex)} ${station.label}`, "#f4eadb")
+      );
+      const brandSign = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.7, 1.38),
+        new THREE.MeshBasicMaterial({ map: brandTexture, transparent: true })
+      );
+      brandSign.position.set(0, 2.9, ROOM_D / 2 - 0.32);
+      brandSign.rotation.y = Math.PI;
+      group.add(brandSign);
+
       const skylight = addBox(group, [5.4, 0.08, 2.6], [0, WALL_H + 0.24, -1], "#eafaff", { roughness: 0.18 });
-      skylight.material = new THREE.MeshStandardMaterial({
+      skylight.material = new THREE.MeshPhysicalMaterial({
         color: "#eafaff",
         emissive: "#c5f7ff",
         emissiveIntensity: 0.45,
         roughness: 0.18,
+        transmission: 0.12,
       });
 
       const light = new THREE.PointLight("#fff1cf", roomKey === "court" ? 18 : 10, 18, 1.8);
@@ -518,14 +603,24 @@ export default function VirtualRoomPage() {
       addBox(group, [2.35, 2.95, 0.16], [0, 0, 0], "#3d2c1d", { roughness: 0.6 });
       addBox(group, [2.02, 2.62, 0.18], [0, 0, -0.04], "#f2eadc", { roughness: 0.52 });
 
+      const fallbackTexture = new THREE.CanvasTexture(createArtworkCanvas(artwork));
+      fallbackTexture.colorSpace = THREE.SRGBColorSpace;
+      const plane = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.76, 2.26),
+        new THREE.MeshPhysicalMaterial({
+          map: fallbackTexture,
+          roughness: 0.56,
+          clearcoat: 0.16,
+          clearcoatRoughness: 0.48,
+        })
+      );
+      plane.position.z = -0.14;
+      group.add(plane);
+
       loader.load(artwork.image, (texture) => {
         texture.colorSpace = THREE.SRGBColorSpace;
-        const plane = new THREE.Mesh(
-          new THREE.PlaneGeometry(1.76, 2.26),
-          new THREE.MeshStandardMaterial({ map: texture, roughness: 0.65 })
-        );
-        plane.position.z = -0.14;
-        group.add(plane);
+        plane.material.map = texture;
+        plane.material.needsUpdate = true;
       });
 
       const plaqueTexture = new THREE.CanvasTexture(createTextCanvas(artwork.title, artwork.artist));
@@ -732,6 +827,27 @@ export default function VirtualRoomPage() {
     setRoom(nextRoom);
   };
 
+  useEffect(() => {
+    const initialState = readInitialRouteState();
+    if (initialState) {
+      goToRoom(initialState.room, initialState.wing);
+    }
+    routeStateHydratedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!routeStateHydratedRef.current) {
+      return;
+    }
+
+    writeRouteState(room, wing);
+    saveVirtualRoomProgress({
+      room,
+      wing,
+      selectedArtworkId: selectedArtwork?.id,
+    });
+  }, [room, selectedArtwork?.id, wing]);
+
   const reset = () => {
     goToRoom("entrance", 0);
   };
@@ -764,21 +880,21 @@ export default function VirtualRoomPage() {
       </header>
 
       {mapOpen && (
-        <aside className="fixed right-4 top-24 z-40 w-72 rounded-xl border border-white/10 bg-black/65 p-4 shadow-2xl backdrop-blur-md">
+        <aside className="fixed bottom-5 right-5 z-40 h-44 w-44 rounded-full border border-white/15 bg-black/62 p-3 shadow-2xl backdrop-blur-md">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Compass className="h-4 w-4 text-teal-300" />
-              Practical Floor Map
+              Map
             </div>
-            <button type="button" onClick={() => setMapOpen(false)} className="rounded p-1 hover:bg-white/10" title="Close map">
+            <button type="button" onClick={() => setMapOpen(false)} className="rounded-full p-1 hover:bg-white/10" title="Close map">
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="relative h-64 rounded-lg border border-white/15 bg-[#d8ccb8] text-[#2d241c]">
-            <div className="absolute left-[39%] top-[10%] h-[78%] w-[22%] rounded bg-teal-800/15" />
-            <div className="absolute left-[9%] top-[35%] h-[24%] w-[26%] rounded border border-[#6b573f]/60 bg-white/40" />
-            <div className="absolute right-[9%] top-[35%] h-[24%] w-[26%] rounded border border-[#6b573f]/60 bg-white/40" />
+          <div className="relative mx-auto h-28 w-28 rounded-full border border-white/20 bg-[#d8ccb8] text-[#2d241c] shadow-inner">
+            <div className="absolute left-[42%] top-[13%] h-[74%] w-[16%] rounded-full bg-teal-800/15" />
+            <div className="absolute left-[15%] top-[39%] h-[20%] w-[25%] rounded-full border border-[#6b573f]/60 bg-white/45" />
+            <div className="absolute right-[15%] top-[39%] h-[20%] w-[25%] rounded-full border border-[#6b573f]/60 bg-white/45" />
             {roomStations.map((station) => {
               const active = station.key === room;
               const left = 50 + (station.x / 36) * 42;
@@ -789,37 +905,79 @@ export default function VirtualRoomPage() {
                   key={station.key}
                   type="button"
                   onClick={() => goToRoom(station.key)}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 rounded px-2 py-1 text-[10px] font-semibold shadow ${
-                    active ? "bg-teal-700 text-white" : "bg-white/85 text-[#2d241c] hover:bg-amber-100"
+                  title={station.label}
+                  className={`absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border shadow ${
+                    active ? "border-white bg-teal-700" : "border-[#6b573f]/60 bg-white/90 hover:bg-amber-100"
                   }`}
                   style={{ left: `${left}%`, top: `${top}%` }}
-                >
-                  {station.label}
-                </button>
+                />
               );
             })}
           </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {currentDoors.map((door) => (
-              <button
-                key={`${door.label}-${door.room}-${door.wingOffset ?? 0}`}
-                type="button"
-                onClick={() => goToRoom(door.room, wing + (door.wingOffset ?? 0))}
-                className="rounded-lg bg-white/10 px-3 py-2 text-left text-xs hover:bg-white/15"
-              >
-                {door.label}
-              </button>
-            ))}
-          </div>
-          <p className="mt-3 text-xs text-white/60">Scroll enters the nearest doorway. Click glowing floor circles or map rooms to navigate.</p>
         </aside>
       )}
 
-      <section className="pointer-events-none fixed bottom-5 left-1/2 z-40 w-[min(94vw,680px)] -translate-x-1/2 rounded-xl border border-white/10 bg-black/55 p-4 text-center shadow-2xl backdrop-blur-md">
-          <p className="text-sm font-medium">Scroll to walk through the doorway you are facing. Drag to look around. Click glowing door circles or artworks.</p>
-        <p className="mt-1 text-xs text-white/65">Current room: {currentStation.label}. Next visible routes: {currentDoors.map((door) => door.label).join(", ")}.</p>
-      </section>
+      <div className="fixed bottom-20 left-5 z-[60] flex items-end gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            setInfoOpen((value) => !value);
+            setListOpen(false);
+          }}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/62 shadow-2xl backdrop-blur-md hover:bg-black/75"
+          title="Museum controls"
+          aria-label="Museum controls"
+        >
+          <Info className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setListOpen((value) => !value);
+            setInfoOpen(false);
+          }}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/62 shadow-2xl backdrop-blur-md hover:bg-black/75"
+          title={listOpen ? "Hide accessible artwork list" : "Show accessible artwork list"}
+          aria-label={listOpen ? "Hide accessible artwork list" : "Show accessible artwork list"}
+          aria-pressed={listOpen}
+        >
+          <List className="h-5 w-5" />
+        </button>
+
+        {infoOpen && (
+          <section className="absolute bottom-14 left-0 w-[min(88vw,360px)] rounded-xl border border-white/10 bg-black/78 p-4 shadow-2xl backdrop-blur-md">
+            <p className="text-sm font-medium">Scroll or press W to walk through the doorway you face. Drag or use A/D to look around. Click glowing circles or artworks.</p>
+            <p className="mt-2 text-xs text-white/65">Current room: {currentStation.label}. Routes: {currentDoors.map((door) => door.label).join(", ")}.</p>
+          </section>
+        )}
+      </div>
+
+      {!mapOpen && (
+        <button
+          type="button"
+          onClick={() => setMapOpen(true)}
+          className="fixed bottom-5 right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/62 shadow-2xl backdrop-blur-md hover:bg-black/75"
+          title="Open map"
+        >
+          <MapIcon className="h-5 w-5" />
+        </button>
+      )}
+
+      {listOpen && (
+        <section className="fixed bottom-36 left-5 z-[60] max-h-[46vh] w-[min(92vw,430px)] overflow-auto rounded-xl border border-white/10 bg-black/78 p-4 text-sm shadow-2xl backdrop-blur-md">
+          <h2 className="font-semibold">Artwork List</h2>
+          <p className="mt-1 text-xs text-white/65">{museumCurationPlan.accessibilitySummary}</p>
+          <ul className="mt-3 space-y-3">
+            {accessiblePlacements.map((placement) => (
+              <li key={`${placement.artwork.id}-${placement.curationRoomTitle}`} className="border-b border-white/10 pb-3 last:border-b-0">
+                <p className="font-medium">{placement.artwork.title}</p>
+                <p className="text-xs text-white/65">by {placement.artwork.artist} / {placement.curationRoomTitle}</p>
+                <p className="mt-1 text-xs text-white/55">{placement.curationExplanation}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="sr-only" aria-label="Accessible museum artwork list">
         <h2>Infinite Museum artwork list</h2>

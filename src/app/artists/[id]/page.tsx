@@ -10,8 +10,8 @@ import {
   Heart,
   Eye,
   ShoppingBag,
-  Instagram,
-  Twitter,
+  Camera,
+  MessageCircle,
   Globe,
   Mail,
   Share2,
@@ -411,7 +411,7 @@ export default function ArtistProfilePage() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <Instagram className="w-5 h-5 text-pink-600" />
+                    <Camera className="w-5 h-5 text-pink-600" />
                     <span className="text-gray-700">{artist.social.instagram}</span>
                   </a>
                 )}
@@ -422,7 +422,7 @@ export default function ArtistProfilePage() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <Twitter className="w-5 h-5 text-blue-400" />
+                    <MessageCircle className="w-5 h-5 text-blue-400" />
                     <span className="text-gray-700">{artist.social.twitter}</span>
                   </a>
                 )}
@@ -475,7 +475,7 @@ export default function ArtistProfilePage() {
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-6xl mx-auto px-4 text-center">
           <p className="text-gray-400">
-            © 2026 RenewCanvas Africa. All rights reserved.
+            © 2026 RenewCanvas <span className="text-amber-500">Africa</span>. All rights reserved.
           </p>
         </div>
       </footer>

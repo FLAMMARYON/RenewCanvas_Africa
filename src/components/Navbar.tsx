@@ -68,7 +68,7 @@ export default function Navbar() {
                   <Recycle className="w-5 h-5 text-white" />
                 </div>
                 <span className="font-bold text-xl text-gray-900">
-                  Renew<span className="text-teal-600">Canvas</span>
+                  Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
                 </span>
               </Link>
 
@@ -149,7 +149,7 @@ export default function Navbar() {
                 <Recycle className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold text-gray-900">
-                Renew<span className="text-teal-600">Canvas</span>
+                Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
               </span>
             </Link>
             <button

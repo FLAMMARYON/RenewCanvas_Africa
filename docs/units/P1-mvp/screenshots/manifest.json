@@ -1,0 +1,226 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "outputDir": "C:\\Users\\Nicholas Eke\\Downloads\\RenewCanv1.0\\RenewCanvas_Africa\\docs\\units\\P1-mvp\\screenshots",
+  "capturedAt": "2026-05-04T19:30:36.520Z",
+  "captured": [
+    {
+      "route": "/",
+      "file": "home.png",
+      "status": 200
+    },
+    {
+      "route": "/about",
+      "file": "about.png",
+      "status": 200
+    },
+    {
+      "route": "/artists",
+      "file": "artists.png",
+      "status": 200
+    },
+    {
+      "route": "/artists/1",
+      "file": "artist-detail-1.png",
+      "note": "Uses local mock artist id 1.",
+      "status": 200
+    },
+    {
+      "route": "/artwork/1",
+      "file": "artwork-detail-1.png",
+      "note": "Dynamic route renders a static sample detail page.",
+      "status": 200
+    },
+    {
+      "route": "/auctions",
+      "file": "auctions.png",
+      "status": 200
+    },
+    {
+      "route": "/book-collection",
+      "file": "book-collection.png",
+      "status": 200
+    },
+    {
+      "route": "/checkout",
+      "file": "checkout.png",
+      "status": 200
+    },
+    {
+      "route": "/contact",
+      "file": "contact.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/admin",
+      "file": "dashboard-admin.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/admin/artists",
+      "file": "dashboard-admin-artists.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/admin/artworks",
+      "file": "dashboard-admin-artworks.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/admin/auctions",
+      "file": "dashboard-admin-auctions.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/admin/impact",
+      "file": "dashboard-admin-impact.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/admin/materials",
+      "file": "dashboard-admin-materials.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/admin/orders",
+      "file": "dashboard-admin-orders.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/admin/settings",
+      "file": "dashboard-admin-settings.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/admin/users",
+      "file": "dashboard-admin-users.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/admin/verification",
+      "file": "admin-verification.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/artist",
+      "file": "dashboard-artist.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/artist/analytics",
+      "file": "dashboard-artist-analytics.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/artist/artworks",
+      "file": "dashboard-artist-artworks.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/artist/artworks/1",
+      "file": "dashboard-artist-artwork-edit-1.png",
+      "note": "Uses local mock artwork id 1.",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/artist/artworks/create",
+      "file": "dashboard-artist-artwork-create.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/artist/orders",
+      "file": "dashboard-artist-orders.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/artist/profile",
+      "file": "dashboard-artist-profile.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/buyer",
+      "file": "dashboard-buyer.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/buyer/orders",
+      "file": "dashboard-buyer-orders.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/buyer/profile",
+      "file": "dashboard-buyer-profile.png",
+      "status": 200
+    },
+    {
+      "route": "/dashboard/buyer/wishlist",
+      "file": "dashboard-buyer-wishlist.png",
+      "status": 200
+    },
+    {
+      "route": "/faq",
+      "file": "faq.png",
+      "status": 200
+    },
+    {
+      "route": "/forgot-password",
+      "file": "forgot-password.png",
+      "status": 200
+    },
+    {
+      "route": "/how-it-works",
+      "file": "how-it-works.png",
+      "status": 200
+    },
+    {
+      "route": "/impact",
+      "file": "impact.png",
+      "status": 200
+    },
+    {
+      "route": "/login",
+      "file": "login.png",
+      "status": 200
+    },
+    {
+      "route": "/marketplace",
+      "file": "marketplace.png",
+      "status": 200
+    },
+    {
+      "route": "/order-confirmation",
+      "file": "order-confirmation.png",
+      "status": 200
+    },
+    {
+      "route": "/privacy",
+      "file": "privacy.png",
+      "status": 200
+    },
+    {
+      "route": "/refund-policy",
+      "file": "refund-policy.png",
+      "status": 200
+    },
+    {
+      "route": "/register",
+      "file": "register.png",
+      "status": 200
+    },
+    {
+      "route": "/reset-password",
+      "file": "reset-password.png",
+      "status": 200
+    },
+    {
+      "route": "/terms",
+      "file": "terms.png",
+      "status": 200
+    },
+    {
+      "route": "/virtual-room",
+      "file": "virtual-room.png",
+      "status": 200
+    }
+  ],
+  "failed": []
+}

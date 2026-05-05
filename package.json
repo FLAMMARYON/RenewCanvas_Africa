@@ -9,6 +9,7 @@
     "lint": "eslint src/lib/foundation src/lib/ml tests --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "node --test --import tsx tests/**/*.test.ts",
+    "test:e2e": "playwright test",
     "test:coverage": "c8 --reporter=json-summary --reporter=text --check-coverage --lines 80 node --test --import tsx tests/**/*.test.ts",
     "security:audit": "npm audit --audit-level=high"
   },
@@ -29,6 +30,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.59.1",
+    "axe-core": "^4.11.4",
     "c8": "^11.0.0",
     "eslint": "^10.3.0",
     "tsx": "^4.20.6",

@@ -99,7 +99,7 @@ function Navigation({
               <Recycle className="w-6 h-6 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span>
+              Renew<span className="text-teal-700">Canvas</span> <span className="text-amber-500">Africa</span>
             </span>
           </div>
 
@@ -109,7 +109,7 @@ function Navigation({
               <a
                 key={link.name}
                 href={link.href}
-                className="text-gray-600 hover:text-teal-600 transition-colors font-medium text-sm"
+                className="text-gray-600 hover:text-teal-700 transition-colors font-medium text-sm"
               >
                 {link.name}
               </a>
@@ -120,13 +120,13 @@ function Navigation({
           <div className="group hidden md:flex items-center gap-3">
             <a
               href="/login"
-              className="px-4 py-2 text-sm font-medium text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
+              className="px-4 py-2 text-sm font-medium text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
             >
               Sign In
             </a>
             <a
               href="/register"
-              className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] group-hover:scale-105"
+              className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] group-hover:scale-105"
             >
               Get Started
             </a>
@@ -157,7 +157,7 @@ function Navigation({
               <a
                 key={link.name}
                 href={link.href}
-                className="block py-2 text-gray-600 hover:text-teal-600 font-medium"
+                className="block py-2 text-gray-600 hover:text-teal-700 font-medium"
               >
                 {link.name}
               </a>
@@ -165,13 +165,13 @@ function Navigation({
             <div className="group pt-4 flex flex-col gap-2">
               <a
                 href="/login"
-                className="w-full py-2 text-center text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
+                className="w-full py-2 text-center text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
               >
                 Sign In
               </a>
               <a
                 href="/register"
-                className="w-full py-2 text-center text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] group-hover:scale-105"
+                className="w-full py-2 text-center text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] group-hover:scale-105"
               >
                 Get Started
               </a>
@@ -234,7 +234,7 @@ function HeroSection() {
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
               Transforming{" "}
-              <span className="text-teal-600">Waste</span> Into{" "}
+              <span className="text-teal-700">Waste</span> Into{" "}
               <span className="text-amber-500">Art</span>
             </h1>
 
@@ -247,14 +247,14 @@ function HeroSection() {
             <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center lg:justify-start">
               <a
                 href="/marketplace"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg hover:bg-teal-700 [transition:all_0.4s_ease] font-medium shadow-lg shadow-teal-600/30 hover:shadow-xl hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-white bg-teal-700 rounded-lg hover:bg-teal-800 [transition:all_0.4s_ease] font-medium shadow-lg shadow-teal-700/30 hover:shadow-xl hover:scale-105"
               >
                 Explore Artwork
                 <ArrowRight className="w-5 h-5" />
               </a>
               <a
                 href="/register?role=artist"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-teal-700 bg-teal-100 rounded-lg hover:bg-teal-600 hover:text-white [transition:all_0.4s_ease] font-medium hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-teal-700 bg-teal-100 rounded-lg hover:bg-teal-800 hover:text-white [transition:all_0.4s_ease] font-medium hover:scale-105"
               >
                 Join as Artist
                 <Palette className="w-5 h-5" />
@@ -291,11 +291,11 @@ function HeroSection() {
               {/* Main Image Placeholder */}
               <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-teal-100 to-teal-200 rounded-2xl shadow-xl transform rotate-3 flex items-center justify-center">
                 <div className="text-center p-8">
-                  <Palette className="w-16 h-16 text-teal-600 mx-auto mb-4" />
+                  <Palette className="w-16 h-16 text-teal-700 mx-auto mb-4" />
                   <p className="text-teal-700 font-medium">
                     Featured Artwork
                   </p>
-                  <p className="text-sm text-teal-600 mt-2">
+                  <p className="text-sm text-teal-700 mt-2">
                     Made from recycled materials
                   </p>
                 </div>
@@ -341,7 +341,7 @@ function AboutSection() {
             <div className="aspect-square bg-gradient-to-br from-teal-50 to-teal-100 rounded-3xl p-8 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-32 h-32 mx-auto mb-6 bg-white rounded-full shadow-lg flex items-center justify-center">
-                  <Globe className="w-16 h-16 text-teal-600" />
+                  <Globe className="w-16 h-16 text-teal-700" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   Based in Kigali, Rwanda
@@ -358,12 +358,12 @@ function AboutSection() {
 
           {/* Right - Content */}
           <div>
-            <span className="text-teal-600 font-semibold text-sm uppercase tracking-wider">
+            <span className="text-teal-700 font-semibold text-sm uppercase tracking-wider">
               About Us
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2 mb-6">
               A Platform Where Waste Becomes{" "}
-              <span className="text-teal-600">Masterpiece</span>
+              <span className="text-teal-700">Masterpiece</span>
             </h2>
 
             <div className="space-y-4 text-gray-600">
@@ -391,7 +391,7 @@ function AboutSection() {
             {/* Mission Cards */}
             <div className="grid sm:grid-cols-2 gap-4 mt-8">
               <div className="p-4 bg-teal-50 rounded-xl">
-                <Recycle className="w-8 h-8 text-teal-600 mb-2" />
+                <Recycle className="w-8 h-8 text-teal-700 mb-2" />
                 <h4 className="font-semibold text-gray-900">
                   Circular Economy
                 </h4>
@@ -458,7 +458,7 @@ function HowItWorksSection() {
   const colorClasses = {
     teal: {
       bg: "bg-teal-100",
-      text: "text-teal-600",
+      text: "text-teal-700",
       border: "border-teal-200",
     },
     amber: {
@@ -483,7 +483,7 @@ function HowItWorksSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-teal-600 font-semibold text-sm uppercase tracking-wider">
+          <span className="text-teal-700 font-semibold text-sm uppercase tracking-wider">
             How It Works
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2 mb-4">
@@ -530,7 +530,7 @@ function HowItWorksSection() {
         <div className="text-center mt-12">
           <a
             href="/how-it-works"
-            className="inline-flex items-center gap-2 text-teal-600 font-medium hover:text-teal-700 transition-colors"
+            className="inline-flex items-center gap-2 text-teal-700 font-medium hover:text-teal-700 transition-colors"
           >
             Learn more about our process
             <ArrowRight className="w-4 h-4" />
@@ -610,7 +610,7 @@ function ImpactSection() {
         <div className="text-center mt-12">
           <a
             href="/impact"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-teal-700 rounded-lg font-medium hover:bg-teal-600 hover:text-white [transition:all_0.4s_ease] hover:scale-105"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-teal-700 rounded-lg font-medium hover:bg-teal-800 hover:text-white [transition:all_0.4s_ease] hover:scale-105"
           >
             View Full Impact Report
             <ArrowRight className="w-5 h-5" />
@@ -657,7 +657,7 @@ function WhySection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-teal-600 font-semibold text-sm uppercase tracking-wider">
+          <span className="text-teal-700 font-semibold text-sm uppercase tracking-wider">
             Why Choose Us
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2 mb-4">
@@ -714,14 +714,14 @@ function CTASection() {
         <div className="group flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="/marketplace"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] font-medium shadow-lg shadow-teal-600/30 text-lg group-hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] font-medium shadow-lg shadow-teal-700/30 text-lg group-hover:scale-105"
           >
             Browse Artwork
             <ArrowRight className="w-5 h-5" />
           </a>
           <a
             href="/register?role=artist"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-white border-2 border-teal-200 rounded-lg group-hover:bg-teal-600 group-hover:text-white group-hover:border-teal-600 [transition:all_0.4s_ease] font-medium text-lg group-hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-white border-2 border-teal-200 rounded-lg group-hover:bg-teal-800 group-hover:text-white group-hover:border-teal-700 [transition:all_0.4s_ease] font-medium text-lg group-hover:scale-105"
           >
             Apply as Artist
             <Palette className="w-5 h-5" />
@@ -729,7 +729,7 @@ function CTASection() {
         </div>
 
         {/* Trust Badges */}
-        <div className="mt-12 flex flex-wrap justify-center gap-8 text-gray-400">
+        <div className="mt-12 flex flex-wrap justify-center gap-8 text-gray-600">
           <div className="flex items-center gap-2">
             <Leaf className="w-5 h-5" />
             <span className="text-sm">Eco-Verified</span>
@@ -791,13 +791,13 @@ function Footer() {
                 <Recycle className="w-6 h-6 text-white" />
               </div>
               <span className="text-xl font-bold text-white">
-                Renew<span className="text-teal-400">Canvas</span>
+                Renew<span className="text-teal-400">Canvas</span> <span className="text-amber-500">Africa</span>
               </span>
             </div>
             <p className="text-sm text-gray-400 mb-4">
               Transforming waste into art, one masterpiece at a time.
             </p>
-            <p className="text-sm text-gray-500">Kigali, Rwanda</p>
+            <p className="text-sm text-gray-400">Kigali, Rwanda</p>
           </div>
 
           {/* Platform Links */}
@@ -871,11 +871,11 @@ function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
-          <p className="text-sm text-gray-500">
-            &copy; {currentYear} RenewCanvas Africa. All rights reserved.
+          <p className="text-sm text-gray-400">
+            &copy; {currentYear} RenewCanvas <span className="text-amber-500">Africa</span>. All rights reserved.
           </p>
           <span className="hidden sm:inline text-gray-600">|</span>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-gray-400">
             <Leaf className="w-4 h-4 text-teal-500" />
             <span>Built for a sustainable future</span>
           </div>

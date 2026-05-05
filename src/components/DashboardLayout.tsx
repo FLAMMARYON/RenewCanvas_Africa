@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Recycle,
   LayoutDashboard,
@@ -24,6 +24,12 @@ import {
   Gavel,
   ChevronDown,
 } from "lucide-react";
+import {
+  clearFrontendSession,
+  dashboardPathForRole,
+  readFrontendSession,
+  type FrontendSession,
+} from "@/lib/frontend/session";
 
 type UserRole = "buyer" | "artist" | "admin";
 
@@ -100,9 +106,46 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [session, setSession] = useState<FrontendSession | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const navItems = navigationItems[role];
+  const displayName = session?.name || userName;
+
+  useEffect(() => {
+    const activeSession = readFrontendSession();
+
+    if (!activeSession) {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    if (activeSession.role !== role) {
+      router.replace(dashboardPathForRole(activeSession.role));
+      return;
+    }
+
+    setSession(activeSession);
+    setAuthChecked(true);
+  }, [pathname, role, router]);
+
+  const handleSignOut = () => {
+    clearFrontendSession();
+    router.replace("/login");
+  };
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-sm text-gray-600">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+          Checking account access...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -127,7 +170,7 @@ export default function DashboardLayout({
               <Recycle className="w-5 h-5 text-white" />
             </div>
             <span className="text-lg font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span>
+              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
             </span>
           </Link>
           <button
@@ -182,7 +225,11 @@ export default function DashboardLayout({
             <FileText className="w-5 h-5 text-gray-400" />
             Back to Website
           </Link>
-          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors mt-1">
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors mt-1"
+          >
             <LogOut className="w-5 h-5" />
             Sign Out
           </button>
@@ -219,7 +266,7 @@ export default function DashboardLayout({
                 <User className="w-4 h-4 text-teal-600" />
               </div>
               <span className="hidden sm:block text-sm font-medium text-gray-700">
-                {userName}
+                {displayName}
               </span>
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </button>
@@ -240,7 +287,11 @@ export default function DashboardLayout({
                   Settings
                 </Link>
                 <hr className="my-1" />
-                <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                >
                   Sign Out
                 </button>
               </div>

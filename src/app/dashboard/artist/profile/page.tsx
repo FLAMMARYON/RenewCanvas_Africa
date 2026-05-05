@@ -8,9 +8,8 @@ import {
   Phone,
   Mail,
   Globe,
-  Instagram,
-  Twitter,
-  Facebook,
+  MessageCircle,
+  Users,
   Save,
   CheckCircle,
   AlertCircle,
@@ -25,6 +24,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
+import { saveArtistProfileDraft } from "@/lib/frontend/local-store";
 
 // Mock profile data
 const initialProfile = {
@@ -105,8 +105,7 @@ export default function ArtistProfilePage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    saveArtistProfileDraft({ savedAt: new Date().toISOString(), values: profile });
     setIsSaving(false);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
@@ -368,7 +367,7 @@ export default function ArtistProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        <Instagram className="w-4 h-4 inline mr-1" />
+                        <Camera className="w-4 h-4 inline mr-1" />
                         Instagram
                       </label>
                       <input
@@ -383,7 +382,7 @@ export default function ArtistProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        <Twitter className="w-4 h-4 inline mr-1" />
+                        <MessageCircle className="w-4 h-4 inline mr-1" />
                         Twitter / X
                       </label>
                       <input
@@ -398,7 +397,7 @@ export default function ArtistProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        <Facebook className="w-4 h-4 inline mr-1" />
+                        <Users className="w-4 h-4 inline mr-1" />
                         Facebook
                       </label>
                       <input

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Gavel,
   Clock,
@@ -286,6 +287,7 @@ function AuctionCard({ auction, isLive = true }: { auction: typeof liveAuctions[
 }
 
 export default function AuctionsPage() {
+  const router = useRouter();
   const [filter, setFilter] = useState<"all" | "ending-soon" | "hot">("all");
   const [activeTab, setActiveTab] = useState<"live" | "upcoming" | "past">("live");
 
@@ -304,10 +306,20 @@ export default function AuctionsPage() {
       {/* Header */}
       <header className="bg-gradient-to-r from-teal-600 to-teal-800 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <Link href="/" className="inline-flex items-center gap-2 text-teal-100 hover:text-white mb-6 transition-colors">
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                router.push("/marketplace");
+              }
+            }}
+            className="inline-flex items-center gap-2 text-teal-100 hover:text-white mb-6 transition-colors"
+          >
             <ArrowRight className="w-4 h-4 rotate-180" />
-            Back to Home
-          </Link>
+            Back
+          </button>
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>

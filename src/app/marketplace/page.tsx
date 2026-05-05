@@ -85,7 +85,7 @@ function Navigation({
               <Recycle className="w-6 h-6 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span>
+              Renew<span className="text-teal-700">Canvas</span> <span className="text-amber-600">Africa</span>
             </span>
           </a>
 
@@ -97,8 +97,8 @@ function Navigation({
                 href={link.href}
                 className={`text-sm font-medium transition-colors ${
                   link.href === "/marketplace"
-                    ? "text-teal-600"
-                    : "text-gray-600 hover:text-teal-600"
+                    ? "text-teal-700"
+                    : "text-gray-600 hover:text-teal-700"
                 }`}
               >
                 {link.name}
@@ -110,13 +110,13 @@ function Navigation({
           <div className="group hidden md:flex items-center gap-3">
             <a
               href="/login"
-              className="px-4 py-2 text-sm font-medium text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
+              className="px-4 py-2 text-sm font-medium text-teal-800 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
             >
               Sign In
             </a>
             <a
               href="/register"
-              className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] group-hover:scale-105"
+              className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-800 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] group-hover:scale-105"
             >
               Get Started
             </a>
@@ -149,8 +149,8 @@ function Navigation({
                 href={link.href}
                 className={`block py-2 font-medium ${
                   link.href === "/marketplace"
-                    ? "text-teal-600"
-                    : "text-gray-600 hover:text-teal-600"
+                    ? "text-teal-700"
+                    : "text-gray-600 hover:text-teal-700"
                 }`}
               >
                 {link.name}
@@ -159,13 +159,13 @@ function Navigation({
             <div className="group pt-4 flex flex-col gap-2">
               <a
                 href="/login"
-                className="w-full py-2 text-center text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
+                className="w-full py-2 text-center text-teal-800 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
               >
                 Sign In
               </a>
               <a
                 href="/register"
-                className="w-full py-2 text-center text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] group-hover:scale-105"
+                className="w-full py-2 text-center text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-800 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] group-hover:scale-105"
               >
                 Get Started
               </a>
@@ -189,8 +189,8 @@ function HeroSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight mb-4">
-            Discover <span className="text-teal-600">Unique</span> Upcycled{" "}
-            <span className="text-amber-500">Artwork</span>
+            Discover <span className="text-teal-700">Unique</span> Upcycled{" "}
+            <span className="text-amber-600">Artwork</span>
           </h1>
 
           <p className="text-lg text-gray-600 mb-8">
@@ -206,9 +206,9 @@ function HeroSection() {
               <input
                 type="text"
                 placeholder="Search artwork, artists, or categories..."
-                className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+                className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent text-gray-900 placeholder-gray-500"
               />
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 [transition:all_0.4s_ease] text-sm font-medium">
+              <button className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-teal-700 text-white rounded-lg hover:bg-teal-800 [transition:all_0.4s_ease] text-sm font-medium">
                 Search
               </button>
             </div>
@@ -310,8 +310,8 @@ function MarketplaceSection({
                 onClick={() => setActiveCategory(category)}
                 className={`px-4 py-2 rounded-full text-sm font-medium [transition:all_0.3s_ease] ${
                   activeCategory === category
-                    ? "bg-teal-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-teal-50 hover:text-teal-600 border border-gray-200"
+                    ? "bg-teal-700 text-white"
+                    : "bg-white text-gray-600 hover:bg-teal-50 hover:text-teal-700 border border-gray-200"
                 }`}
               >
                 {category}
@@ -340,9 +340,11 @@ function MarketplaceSection({
             <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
               <button
                 onClick={() => setViewMode("grid")}
+                aria-label="Show artwork grid"
+                aria-pressed={viewMode === "grid"}
                 className={`p-2 [transition:all_0.3s_ease] ${
                   viewMode === "grid"
-                    ? "bg-teal-600 text-white"
+                    ? "bg-teal-700 text-white"
                     : "text-gray-600 hover:bg-gray-50"
                 }`}
               >
@@ -350,9 +352,11 @@ function MarketplaceSection({
               </button>
               <button
                 onClick={() => setViewMode("list")}
+                aria-label="Show artwork list"
+                aria-pressed={viewMode === "list"}
                 className={`p-2 [transition:all_0.3s_ease] ${
                   viewMode === "list"
-                    ? "bg-teal-600 text-white"
+                    ? "bg-teal-700 text-white"
                     : "text-gray-600 hover:bg-gray-50"
                 }`}
               >
@@ -366,7 +370,7 @@ function MarketplaceSection({
         <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
           <div className="max-w-md mx-auto">
             <div className="w-20 h-20 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Package className="w-10 h-10 text-teal-600" />
+              <Package className="w-10 h-10 text-teal-700" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">
               Artwork Coming Soon
@@ -379,14 +383,14 @@ function MarketplaceSection({
             <div className="group flex flex-col sm:flex-row gap-3 justify-center">
               <a
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] font-medium group-hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-800 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] font-medium group-hover:scale-105"
               >
                 Get Notified
                 <ArrowRight className="w-5 h-5" />
               </a>
               <a
                 href="/artists"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_ease] font-medium group-hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-teal-800 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_ease] font-medium group-hover:scale-105"
               >
                 Join as Artist
               </a>
@@ -411,7 +415,7 @@ function CTASection() {
         <div className="grid lg:grid-cols-2 gap-8">
           {/* For Buyers */}
           <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-2xl p-8">
-            <div className="w-14 h-14 bg-teal-600 rounded-xl flex items-center justify-center mb-6">
+            <div className="w-14 h-14 bg-teal-700 rounded-xl flex items-center justify-center mb-6">
               <Palette className="w-7 h-7 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">
@@ -423,7 +427,7 @@ function CTASection() {
             </p>
             <a
               href="/register"
-              className="inline-flex items-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg hover:bg-white hover:text-teal-600 border border-transparent hover:border-teal-600 [transition:all_0.4s_ease] font-medium hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-3 text-white bg-teal-700 rounded-lg hover:bg-white hover:text-teal-800 border border-transparent hover:border-teal-700 [transition:all_0.4s_ease] font-medium hover:scale-105"
             >
               Join Waitlist
               <ArrowRight className="w-5 h-5" />
@@ -432,10 +436,10 @@ function CTASection() {
 
           {/* For Artists */}
           <div className="relative bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl p-8">
-            <span className="absolute top-4 right-4 px-3 py-1 bg-amber-500 text-white text-xs font-semibold rounded-full">
+            <span className="absolute top-4 right-4 px-3 py-1 bg-amber-700 text-white text-xs font-semibold rounded-full">
               Coming Soon
             </span>
-            <div className="w-14 h-14 bg-amber-500 rounded-xl flex items-center justify-center mb-6">
+            <div className="w-14 h-14 bg-amber-600 rounded-xl flex items-center justify-center mb-6">
               <Recycle className="w-7 h-7 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">
@@ -447,7 +451,7 @@ function CTASection() {
             </p>
             <a
               href="/register?role=artist"
-              className="inline-flex items-center gap-2 px-6 py-3 text-white bg-amber-500 rounded-lg hover:bg-white hover:text-amber-600 border border-transparent hover:border-amber-500 [transition:all_0.4s_ease] font-medium hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-3 text-white bg-amber-700 rounded-lg hover:bg-white hover:text-amber-800 border border-transparent hover:border-amber-700 [transition:all_0.4s_ease] font-medium hover:scale-105"
             >
               Apply as Artist
               <ArrowRight className="w-5 h-5" />
@@ -502,13 +506,13 @@ function Footer() {
                 <Recycle className="w-6 h-6 text-white" />
               </div>
               <span className="text-xl font-bold text-white">
-                Renew<span className="text-teal-400">Canvas</span>
+                Renew<span className="text-teal-400">Canvas</span> <span className="text-amber-500">Africa</span>
               </span>
             </a>
             <p className="text-sm text-gray-400 mb-4">
               Transforming waste into art, one masterpiece at a time.
             </p>
-            <p className="text-sm text-gray-500">Kigali, Rwanda</p>
+            <p className="text-sm text-gray-400">Kigali, Rwanda</p>
           </div>
 
           {/* Platform Links */}
@@ -582,11 +586,11 @@ function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
-          <p className="text-sm text-gray-500">
-            &copy; {currentYear} RenewCanvas Africa. All rights reserved.
+          <p className="text-sm text-gray-400">
+            &copy; {currentYear} RenewCanvas <span className="text-amber-400">Africa</span>. All rights reserved.
           </p>
           <span className="hidden sm:inline text-gray-600">|</span>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-gray-400">
             <Leaf className="w-4 h-4 text-teal-500" />
             <span>Built for a sustainable future</span>
           </div>

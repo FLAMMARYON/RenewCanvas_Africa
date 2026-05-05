@@ -12,6 +12,7 @@ import {
   Check,
   X,
 } from "lucide-react";
+import { savePasswordResetRequest } from "@/lib/frontend/local-store";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -49,8 +50,11 @@ export default function ResetPasswordPage() {
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    savePasswordResetRequest({
+      email: "current-user",
+      requestedAt: new Date().toISOString(),
+      status: "completed",
+    });
 
     setIsSubmitting(false);
     setIsReset(true);
@@ -85,7 +89,7 @@ export default function ResetPasswordPage() {
               <Recycle className="w-7 h-7 text-white" />
             </div>
             <span className="text-2xl font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span>
+              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
             </span>
           </Link>
         </div>

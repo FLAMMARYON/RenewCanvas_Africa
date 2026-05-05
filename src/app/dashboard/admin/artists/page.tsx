@@ -24,8 +24,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-// Mock artists data
-const artists = [
+const initialArtists = [
   {
     id: "1",
     name: "Marie Uwimana",
@@ -155,6 +154,7 @@ export default function AdminArtistsPage() {
   const [expandedArtist, setExpandedArtist] = useState<string | null>(null);
   const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [artists, setArtists] = useState(initialArtists);
 
   const filteredArtists = artists.filter((artist) => {
     const matchesSearch =
@@ -177,13 +177,35 @@ export default function AdminArtistsPage() {
   };
 
   const handleApprove = (artistId: string) => {
-    // Would call API to approve
-    console.log("Approving artist:", artistId);
+    setArtists((current) =>
+      current.map((artist) =>
+        artist.id === artistId
+          ? {
+              ...artist,
+              status: "verified",
+              verificationStatus: "approved",
+              reviewedAt: new Date().toISOString().slice(0, 10),
+              rejectionReason: undefined,
+            }
+          : artist
+      )
+    );
   };
 
   const handleReject = (artistId: string) => {
-    // Would call API to reject
-    console.log("Rejecting artist:", artistId, "Reason:", rejectionReason);
+    setArtists((current) =>
+      current.map((artist) =>
+        artist.id === artistId
+          ? {
+              ...artist,
+              status: "rejected",
+              verificationStatus: "rejected",
+              reviewedAt: new Date().toISOString().slice(0, 10),
+              rejectionReason: rejectionReason.trim() || "Application requires more documentation.",
+            }
+          : artist
+      )
+    );
     setShowRejectModal(null);
     setRejectionReason("");
   };

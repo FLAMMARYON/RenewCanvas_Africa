@@ -16,9 +16,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { markWishlistItemRemoved, readRemovedWishlistIds } from "@/lib/frontend/local-store";
 
-// Mock data - will be replaced with API calls
-const savedArtworks = [
+const initialSavedArtworks = [
   {
     id: "1",
     title: "Ocean Waves",
@@ -90,6 +90,10 @@ export default function WishlistPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [savedArtworks, setSavedArtworks] = useState(() => {
+    const removed = readRemovedWishlistIds();
+    return initialSavedArtworks.filter((artwork) => !removed.has(artwork.id));
+  });
 
   const filteredArtworks = savedArtworks.filter(
     (artwork) =>
@@ -109,8 +113,9 @@ export default function WishlistPage() {
   };
 
   const removeFromWishlist = (id: string) => {
-    // API call to remove from wishlist
-    console.log("Remove from wishlist:", id);
+    markWishlistItemRemoved(id);
+    setSavedArtworks((current) => current.filter((artwork) => artwork.id !== id));
+    setSelectedItems((current) => current.filter((itemId) => itemId !== id));
   };
 
   return (

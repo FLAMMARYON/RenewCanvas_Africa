@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Recycle, Mail, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { savePasswordResetRequest } from "@/lib/frontend/local-store";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -15,10 +16,12 @@ export default function ForgotPasswordPage() {
     setError("");
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    savePasswordResetRequest({
+      email: email.trim().toLowerCase(),
+      requestedAt: new Date().toISOString(),
+      status: "requested",
+    });
 
-    // For demo, always succeed
     setIsSubmitting(false);
     setIsSubmitted(true);
   };
@@ -33,7 +36,7 @@ export default function ForgotPasswordPage() {
               <Recycle className="w-7 h-7 text-white" />
             </div>
             <span className="text-2xl font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span>
+              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
             </span>
           </Link>
         </div>

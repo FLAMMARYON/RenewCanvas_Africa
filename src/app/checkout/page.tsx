@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Recycle,
   ArrowLeft,
@@ -20,6 +21,7 @@ import {
   Lock,
   Info,
 } from "lucide-react";
+import { saveOrder } from "@/lib/frontend/local-store";
 
 // Mock artwork data - will come from URL params / API
 const artwork = {
@@ -38,6 +40,7 @@ const artwork = {
 type PaymentMethod = "momo" | "bank" | "card";
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("momo");
   const [formData, setFormData] = useState({
@@ -59,10 +62,21 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    // Redirect to confirmation page
-    window.location.href = `/order-confirmation?order=ORD-${Date.now()}`;
+    const orderId = `ORD-${Date.now()}`;
+
+    saveOrder({
+      id: orderId,
+      artworkId: artwork.id,
+      artworkTitle: artwork.title,
+      amount: artwork.price,
+      customer: formData,
+      paymentMethod,
+      status: "pending_payment",
+      createdAt: new Date().toISOString(),
+    });
+
+    setIsSubmitting(false);
+    router.push(`/order-confirmation?order=${orderId}`);
   };
 
   const paymentMethods = [
@@ -113,7 +127,7 @@ export default function CheckoutPage() {
               <Recycle className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span>
+              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -177,13 +191,14 @@ export default function CheckoutPage() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
                         Full Name
                       </label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
                           type="text"
+                          id="fullName"
                           name="fullName"
                           value={formData.fullName}
                           onChange={handleChange}
@@ -196,13 +211,14 @@ export default function CheckoutPage() {
 
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                           Email Address
                         </label>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                           <input
                             type="email"
+                            id="email"
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
@@ -213,13 +229,14 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                           Phone / WhatsApp
                         </label>
                         <div className="relative">
                           <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                           <input
                             type="tel"
+                            id="phone"
                             name="phone"
                             value={formData.phone}
                             onChange={handleChange}
@@ -232,13 +249,14 @@ export default function CheckoutPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
                         Delivery Address
                       </label>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                         <input
                           type="text"
+                          id="address"
                           name="address"
                           value={formData.address}
                           onChange={handleChange}
@@ -250,11 +268,12 @@ export default function CheckoutPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
                         City
                       </label>
                       <input
                         type="text"
+                        id="city"
                         name="city"
                         value={formData.city}
                         onChange={handleChange}
@@ -265,11 +284,12 @@ export default function CheckoutPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
                         Order Notes{" "}
                         <span className="text-gray-400">(Optional)</span>
                       </label>
                       <textarea
+                        id="notes"
                         name="notes"
                         value={formData.notes}
                         onChange={handleChange}

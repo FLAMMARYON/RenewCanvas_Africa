@@ -310,7 +310,7 @@ export default function FAQPage() {
 
       {/* Footer */}
       <footer className="py-8 bg-gray-900 text-center text-gray-400">
-        <p>&copy; 2026 RenewCanvas Africa. All rights reserved.</p>
+        <p>&copy; 2026 RenewCanvas <span className="text-amber-500">Africa</span>. All rights reserved.</p>
       </footer>
     </div>
   );

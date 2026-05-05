@@ -369,7 +369,7 @@ export default function AboutPage() {
             </div>
           </div>
           <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400">
-            <p>© 2026 RenewCanvas Africa. All rights reserved.</p>
+            <p>© 2026 RenewCanvas <span className="text-amber-500">Africa</span>. All rights reserved.</p>
           </div>
         </div>
       </section>

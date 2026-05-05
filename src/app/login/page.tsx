@@ -12,16 +12,34 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  createFrontendSession,
+  dashboardPathForRole,
+  saveFrontendSession,
+} from "@/lib/frontend/session";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login - will be connected to backend
-    console.log("Login submitted:", { email, password });
+    setError("");
+
+    if (!email.trim() || !password.trim()) {
+      setError("Enter your email and password to continue.");
+      return;
+    }
+
+    const session = createFrontendSession({ email });
+    saveFrontendSession(session);
+
+    const nextPath = new URLSearchParams(window.location.search).get("next");
+    router.push(nextPath?.startsWith("/") ? nextPath : dashboardPathForRole(session.role));
   };
 
   return (
@@ -62,7 +80,7 @@ export default function LoginPage() {
               <Recycle className="w-7 h-7 text-white" />
             </div>
             <span className="text-2xl font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span>
+              Renew<span className="text-teal-700">Canvas</span> <span className="text-amber-600">Africa</span>
             </span>
           </a>
 
@@ -75,7 +93,7 @@ export default function LoginPage() {
                 Welcome Back
               </span>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Sign In to Your <span className="text-teal-600">Account</span>
+                Sign In to Your <span className="text-teal-700">Account</span>
               </h1>
               <p className="text-gray-600">
                 Continue your journey of sustainable art
@@ -84,6 +102,12 @@ export default function LoginPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
               {/* Email Field */}
               <div>
                 <label
@@ -133,6 +157,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
                       <EyeOff className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_ease]" />
@@ -163,7 +188,7 @@ export default function LoginPage() {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white bg-teal-600 rounded-xl hover:bg-teal-700 [transition:all_0.4s_ease] font-medium hover:scale-[1.02] shadow-lg shadow-teal-600/30"
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white bg-teal-700 rounded-xl hover:bg-teal-800 [transition:all_0.4s_ease] font-medium hover:scale-[1.02] shadow-lg shadow-teal-700/30"
               >
                 Sign In
                 <ArrowRight className="w-5 h-5" />

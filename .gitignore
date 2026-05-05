@@ -31,3 +31,10 @@ next-env.d.ts
 
 # Project memory
 CLAUDE.md
+
+# Coverage output
+coverage/
+
+# Browser test artifacts
+test-results/
+playwright-report/

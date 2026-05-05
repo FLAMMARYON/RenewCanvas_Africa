@@ -4,7 +4,7 @@
     "F01-pricing": "verified",
     "F03-impact-estimator": "verified",
     "F08-ai-curator": "verified",
-    "P1-mvp": "pending",
+    "P1-mvp": "in_progress",
     "F02-material-vision": "pending",
     "F06-listing-assistant": "pending",
     "F07-fraud-risk": "pending",
@@ -16,5 +16,5 @@
     "F09-multilingual-accessibility": "pending",
     "P4-trust-scale": "pending"
   },
-  "lastUpdated": "2026-05-04T07:28:03+02:00"
+  "lastUpdated": "2026-05-04T07:35:00+02:00"
 }

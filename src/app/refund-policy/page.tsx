@@ -14,7 +14,7 @@ export default function RefundPolicyPage() {
               <Recycle className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span>
+              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
             </span>
           </Link>
           <Link

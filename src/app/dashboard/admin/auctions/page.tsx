@@ -84,8 +84,7 @@ const availableArtworks = [
   },
 ];
 
-// Mock existing auctions
-const mockAuctions = [
+const initialAuctions = [
   {
     id: "AUC-001",
     artworkId: "ART-010",
@@ -212,8 +211,9 @@ export default function AdminAuctionsPage() {
   const [startDate, setStartDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [featuredAuction, setFeaturedAuction] = useState(false);
+  const [auctions, setAuctions] = useState(initialAuctions);
 
-  const filteredAuctions = mockAuctions.filter((auction) => {
+  const filteredAuctions = auctions.filter((auction) => {
     const matchesSearch =
       auction.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       auction.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -224,10 +224,10 @@ export default function AdminAuctionsPage() {
   });
 
   const stats = {
-    live: mockAuctions.filter((a) => a.status === "live").length,
-    scheduled: mockAuctions.filter((a) => a.status === "scheduled").length,
-    ended: mockAuctions.filter((a) => a.status === "ended").length,
-    totalRevenue: mockAuctions
+    live: auctions.filter((a) => a.status === "live").length,
+    scheduled: auctions.filter((a) => a.status === "scheduled").length,
+    ended: auctions.filter((a) => a.status === "ended").length,
+    totalRevenue: auctions
       .filter((a) => a.status === "ended" && a.finalPrice)
       .reduce((sum, a) => sum + (a.finalPrice || 0), 0),
   };
@@ -252,15 +252,32 @@ export default function AdminAuctionsPage() {
     const artwork = getSelectedArtworkDetails();
     if (!artwork) return;
 
-    // In real app, this would call an API
-    console.log("Creating auction:", {
-      artworkId: artwork.id,
-      minimumPrice: artwork.listedPrice,
-      duration: auctionDuration,
-      startDate,
-      startTime,
-      featured: featuredAuction,
-    });
+    const start = startDate && startTime
+      ? new Date(`${startDate}T${startTime}`).toISOString()
+      : new Date().toISOString();
+    const end = new Date(
+      new Date(start).getTime() + Number(auctionDuration) * 60 * 60 * 1000
+    ).toISOString();
+
+    setAuctions((current) => [
+      {
+        id: `AUC-${String(current.length + 1).padStart(3, "0")}`,
+        artworkId: artwork.id,
+        title: artwork.title,
+        artist: artwork.artist,
+        image: artwork.image,
+        minimumPrice: artwork.listedPrice,
+        currentBid: null,
+        startingBid: artwork.listedPrice,
+        bidCount: 0,
+        watcherCount: 0,
+        status: new Date(start).getTime() > Date.now() ? "scheduled" : "live",
+        startTime: start,
+        endTime: end,
+        featured: featuredAuction,
+      },
+      ...current,
+    ]);
 
     setShowCreateModal(false);
     setSelectedArtwork(null);

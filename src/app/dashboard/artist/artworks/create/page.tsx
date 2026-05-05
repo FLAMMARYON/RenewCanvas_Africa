@@ -20,6 +20,8 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { saveArtworkDraft } from "@/lib/frontend/local-store";
 
 const categories = [
   "Wall Art",
@@ -70,6 +72,7 @@ const complexityLevels = [
 ];
 
 export default function CreateArtworkPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [images, setImages] = useState<string[]>([]);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
@@ -80,6 +83,7 @@ export default function CreateArtworkPage() {
     suggested: number;
     explanation: string;
   } | null>(null);
+  const [formError, setFormError] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -127,54 +131,69 @@ export default function CreateArtworkPage() {
 
   const getAiPriceSuggestion = async () => {
     setIsLoadingPrice(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    setFormError("");
 
-    // Mock AI pricing logic based on inputs
-    const basePrice = 15000;
-    let multiplier = 1;
+    try {
+      const response = await fetch("/api/pricing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: formData.category,
+          materials: selectedMaterials,
+          materialWeight: Number(formData.materialWeight),
+          dimensions: formData.dimensions || undefined,
+          complexity: formData.complexity,
+          experienceLevel: formData.experienceLevel,
+          hoursWorked: 8,
+          previousArtistSales: [],
+          views: 0,
+          wishlistCount: 0,
+        }),
+      });
 
-    // Category multiplier
-    if (formData.category === "Sculpture") multiplier *= 1.3;
-    if (formData.category === "Installation") multiplier *= 1.5;
+      const body = await response.json();
 
-    // Complexity multiplier
-    if (formData.complexity === "moderate") multiplier *= 1.3;
-    if (formData.complexity === "complex") multiplier *= 1.8;
-    if (formData.complexity === "very_complex") multiplier *= 2.5;
+      if (!response.ok) {
+        setFormError("Complete category, materials, weight, complexity, and experience before requesting a price.");
+        return;
+      }
 
-    // Experience multiplier
-    if (formData.experienceLevel === "intermediate") multiplier *= 1.2;
-    if (formData.experienceLevel === "professional") multiplier *= 1.5;
-
-    // Material weight impact
-    const weight = parseFloat(formData.materialWeight) || 1;
-    multiplier *= 1 + weight * 0.1;
-
-    const suggestedPrice = Math.round((basePrice * multiplier) / 1000) * 1000;
-    const minPrice = Math.round(suggestedPrice * 0.8);
-    const maxPrice = Math.round(suggestedPrice * 1.3);
-
-    setAiPriceSuggestion({
-      min: minPrice,
-      max: maxPrice,
-      suggested: suggestedPrice,
-      explanation: `Based on your ${formData.category.toLowerCase() || "artwork"} category, ${
-        formData.complexity || "moderate"
-      } complexity, ${formData.experienceLevel || "emerging"} experience level, and ${
-        formData.materialWeight || "estimated"
-      } kg of recycled materials, we suggest pricing between ${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()} RWF. The suggested price of ${suggestedPrice.toLocaleString()} RWF reflects current market trends for similar upcycled artworks.`,
-    });
-
-    setIsLoadingPrice(false);
+      setAiPriceSuggestion(body);
+      setFormData((current) => ({
+        ...current,
+        price: String(body.suggested),
+      }));
+    } finally {
+      setIsLoadingPrice(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Submit to API
-    console.log("Submit artwork:", { formData, images, selectedMaterials });
-    // Redirect to artworks list
-    window.location.href = "/dashboard/artist/artworks";
+    setFormError("");
+
+    if (!formData.title || !formData.category || selectedMaterials.length === 0 || !formData.price) {
+      setFormError("Complete the required artwork details before submitting.");
+      return;
+    }
+
+    const draft = {
+      ...formData,
+      id: `ART-${Date.now()}`,
+      images,
+      materials: selectedMaterials,
+      submittedAt: new Date().toISOString(),
+      status: "pending",
+    };
+
+    saveArtworkDraft({
+      id: draft.id,
+      title: draft.title,
+      status: "submitted",
+      savedAt: draft.submittedAt,
+      values: draft,
+    });
+    router.push("/dashboard/artist/artworks");
   };
 
   return (
@@ -240,6 +259,12 @@ export default function CreateArtworkPage() {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {formError && (
+            <div className="mb-6 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {formError}
+            </div>
+          )}
+
           {/* Step 1: Basic Information */}
           {step === 1 && (
             <div className="space-y-6">
