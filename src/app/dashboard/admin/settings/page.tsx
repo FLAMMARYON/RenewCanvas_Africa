@@ -87,6 +87,10 @@ export default function AdminSettingsPage() {
     stripePublicKey: "pk_test_••••••••••••••••",
     stripeSecretKey: "sk_test_••••••••••••••••",
     mtnMomoEnabled: true,
+    mtnMomoPromptEnabled: true,
+    mtnMomoUssdEnabled: true,
+    mtnMomoUssdCode: "*182*8*1#",
+    mtnMomoMerchantCode: "123456",
     artistCommission: "80",
     platformFee: "20",
     minPayout: "5000",
@@ -839,7 +843,8 @@ export default function AdminSettingsPage() {
                       <div>
                         <p className="font-medium text-gray-900">MTN Mobile Money</p>
                         <p className="text-sm text-gray-500">
-                          Accept mobile money into the RenewCanvas merchant account
+                          Accept phone approval prompts and USSD fallback into the
+                          RenewCanvas account
                         </p>
                       </div>
                       <input
@@ -854,6 +859,92 @@ export default function AdminSettingsPage() {
                         className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
                       />
                     </label>
+                    {paymentSettings.mtnMomoEnabled && (
+                      <div className="mt-4 grid sm:grid-cols-3 gap-4">
+                        <label className="flex items-center justify-between gap-4 sm:col-span-3 p-3 bg-white border border-gray-200 rounded-lg cursor-pointer">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              Phone approval prompt
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Send a MoMo prompt to the buyer's phone so they
+                              only enter their PIN to approve payment.
+                            </p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={paymentSettings.mtnMomoPromptEnabled}
+                            onChange={(e) =>
+                              setPaymentSettings({
+                                ...paymentSettings,
+                                mtnMomoPromptEnabled: e.target.checked,
+                              })
+                            }
+                            className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                          />
+                        </label>
+                        <label className="flex items-center justify-between gap-4 sm:col-span-3 p-3 bg-white border border-gray-200 rounded-lg cursor-pointer">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              USSD fallback
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Let buyers pay manually only when the approval
+                              prompt or hosted payment link is unavailable.
+                            </p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={paymentSettings.mtnMomoUssdEnabled}
+                            onChange={(e) =>
+                              setPaymentSettings({
+                                ...paymentSettings,
+                                mtnMomoUssdEnabled: e.target.checked,
+                              })
+                            }
+                            className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                          />
+                        </label>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            USSD Code
+                          </label>
+                          <input
+                            type="text"
+                            value={paymentSettings.mtnMomoUssdCode}
+                            onChange={(e) =>
+                              setPaymentSettings({
+                                ...paymentSettings,
+                                mtnMomoUssdCode: e.target.value,
+                              })
+                            }
+                            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            RenewCanvas Merchant Code
+                          </label>
+                          <input
+                            type="text"
+                            value={paymentSettings.mtnMomoMerchantCode}
+                            onChange={(e) =>
+                              setPaymentSettings({
+                                ...paymentSettings,
+                                mtnMomoMerchantCode: e.target.value,
+                              })
+                            }
+                            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 sm:col-span-3">
+                          Phone approvals should reconcile automatically through
+                          provider callbacks. Fallback USSD payments must store
+                          the order reference so admins can match MoMo
+                          confirmations to RenewCanvas orders.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

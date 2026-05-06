@@ -82,11 +82,12 @@ export default function CheckoutPage() {
   const paymentMethods = [
     {
       id: "momo" as PaymentMethod,
-      name: "MTN Mobile Money",
-      description: "Pay RenewCanvas Africa with your MTN MoMo account",
+      name: "MTN MoMo Phone Approval",
+      description:
+        "Pay RenewCanvas Africa by approving the MoMo prompt on your phone",
       icon: Smartphone,
       instructions:
-        "You will receive RenewCanvas Africa merchant payment instructions via SMS after submitting your order.",
+        "After submitting your order, RenewCanvas Africa will send a MoMo approval prompt to your phone. Confirm it with your PIN to complete payment. If the prompt is unavailable, support will provide USSD fallback details tied to your order reference.",
     },
     {
       id: "bank" as PaymentMethod,
@@ -506,10 +507,10 @@ export default function CheckoutPage() {
                         >
                           Refund Policy
                         </Link>
-                        . I understand that I will receive payment instructions
-                        after submitting this order, and that RenewCanvas Africa
-                        manages payment, delivery communication, returns, and
-                        artist payout release.
+                        . I understand that RenewCanvas Africa will send payment
+                        instructions after submitting this order, manages payment
+                        and delivery communication, and releases artist payouts
+                        after the return request window.
                       </span>
                     </label>
                   </div>

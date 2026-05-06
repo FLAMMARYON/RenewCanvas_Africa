@@ -30,6 +30,8 @@ Done when:
 
 Goal: replace frontend-only auth with real accounts.
 
+Current status: verified. Auth/session schema, migration, password hashing, register/login/logout/session APIs, password reset token flow, dashboard session checks, tests, local migration, seed execution, E2E, and build gates have passed.
+
 Deliver:
 
 - Use the B0 `User` table for real account records.
@@ -184,6 +186,9 @@ Deliver:
 - Webhook signature verification.
 - Idempotency handling.
 - Payment success/failure reconciliation.
+- MTN MoMo phone approval prompt as the primary mobile money flow.
+- MTN MoMo USSD fallback payment instructions.
+- Store provider references for prompt payments and buyer-entered order references for USSD reconciliation.
 - Refund model baseline.
 - Ensure buyer payments go to RenewCanvas Africa, not directly to artists.
 - Hide artist payout details from buyers.
@@ -195,6 +200,9 @@ Done when:
 - Webhook marks order paid.
 - Failed payments do not mark orders paid.
 - Duplicate webhooks do not duplicate records.
+- MTN MoMo buyers can approve payment from a phone prompt without typing merchant codes manually.
+- MTN MoMo buyers can complete payment through USSD when prompts or payment links are unavailable.
+- Prompt payments reconcile through provider callbacks, and admins can reconcile fallback USSD payments to the correct order reference.
 - Paid orders record RenewCanvas as payment recipient.
 - RenewCanvas-owned artwork orders do not create payout records.
 

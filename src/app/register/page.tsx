@@ -16,12 +16,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  createFrontendSession,
-  dashboardPathForRole,
-  saveFrontendSession,
-  saveRegisteredUser,
-} from "@/lib/frontend/session";
+import { dashboardPathForRole, registerAccount } from "@/lib/frontend/auth-api";
 
 type UserRole = "buyer" | "artist";
 
@@ -40,6 +35,7 @@ function RegisterForm() {
   const [role, setRole] = useState<UserRole>("buyer");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const roleParam = searchParams.get("role");
@@ -52,7 +48,7 @@ function RegisterForm() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -66,18 +62,21 @@ function RegisterForm() {
       return;
     }
 
-    const session = createFrontendSession({
-      email: formData.email,
-      name: formData.fullName,
-      role,
-    });
+    setIsSubmitting(true);
 
-    saveRegisteredUser({
-      ...session,
-      phone: formData.phone.trim() || undefined,
-    });
-    saveFrontendSession(session);
-    router.push(dashboardPathForRole(session.role));
+    try {
+      const session = await registerAccount({
+        email: formData.email,
+        name: formData.fullName,
+        password: formData.password,
+        role,
+      });
+      router.push(dashboardPathForRole(session.role));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to create account.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const roleOptions = [
@@ -382,9 +381,10 @@ function RegisterForm() {
               {/* Submit Button */}
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white bg-teal-600 rounded-xl hover:bg-teal-700 [transition:all_0.4s_ease] font-medium hover:scale-[1.02] shadow-lg shadow-teal-600/30"
               >
-                Create Account
+                {isSubmitting ? "Creating Account..." : "Create Account"}
                 <ArrowRight className="w-5 h-5" />
               </button>
             </form>

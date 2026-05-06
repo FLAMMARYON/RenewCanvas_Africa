@@ -42,17 +42,17 @@ const orderData = {
 
 const paymentInstructions = {
   momo: {
-    title: "MTN Mobile Money Payment",
+    title: "MTN MoMo Phone Approval",
     icon: Smartphone,
     steps: [
-      "Dial *182*8*1#",
-      "Select 'Pay Bill'",
-      "Enter RenewCanvas Africa Merchant Code: 123456",
-      `Enter Amount: ${orderData.artwork.price.toLocaleString()} RWF`,
-      `Use Reference: ${orderData.orderId}`,
-      "Enter your PIN to confirm",
+      "Keep your MTN Mobile Money phone nearby",
+      "Open the RenewCanvas Africa payment prompt when it arrives",
+      `Confirm Amount: ${orderData.artwork.price.toLocaleString()} RWF`,
+      `Confirm Reference: ${orderData.orderId}`,
+      "Enter your MoMo PIN on your phone to approve",
+      "Wait for RenewCanvas Africa payment confirmation",
     ],
-    note: "Payment goes to RenewCanvas Africa and will be confirmed within 5-10 minutes after completion.",
+    note: "Payment goes to RenewCanvas Africa. If the phone approval prompt does not arrive, support can provide the fallback USSD path: dial *182*8*1#, select Pay Bill, enter merchant code 123456, and use your order reference.",
   },
   bank: {
     title: "Bank Transfer Details",

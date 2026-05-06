@@ -116,7 +116,7 @@ const faqs = [
     category: "payments",
     question: "What payment methods do you accept?",
     answer:
-      "We accept major credit cards (Visa, Mastercard, American Express), mobile money (MTN, Airtel), and bank transfers. Payment processing is secure and encrypted to protect your financial information.",
+      "We accept major credit cards, bank transfers, and MTN MoMo phone approval prompts, with USSD available as a fallback when prompts are unavailable. Buyers pay RenewCanvas Africa directly, and payment processing is secure and encrypted to protect financial information.",
   },
   {
     category: "payments",

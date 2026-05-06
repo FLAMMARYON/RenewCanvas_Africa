@@ -13,11 +13,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  createFrontendSession,
-  dashboardPathForRole,
-  saveFrontendSession,
-} from "@/lib/frontend/session";
+import { dashboardPathForRole, loginWithPassword } from "@/lib/frontend/auth-api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,8 +21,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -35,11 +32,17 @@ export default function LoginPage() {
       return;
     }
 
-    const session = createFrontendSession({ email });
-    saveFrontendSession(session);
+    setIsSubmitting(true);
 
-    const nextPath = new URLSearchParams(window.location.search).get("next");
-    router.push(nextPath?.startsWith("/") ? nextPath : dashboardPathForRole(session.role));
+    try {
+      const session = await loginWithPassword({ email, password });
+      const nextPath = new URLSearchParams(window.location.search).get("next");
+      router.push(nextPath?.startsWith("/") ? nextPath : dashboardPathForRole(session.role));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to sign in.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -188,9 +191,10 @@ export default function LoginPage() {
               {/* Submit Button */}
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white bg-teal-700 rounded-xl hover:bg-teal-800 [transition:all_0.4s_ease] font-medium hover:scale-[1.02] shadow-lg shadow-teal-700/30"
               >
-                Sign In
+                {isSubmitting ? "Signing In..." : "Sign In"}
                 <ArrowRight className="w-5 h-5" />
               </button>
             </form>

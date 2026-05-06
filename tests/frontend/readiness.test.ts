@@ -15,23 +15,22 @@ test("frontend app code has no console-only user actions", () => {
   assert.deepEqual(offenders, []);
 });
 
-test("dashboard shell enforces a frontend session before rendering protected content", () => {
+test("dashboard shell enforces a server session before rendering protected content", () => {
   const source = readFileSync(join(repoRoot, "src", "components", "DashboardLayout.tsx"), "utf8");
 
-  assert.match(source, /readFrontendSession/);
+  assert.match(source, /readServerSession/);
   assert.match(source, /router\.replace\(`\/login\?next=/);
   assert.match(source, /activeSession\.role !== role/);
-  assert.match(source, /clearFrontendSession/);
+  assert.match(source, /logoutServerSession/);
 });
 
-test("auth pages create frontend sessions and route users to role dashboards", () => {
+test("auth pages use backend auth APIs and route users to role dashboards", () => {
   const login = readFileSync(join(repoRoot, "src", "app", "login", "page.tsx"), "utf8");
   const register = readFileSync(join(repoRoot, "src", "app", "register", "page.tsx"), "utf8");
 
-  assert.match(login, /saveFrontendSession/);
+  assert.match(login, /loginWithPassword/);
   assert.match(login, /dashboardPathForRole/);
-  assert.match(register, /saveRegisteredUser/);
-  assert.match(register, /saveFrontendSession/);
+  assert.match(register, /registerAccount/);
   assert.match(register, /dashboardPathForRole/);
 });
 

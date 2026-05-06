@@ -25,11 +25,11 @@ import {
   ChevronDown,
 } from "lucide-react";
 import {
-  clearFrontendSession,
   dashboardPathForRole,
-  readFrontendSession,
+  logoutServerSession,
+  readServerSession,
   type FrontendSession,
-} from "@/lib/frontend/session";
+} from "@/lib/frontend/auth-api";
 
 type UserRole = "buyer" | "artist" | "admin";
 
@@ -115,24 +115,44 @@ export default function DashboardLayout({
   const displayName = session?.name || userName;
 
   useEffect(() => {
-    const activeSession = readFrontendSession();
+    let isCurrent = true;
 
-    if (!activeSession) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-      return;
+    async function checkAccess() {
+      try {
+        const activeSession = await readServerSession();
+
+        if (!isCurrent) {
+          return;
+        }
+
+        if (!activeSession) {
+          router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+          return;
+        }
+
+        if (activeSession.role !== role) {
+          router.replace(dashboardPathForRole(activeSession.role));
+          return;
+        }
+
+        setSession(activeSession);
+        setAuthChecked(true);
+      } catch {
+        if (isCurrent) {
+          router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+        }
+      }
     }
 
-    if (activeSession.role !== role) {
-      router.replace(dashboardPathForRole(activeSession.role));
-      return;
-    }
+    checkAccess();
 
-    setSession(activeSession);
-    setAuthChecked(true);
+    return () => {
+      isCurrent = false;
+    };
   }, [pathname, role, router]);
 
-  const handleSignOut = () => {
-    clearFrontendSession();
+  const handleSignOut = async () => {
+    await logoutServerSession();
     router.replace("/login");
   };
 

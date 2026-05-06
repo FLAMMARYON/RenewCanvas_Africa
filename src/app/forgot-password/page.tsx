@@ -3,27 +3,29 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Recycle, Mail, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
-import { savePasswordResetRequest } from "@/lib/frontend/local-store";
+import { requestResetLink } from "@/lib/frontend/auth-api";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [resetToken, setResetToken] = useState<string | undefined>();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
 
-    savePasswordResetRequest({
-      email: email.trim().toLowerCase(),
-      requestedAt: new Date().toISOString(),
-      status: "requested",
-    });
-
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    try {
+      const token = await requestResetLink(email);
+      setResetToken(token);
+      setIsSubmitted(true);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to request password reset.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -125,6 +127,11 @@ export default function ForgotPasswordPage() {
                     try another email address
                   </button>
                 </p>
+                {resetToken && (
+                  <p className="mt-3 text-xs text-gray-500 break-all">
+                    Development reset link: /reset-password?token={resetToken}
+                  </p>
+                )}
               </div>
               <Link
                 href="/login"

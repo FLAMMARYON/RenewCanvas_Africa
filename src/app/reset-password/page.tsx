@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Recycle,
   Lock,
@@ -12,7 +12,7 @@ import {
   Check,
   X,
 } from "lucide-react";
-import { savePasswordResetRequest } from "@/lib/frontend/local-store";
+import { confirmPasswordReset } from "@/lib/frontend/auth-api";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -22,6 +22,11 @@ export default function ResetPasswordPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReset, setIsReset] = useState(false);
   const [error, setError] = useState("");
+  const [resetToken, setResetToken] = useState("");
+
+  useEffect(() => {
+    setResetToken(new URLSearchParams(window.location.search).get("token") ?? "");
+  }, []);
 
   // Password validation
   const hasMinLength = password.length >= 8;
@@ -50,14 +55,14 @@ export default function ResetPasswordPage() {
 
     setIsSubmitting(true);
 
-    savePasswordResetRequest({
-      email: "current-user",
-      requestedAt: new Date().toISOString(),
-      status: "completed",
-    });
-
-    setIsSubmitting(false);
-    setIsReset(true);
+    try {
+      await confirmPasswordReset({ token: resetToken, password });
+      setIsReset(true);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to reset password.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const PasswordRequirement = ({
@@ -119,6 +124,14 @@ export default function ResetPasswordPage() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
+                {!resetToken && (
+                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-amber-700">
+                      This reset link is missing a token. Request a new password reset link.
+                    </p>
+                  </div>
+                )}
                 {/* New Password */}
                 <div>
                   <label
@@ -228,7 +241,7 @@ export default function ResetPasswordPage() {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting || !isPasswordValid || !passwordsMatch}
+                  disabled={isSubmitting || !resetToken || !isPasswordValid || !passwordsMatch}
                   className="w-full py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (

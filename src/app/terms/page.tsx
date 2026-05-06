@@ -140,7 +140,7 @@ export default function TermsPage() {
               following payment methods:
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>MTN Mobile Money</li>
+              <li>MTN Mobile Money phone approval, with USSD fallback</li>
               <li>Bank Transfer</li>
               <li>Credit/Debit Cards (via Flutterwave)</li>
             </ul>

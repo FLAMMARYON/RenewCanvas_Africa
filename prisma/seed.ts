@@ -1,26 +1,31 @@
 import "dotenv/config";
 import { createDatabaseClient } from "../src/lib/backend/db";
+import { hashPassword } from "../src/lib/backend/auth";
 
 const prisma = createDatabaseClient();
 
 async function main() {
+  const demoPasswordHash = await hashPassword("Password1!");
+
   const admin = await prisma.user.upsert({
     where: { email: "admin@renewcanvas.africa" },
-    update: {},
+    update: { passwordHash: demoPasswordHash },
     create: {
       email: "admin@renewcanvas.africa",
       name: "RenewCanvas Admin",
       role: "admin",
+      passwordHash: demoPasswordHash,
     },
   });
 
   const artist = await prisma.user.upsert({
     where: { email: "artist@renewcanvas.africa" },
-    update: {},
+    update: { passwordHash: demoPasswordHash },
     create: {
       email: "artist@renewcanvas.africa",
       name: "Marie Uwimana",
       role: "artist",
+      passwordHash: demoPasswordHash,
     },
   });
 
@@ -45,11 +50,12 @@ async function main() {
 
   const buyer = await prisma.user.upsert({
     where: { email: "buyer@renewcanvas.africa" },
-    update: {},
+    update: { passwordHash: demoPasswordHash },
     create: {
       email: "buyer@renewcanvas.africa",
       name: "Amina Buyer",
       role: "buyer",
+      passwordHash: demoPasswordHash,
     },
   });
 

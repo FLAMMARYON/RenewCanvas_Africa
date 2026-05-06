@@ -29,7 +29,7 @@ test("dashboard guard redirects unauthenticated users and login restores the int
   await page.goto("/dashboard/buyer/wishlist");
   await expect(page).toHaveURL(/\/login\?next=%2Fdashboard%2Fbuyer%2Fwishlist/);
 
-  await page.getByLabel("Email Address").fill("buyer@example.com");
+  await page.getByLabel("Email Address").fill("buyer@renewcanvas.africa");
   await page.locator("#password").fill("Password1!");
   await page.getByRole("button", { name: /sign in/i }).click();
 
