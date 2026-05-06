@@ -50,13 +50,13 @@ const faqs = [
     category: "buying",
     question: "How do I purchase artwork?",
     answer:
-      "Simply browse our marketplace, find artwork you love, and add it to your cart. You can then proceed to checkout where you'll enter your shipping information and payment details. Once your order is confirmed, the artist will prepare your artwork for shipping.",
+      "Simply browse our marketplace, find artwork you love, and proceed to checkout. Buyers pay RenewCanvas Africa directly, then RenewCanvas confirms the order, coordinates fulfillment with the artist, and manages delivery communication.",
   },
   {
     category: "buying",
     question: "Can I request custom artwork?",
     answer:
-      "Yes! Many of our artists accept custom commissions. You can contact an artist directly through their profile page to discuss your custom artwork requirements, timeline, and pricing.",
+      "Yes. Many artists accept custom commissions, but requests are coordinated through RenewCanvas admins. We collect the brief, confirm scope and pricing, and keep buyer and artist contact details private.",
   },
   {
     category: "buying",
@@ -68,7 +68,7 @@ const faqs = [
     category: "buying",
     question: "What if I receive damaged artwork?",
     answer:
-      "If your artwork arrives damaged, please contact us within 48 hours of delivery with photos of the damage. We'll work with you and the artist to resolve the issue, which may include a replacement or refund depending on the circumstances.",
+      "If your artwork arrives damaged, please contact RenewCanvas within 48 hours of delivery with photos of the damage. Admins will review the issue and coordinate any approved replacement, return, or refund.",
   },
   {
     category: "selling",
@@ -80,7 +80,7 @@ const faqs = [
     category: "selling",
     question: "What percentage of sales do artists keep?",
     answer:
-      "Artists keep 80% of every sale made on RenewCanvas Africa. This is significantly higher than traditional galleries, which typically take 40-50%. We believe in fair compensation for artists' creativity and craftsmanship.",
+      "Artists keep 80% of every eligible sale made on RenewCanvas Africa. Buyers pay RenewCanvas first, and artist payouts are released by admins after delivery and the 48-hour return request window.",
   },
   {
     category: "selling",

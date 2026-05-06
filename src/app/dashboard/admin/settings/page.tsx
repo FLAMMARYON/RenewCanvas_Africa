@@ -89,7 +89,8 @@ export default function AdminSettingsPage() {
     mtnMomoEnabled: true,
     artistCommission: "80",
     platformFee: "20",
-    minPayout: "50",
+    minPayout: "5000",
+    payoutHoldHours: "48",
   });
 
   // Shipping settings
@@ -664,17 +665,31 @@ export default function AdminSettingsPage() {
                         Payment Settings
                       </h2>
                       <p className="text-sm text-gray-500">
-                        Configure payment gateways and commission
+                        Configure buyer payment collection and artist payout release
                       </p>
                     </div>
                   </div>
 
                   {/* Commission Settings */}
+                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                    <h3 className="font-medium text-blue-900 mb-2">
+                      Managed Marketplace Payment Flow
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      Buyers pay RenewCanvas Africa directly. RenewCanvas holds
+                      artist payouts until the configured return request window
+                      closes, then admins release payouts to the artist payment
+                      method on file. RenewCanvas-owned artworks do not create
+                      artist payouts; 100% of net sale revenue stays with
+                      RenewCanvas after payment and delivery costs.
+                    </p>
+                  </div>
+
                   <div className="p-4 bg-teal-50 rounded-lg">
                     <h3 className="font-medium text-gray-900 mb-4">
-                      Commission Structure
+                      Commission & Payout Structure
                     </h3>
-                    <div className="grid sm:grid-cols-3 gap-4">
+                    <div className="grid sm:grid-cols-4 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Artist Commission (%)
@@ -709,7 +724,7 @@ export default function AdminSettingsPage() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Min Payout ($)
+                          Min Payout (RWF)
                         </label>
                         <input
                           type="number"
@@ -723,7 +738,27 @@ export default function AdminSettingsPage() {
                           className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                         />
                       </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Payout Hold (hours)
+                        </label>
+                        <input
+                          type="number"
+                          value={paymentSettings.payoutHoldHours}
+                          onChange={(e) =>
+                            setPaymentSettings({
+                              ...paymentSettings,
+                              payoutHoldHours: e.target.value,
+                            })
+                          }
+                          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        />
+                      </div>
                     </div>
+                    <p className="text-xs text-teal-700 mt-3">
+                      Artist payment details are private and visible only to the
+                      artist and authorized admins.
+                    </p>
                   </div>
 
                   {/* Stripe Settings */}
@@ -732,7 +767,7 @@ export default function AdminSettingsPage() {
                       <div>
                         <p className="font-medium text-gray-900">Stripe</p>
                         <p className="text-sm text-gray-500">
-                          Accept credit card payments
+                          Accept card payments into the RenewCanvas account
                         </p>
                       </div>
                       <input
@@ -804,7 +839,7 @@ export default function AdminSettingsPage() {
                       <div>
                         <p className="font-medium text-gray-900">MTN Mobile Money</p>
                         <p className="text-sm text-gray-500">
-                          Accept mobile money payments
+                          Accept mobile money into the RenewCanvas merchant account
                         </p>
                       </div>
                       <input

@@ -112,17 +112,17 @@ const recentOrders = [
   {
     id: "ORD-001",
     artwork: "Ocean Waves",
-    buyer: "John D.",
     price: 42000,
     status: "confirmed",
+    payoutStatus: "Held until 48h after delivery",
     date: "2026-04-28",
   },
   {
     id: "ORD-002",
     artwork: "City Lights",
-    buyer: "Sarah M.",
     price: 55000,
     status: "pending",
+    payoutStatus: "Awaiting buyer payment to RenewCanvas",
     date: "2026-04-30",
   },
 ];
@@ -217,7 +217,7 @@ export default function ArtistDashboard() {
               </div>
             </div>
             <p className="text-sm text-gray-600">
-              75-80% of each sale goes directly to you
+              Payouts are released by admins after the 48-hour return window
             </p>
           </div>
           <div className="bg-gradient-to-br from-teal-50 to-amber-50 rounded-xl p-6 border border-teal-100">
@@ -332,7 +332,7 @@ export default function ArtistDashboard() {
                           {order.artwork}
                         </p>
                         <p className="text-sm text-gray-500">
-                          Buyer: {order.buyer}
+                          {order.payoutStatus}
                         </p>
                       </div>
                       <div className="text-right">

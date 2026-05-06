@@ -74,6 +74,7 @@ Goal: replace mock artwork data.
 Deliver:
 
 - Use and extend the B0 artwork, image, material, and artist ownership schema where needed.
+- Add artwork ownership type for `artist` versus `renewcanvas`.
 - Artwork create, edit, and delete APIs.
 - Draft, submitted, approved, rejected, listed, and sold states.
 - Image upload pipeline or signed upload abstraction.
@@ -82,9 +83,11 @@ Deliver:
 Done when:
 
 - Artist can create artwork.
+- Admin can list RenewCanvas-owned artwork.
 - Admin can see submitted artwork.
 - Marketplace shows approved listed artwork only.
 - Artwork detail pages use real IDs.
+- RenewCanvas-owned artwork is clearly marked as platform-owned inventory.
 
 ## B4: Marketplace, Search, And Wishlist
 
@@ -170,7 +173,7 @@ Done when:
 
 ## B8: Payments
 
-Goal: collect money safely.
+Goal: collect buyer money safely into RenewCanvas-controlled accounts.
 
 Deliver:
 
@@ -182,6 +185,9 @@ Deliver:
 - Idempotency handling.
 - Payment success/failure reconciliation.
 - Refund model baseline.
+- Ensure buyer payments go to RenewCanvas Africa, not directly to artists.
+- Hide artist payout details from buyers.
+- Mark RenewCanvas-owned artwork payments as platform revenue with no artist payout.
 
 Done when:
 
@@ -189,6 +195,8 @@ Done when:
 - Webhook marks order paid.
 - Failed payments do not mark orders paid.
 - Duplicate webhooks do not duplicate records.
+- Paid orders record RenewCanvas as payment recipient.
+- RenewCanvas-owned artwork orders do not create payout records.
 
 ## B9: Shipping And Fulfillment
 
@@ -212,7 +220,7 @@ Done when:
 
 ## B10: Artist Payouts
 
-Goal: prepare marketplace economics.
+Goal: prepare marketplace economics with RenewCanvas as the order middleman.
 
 Deliver:
 
@@ -222,12 +230,18 @@ Deliver:
 - Payout status lifecycle.
 - Manual payout approval or provider payout integration.
 - Payout reports.
+- Private artist payout details visible only to the artist and authorized admins.
+- Payout eligibility starts 48 hours after confirmed delivery when no eligible return request is open.
+- Admin-controlled payout release; buyers and artists do not exchange payment or contact details.
+- No payout is created for RenewCanvas-owned artwork; 100% of net sale revenue belongs to RenewCanvas after payment and delivery costs.
 
 Done when:
 
 - Paid and delivered orders produce payout records.
 - Admin can mark payouts paid or failed.
 - Artist sees payout history.
+- Payouts cannot be released before the 48-hour return request window closes.
+- RenewCanvas-owned artwork sales are excluded from artist payout queues.
 
 ## B11: Notifications
 

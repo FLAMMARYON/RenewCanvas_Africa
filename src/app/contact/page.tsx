@@ -685,6 +685,11 @@ function FAQSection() {
       answer:
         "We are starting with local delivery in Rwanda and will expand to international shipping soon. Sign up to be notified when international shipping becomes available.",
     },
+    {
+      question: "Can buyers contact artists directly?",
+      answer:
+        "No. RenewCanvas admins handle order, delivery, return, and payment communication. Buyers pay RenewCanvas Africa directly, and artists receive payouts through their private payout details after the 48-hour return request window.",
+    },
   ];
 
   return (

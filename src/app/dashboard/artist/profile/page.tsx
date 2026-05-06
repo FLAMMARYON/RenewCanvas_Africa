@@ -21,6 +21,8 @@ import {
   Recycle,
   FileText,
   Link as LinkIcon,
+  CreditCard,
+  Shield,
 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
@@ -42,6 +44,10 @@ const initialProfile = {
   techniques: ["Weaving", "Assemblage", "Mosaic"],
   preferredMaterials: ["PET Bottles", "Fabric Scraps", "Metal Cans"],
   yearsExperience: 5,
+  payoutMethod: "MTN Mobile Money",
+  payoutAccountName: "Marie Uwimana",
+  payoutAccountNumber: "+250 788 123 456",
+  payoutBankName: "",
   isVerified: false,
   verificationStatus: "pending",
   completionPercentage: 75,
@@ -84,7 +90,7 @@ const availableMaterials = [
 
 export default function ArtistProfilePage() {
   const [profile, setProfile] = useState(initialProfile);
-  const [activeTab, setActiveTab] = useState<"profile" | "portfolio" | "verification">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "portfolio" | "verification" | "payout">("profile");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -115,6 +121,7 @@ export default function ArtistProfilePage() {
     { id: "profile", label: "Profile Info", icon: User },
     { id: "portfolio", label: "Portfolio", icon: Palette },
     { id: "verification", label: "Verification", icon: Award },
+    { id: "payout", label: "Payout Info", icon: CreditCard },
   ];
 
   return (
@@ -768,6 +775,102 @@ export default function ArtistProfilePage() {
                     Submit for Verification
                   </button>
                 )}
+              </div>
+            )}
+
+            {/* Payout Tab */}
+            {activeTab === "payout" && (
+              <div className="space-y-6">
+                <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3">
+                  <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-blue-900">
+                      Private artist payout details
+                    </h3>
+                    <p className="text-sm text-blue-700 mt-1">
+                      This information is visible only to you and authorized
+                      RenewCanvas admins. Buyers never see artist payment
+                      details, and artists do not receive buyer contact details.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-4">
+                    Payout Method
+                  </h3>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Preferred Payout Method
+                      </label>
+                      <select
+                        value={profile.payoutMethod}
+                        onChange={(e) =>
+                          handleInputChange("payoutMethod", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
+                      >
+                        <option value="MTN Mobile Money">MTN Mobile Money</option>
+                        <option value="Airtel Money">Airtel Money</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Account Holder Name
+                      </label>
+                      <input
+                        type="text"
+                        value={profile.payoutAccountName}
+                        onChange={(e) =>
+                          handleInputChange("payoutAccountName", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mobile Number or Account Number
+                      </label>
+                      <input
+                        type="text"
+                        value={profile.payoutAccountNumber}
+                        onChange={(e) =>
+                          handleInputChange("payoutAccountNumber", e.target.value)
+                        }
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bank Name{" "}
+                        <span className="text-gray-400">(if bank transfer)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={profile.payoutBankName}
+                        onChange={(e) =>
+                          handleInputChange("payoutBankName", e.target.value)
+                        }
+                        placeholder="Bank of Kigali, Equity Bank, etc."
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-teal-50 border border-teal-100 rounded-xl">
+                  <h3 className="font-semibold text-teal-900 mb-2">
+                    Payout Release Rule
+                  </h3>
+                  <p className="text-sm text-teal-700">
+                    Buyers pay RenewCanvas Africa directly. RenewCanvas holds
+                    your payout until 48 hours after delivery. If no eligible
+                    return request is opened during that window, admins release
+                    your payout to the method saved here.
+                  </p>
+                </div>
               </div>
             )}
           </div>

@@ -83,26 +83,26 @@ export default function CheckoutPage() {
     {
       id: "momo" as PaymentMethod,
       name: "MTN Mobile Money",
-      description: "Pay with your MTN MoMo account",
+      description: "Pay RenewCanvas Africa with your MTN MoMo account",
       icon: Smartphone,
       instructions:
-        "You will receive payment instructions via SMS after submitting your order.",
+        "You will receive RenewCanvas Africa merchant payment instructions via SMS after submitting your order.",
     },
     {
       id: "bank" as PaymentMethod,
       name: "Bank Transfer",
-      description: "Transfer directly to our bank account",
+      description: "Transfer to the RenewCanvas Africa holding account",
       icon: Building2,
       instructions:
-        "Bank details will be provided after order submission. Payment must be completed within 48 hours.",
+        "RenewCanvas Africa bank details will be provided after order submission. Payment must be completed within 48 hours.",
     },
     {
       id: "card" as PaymentMethod,
       name: "Card Payment",
-      description: "Pay with Visa, Mastercard via Flutterwave",
+      description: "Pay RenewCanvas Africa with Visa or Mastercard",
       icon: CreditCard,
       instructions:
-        "You will be redirected to a secure payment page to complete your transaction.",
+        "You will be redirected to a secure RenewCanvas Africa payment page to complete your transaction.",
     },
   ];
 
@@ -374,10 +374,16 @@ export default function CheckoutPage() {
                       <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-medium text-blue-900">
-                          How it works
+                          RenewCanvas managed payment
                         </p>
                         <p className="text-sm text-blue-700 mt-1">
                           {selectedPaymentMethod?.instructions}
+                        </p>
+                        <p className="text-sm text-blue-700 mt-2">
+                          Buyers pay RenewCanvas Africa directly. We confirm the
+                          order, coordinate delivery, and release the artist
+                          payout only after the 48-hour return request window
+                          closes without an approved return.
                         </p>
                       </div>
                     </div>
@@ -501,7 +507,9 @@ export default function CheckoutPage() {
                           Refund Policy
                         </Link>
                         . I understand that I will receive payment instructions
-                        after submitting this order.
+                        after submitting this order, and that RenewCanvas Africa
+                        manages payment, delivery communication, returns, and
+                        artist payout release.
                       </span>
                     </label>
                   </div>
@@ -614,15 +622,15 @@ export default function CheckoutPage() {
               <div className="mt-6 pt-4 border-t border-gray-100 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Shield className="w-4 h-4 text-green-500" />
-                  <span>Secure checkout</span>
+                  <span>RenewCanvas receives and holds buyer payment</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Truck className="w-4 h-4 text-green-500" />
-                  <span>Careful packaging & delivery</span>
+                  <span>Admin-mediated delivery communication</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Recycle className="w-4 h-4 text-green-500" />
-                  <span>Verified impact tracking</span>
+                  <span>Artist payout after 48-hour return window</span>
                 </div>
               </div>
             </div>

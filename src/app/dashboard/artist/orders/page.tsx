@@ -9,15 +9,10 @@ import {
   XCircle,
   Truck,
   Eye,
-  Mail,
-  Phone,
-  MapPin,
-  DollarSign,
   Calendar,
-  Filter,
   ChevronDown,
   ChevronUp,
-  MessageCircle,
+  Shield,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -30,14 +25,10 @@ const orders = [
       price: 42000,
       image: "/placeholder.jpg",
     },
-    buyer: {
-      name: "John Doe",
-      email: "john@example.com",
-      phone: "+250 788 123 456",
-      address: "KG 123 St, Kimironko, Kigali",
-    },
     status: "confirmed",
     paymentStatus: "paid",
+    payoutStatus: "held",
+    payoutEligibleAt: "48 hours after delivery",
     createdAt: "2026-04-28",
     earnings: 33600, // 80% of price
   },
@@ -48,14 +39,10 @@ const orders = [
       price: 55000,
       image: "/placeholder.jpg",
     },
-    buyer: {
-      name: "Sarah Miller",
-      email: "sarah@example.com",
-      phone: "+250 788 234 567",
-      address: "KN 45 Ave, Nyarutarama, Kigali",
-    },
     status: "pending",
     paymentStatus: "pending",
+    payoutStatus: "not_ready",
+    payoutEligibleAt: "After payment, delivery, and return window",
     createdAt: "2026-04-30",
     earnings: 44000,
   },
@@ -66,14 +53,10 @@ const orders = [
       price: 85000,
       image: "/placeholder.jpg",
     },
-    buyer: {
-      name: "Michael Chen",
-      email: "michael@example.com",
-      phone: "+250 788 345 678",
-      address: "KG 567 St, Remera, Kigali",
-    },
     status: "shipped",
     paymentStatus: "paid",
+    payoutStatus: "held",
+    payoutEligibleAt: "48 hours after delivery",
     createdAt: "2026-04-15",
     shippedAt: "2026-04-18",
     trackingNumber: "RW123456789",
@@ -86,14 +69,10 @@ const orders = [
       price: 35000,
       image: "/placeholder.jpg",
     },
-    buyer: {
-      name: "Emma Wilson",
-      email: "emma@example.com",
-      phone: "+250 788 456 789",
-      address: "KN 89 Ave, Kacyiru, Kigali",
-    },
     status: "delivered",
     paymentStatus: "paid",
+    payoutStatus: "ready",
+    payoutEligibleAt: "Eligible for admin release",
     createdAt: "2026-03-20",
     shippedAt: "2026-03-23",
     deliveredAt: "2026-03-25",
@@ -106,14 +85,10 @@ const orders = [
       price: 38000,
       image: "/placeholder.jpg",
     },
-    buyer: {
-      name: "David Brown",
-      email: "david@example.com",
-      phone: "+250 788 567 890",
-      address: "KG 234 St, Gisozi, Kigali",
-    },
     status: "cancelled",
     paymentStatus: "refunded",
+    payoutStatus: "cancelled",
+    payoutEligibleAt: "Not eligible",
     createdAt: "2026-04-10",
     cancelledAt: "2026-04-12",
     cancelReason: "Buyer changed mind",
@@ -163,7 +138,7 @@ export default function ArtistOrdersPage() {
     const matchesSearch =
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.artwork.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.buyer.name.toLowerCase().includes(searchQuery.toLowerCase());
+      order.payoutStatus.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       statusFilter === "all" || order.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -190,7 +165,9 @@ export default function ArtistOrdersPage() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-          <p className="text-gray-500">Manage your artwork orders</p>
+          <p className="text-gray-500">
+            Manage fulfillment through RenewCanvas admin mediation
+          </p>
         </div>
 
         {/* Stats */}
@@ -219,6 +196,18 @@ export default function ArtistOrdersPage() {
           </div>
         </div>
 
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
+          <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+          <div>
+            <p className="font-medium text-blue-900">Admin-mediated orders</p>
+            <p className="text-sm text-blue-700 mt-1">
+              Buyers pay RenewCanvas Africa directly. Buyer contact details are
+              hidden from artists; admins coordinate delivery and release artist
+              payouts after the 48-hour return request window closes.
+            </p>
+          </div>
+        </div>
+
         {/* Filters */}
         <div className="bg-white rounded-xl border border-gray-100 p-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -226,7 +215,7 @@ export default function ArtistOrdersPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search orders, artworks, or buyers..."
+                placeholder="Search orders, artworks, or payout status..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
@@ -286,7 +275,7 @@ export default function ArtistOrdersPage() {
                           {order.artwork.title}
                         </p>
                         <p className="text-sm text-gray-500">
-                          Buyer: {order.buyer.name}
+                          Buyer details managed by RenewCanvas admin
                         </p>
                       </div>
                     </div>
@@ -298,7 +287,7 @@ export default function ArtistOrdersPage() {
                           {order.artwork.price.toLocaleString()} RWF
                         </p>
                         <p className="text-sm text-green-600">
-                          You earn: {order.earnings.toLocaleString()} RWF
+                          Payout: {order.earnings.toLocaleString()} RWF
                         </p>
                       </div>
                       <div className="flex items-center gap-2 text-gray-400">
@@ -318,44 +307,34 @@ export default function ArtistOrdersPage() {
                 {isExpanded && (
                   <div className="border-t border-gray-100 p-4 bg-gray-50">
                     <div className="grid md:grid-cols-2 gap-6">
-                      {/* Buyer Details */}
+                      {/* Admin-Mediated Order Details */}
                       <div>
                         <h4 className="font-medium text-gray-900 mb-3">
-                          Buyer Details
+                          Buyer Privacy & Admin Coordination
                         </h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Mail className="w-4 h-4" />
-                            {order.buyer.email}
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Phone className="w-4 h-4" />
-                            {order.buyer.phone}
-                          </div>
-                          <div className="flex items-start gap-2 text-gray-600">
-                            <MapPin className="w-4 h-4 mt-0.5" />
-                            {order.buyer.address}
-                          </div>
+                        <div className="space-y-2 text-sm text-gray-600">
+                          <p>
+                            Buyer identity and contact details are visible only
+                            to RenewCanvas admins.
+                          </p>
+                          <p>
+                            Use the admin order thread for delivery questions,
+                            packaging issues, or shipment updates.
+                          </p>
+                          <p className="font-medium text-gray-900">
+                            Payout status: {order.payoutStatus.replace("_", " ")}
+                          </p>
+                          <p>Release timing: {order.payoutEligibleAt}</p>
                         </div>
 
                         {/* Contact Buttons */}
                         <div className="flex gap-2 mt-4">
-                          <a
-                            href={`mailto:${order.buyer.email}`}
+                          <button
                             className="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
                           >
-                            <Mail className="w-4 h-4" />
-                            Email
-                          </a>
-                          <a
-                            href={`https://wa.me/${order.buyer.phone.replace(/\s/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                            WhatsApp
-                          </a>
+                            <Shield className="w-4 h-4" />
+                            Message Admin
+                          </button>
                         </div>
                       </div>
 
@@ -389,7 +368,7 @@ export default function ArtistOrdersPage() {
                                   Payment Confirmed
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  Ready to ship
+                                  Paid to RenewCanvas, awaiting fulfillment
                                 </p>
                               </div>
                             </div>
@@ -426,7 +405,9 @@ export default function ArtistOrdersPage() {
                                   Delivered
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {order.deliveredAt}
+                                  {order.deliveredAt}. Payout releases after
+                                  the 48-hour return window if no return request
+                                  is approved.
                                 </p>
                               </div>
                             </div>

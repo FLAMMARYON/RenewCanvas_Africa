@@ -51,9 +51,9 @@ export default function RefundPolicyPage() {
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
                 <div>
-                  <p className="font-medium text-gray-900">7-Day Return Window</p>
+                  <p className="font-medium text-gray-900">48-Hour Request Window</p>
                   <p className="text-sm text-gray-600">
-                    From delivery date for eligible items
+                    From delivery time for eligible return requests
                   </p>
                 </div>
               </div>
@@ -86,9 +86,9 @@ export default function RefundPolicyPage() {
             <p className="text-gray-600 mb-4">
               At RenewCanvas Africa, we want you to be completely satisfied with
               your purchase. This policy outlines the conditions under which
-              returns and refunds are processed. Due to the unique, handcrafted
-              nature of our artwork, we have specific guidelines to ensure
-              fairness for both buyers and artists.
+              returns and refunds are processed. RenewCanvas Africa manages
+              payment, delivery communication, return review, and artist payout
+              release as the marketplace middleman.
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
@@ -126,7 +126,7 @@ export default function RefundPolicyPage() {
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
               <li>
                 <strong>Change of Mind:</strong> You no longer want the artwork
-                (subject to artist approval, restocking fee may apply)
+                (subject to RenewCanvas admin approval, restocking fee may apply)
               </li>
               <li>
                 <strong>Minor Variations:</strong> Small differences inherent to
@@ -143,7 +143,7 @@ export default function RefundPolicyPage() {
               <li>
                 Custom or commissioned pieces (unless defective)
               </li>
-              <li>Items returned after 7 days without prior authorization</li>
+              <li>Return requests opened after 48 hours without prior authorization</li>
               <li>Items with altered or removed artist tags/signatures</li>
             </ul>
 
@@ -159,7 +159,7 @@ export default function RefundPolicyPage() {
                   <div>
                     <p className="font-medium text-gray-900">Contact Us</p>
                     <p className="text-sm text-gray-600">
-                      Email support@renewcanvas.africa within 7 days of delivery
+                      Email support@renewcanvas.africa within 48 hours of delivery
                       with your order number and reason for return
                     </p>
                   </div>
@@ -237,7 +237,18 @@ export default function RefundPolicyPage() {
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              5. Return Shipping
+              5. Artist Payout Hold
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Buyer payments are made to RenewCanvas Africa, not directly to the
+              artist. RenewCanvas holds the artist payout until 48 hours after
+              delivery. If no eligible return request is opened during that
+              window, the artist payout is released according to the platform
+              payout schedule.
+            </p>
+
+            <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
+              6. Return Shipping
             </h2>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
               <li>
@@ -255,19 +266,19 @@ export default function RefundPolicyPage() {
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              6. Restocking Fee
+              7. Restocking Fee
             </h2>
             <p className="text-gray-600 mb-4">
               A restocking fee of up to 15% may apply for:
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Change of mind returns (if approved by the artist)</li>
+              <li>Change of mind returns (if approved by RenewCanvas admin)</li>
               <li>Items returned without original packaging</li>
               <li>Items with minor damage upon return</li>
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              7. Order Cancellations
+              8. Order Cancellations
             </h2>
             <h3 className="text-lg font-medium text-gray-800 mt-6 mb-3">
               Before Payment Confirmation
@@ -282,7 +293,8 @@ export default function RefundPolicyPage() {
             </h3>
             <p className="text-gray-600 mb-4">
               Contact us immediately to request cancellation. Full refund will be
-              processed if the artist has not yet shipped the item.
+              processed if RenewCanvas has not yet released the order for
+              shipment.
             </p>
 
             <h3 className="text-lg font-medium text-gray-800 mt-6 mb-3">
@@ -294,7 +306,7 @@ export default function RefundPolicyPage() {
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              8. Disputes
+              9. Disputes
             </h2>
             <p className="text-gray-600 mb-4">
               If you are unsatisfied with our decision regarding your return or
@@ -313,7 +325,7 @@ export default function RefundPolicyPage() {
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              9. Exchanges
+              10. Exchanges
             </h2>
             <p className="text-gray-600 mb-4">
               Direct exchanges are not available. To obtain a different artwork:
@@ -324,7 +336,7 @@ export default function RefundPolicyPage() {
             </ol>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              10. Contact Us
+              11. Contact Us
             </h2>
             <p className="text-gray-600 mb-4">
               For return and refund inquiries:

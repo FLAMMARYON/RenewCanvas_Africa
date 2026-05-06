@@ -567,7 +567,7 @@ function ImpactSection() {
     {
       value: "75-80%",
       label: "To Artists",
-      description: "Of each sale goes directly to creators",
+      description: "Released after the 48-hour return window",
       icon: TrendingUp,
     },
   ];

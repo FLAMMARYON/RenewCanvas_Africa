@@ -16,7 +16,7 @@ import {
   Star,
   Recycle,
   MapPin,
-  User,
+  Shield,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -118,7 +118,7 @@ const statusConfig = {
     color: "text-blue-600",
     bgColor: "bg-blue-50",
     icon: CheckCircle,
-    description: "Order confirmed, preparing for shipping",
+    description: "RenewCanvas confirmed payment and is coordinating fulfillment",
   },
   shipped: {
     label: "Shipped",
@@ -177,7 +177,21 @@ export default function BuyerOrdersPage() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Orders</h1>
-          <p className="text-gray-500">Track and manage your artwork orders</p>
+          <p className="text-gray-500">
+            Track orders managed by RenewCanvas from payment to delivery
+          </p>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
+          <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+          <div>
+            <p className="font-medium text-blue-900">RenewCanvas is your order contact</p>
+            <p className="text-sm text-blue-700 mt-1">
+              Buyers pay RenewCanvas Africa directly. Admins coordinate all
+              order, delivery, and return communication; buyers and artists do
+              not contact each other directly.
+            </p>
+          </div>
         </div>
 
         {/* Stats */}
@@ -328,10 +342,13 @@ export default function BuyerOrdersPage() {
                                 </div>
                                 <div>
                                   <p className="text-sm font-medium text-gray-900">
-                                    Payment Confirmed
-                                  </p>
-                                </div>
+                                  Payment Confirmed
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Paid to RenewCanvas Africa
+                                </p>
                               </div>
+                            </div>
                             )}
 
                           {(order.status === "shipped" ||
@@ -427,7 +444,7 @@ export default function BuyerOrdersPage() {
 
                           <button className="flex items-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium">
                             <MessageCircle className="w-4 h-4" />
-                            Contact Artist
+                            Contact RenewCanvas Support
                           </button>
                         </div>
                       </div>

@@ -47,12 +47,12 @@ const paymentInstructions = {
     steps: [
       "Dial *182*8*1#",
       "Select 'Pay Bill'",
-      "Enter Merchant Code: 123456",
+      "Enter RenewCanvas Africa Merchant Code: 123456",
       `Enter Amount: ${orderData.artwork.price.toLocaleString()} RWF`,
       `Use Reference: ${orderData.orderId}`,
       "Enter your PIN to confirm",
     ],
-    note: "Payment will be confirmed within 5-10 minutes after completion.",
+    note: "Payment goes to RenewCanvas Africa and will be confirmed within 5-10 minutes after completion.",
   },
   bank: {
     title: "Bank Transfer Details",
@@ -75,7 +75,7 @@ const paymentInstructions = {
       "Complete the 3D Secure verification",
       "Receive instant confirmation",
     ],
-    note: "A secure payment link has been sent to your email address.",
+    note: "A secure RenewCanvas Africa payment link has been sent to your email address.",
   },
 };
 
@@ -120,7 +120,8 @@ export default function OrderConfirmationPage() {
           </h1>
           <p className="text-gray-600 max-w-lg mx-auto">
             Thank you for your order. Please complete the payment to secure your
-            artwork.
+            artwork. RenewCanvas Africa receives the payment and manages the
+            order between you and the artist.
           </p>
         </div>
 
@@ -165,7 +166,7 @@ export default function OrderConfirmationPage() {
                   {instructions.title}
                 </h2>
                 <p className="text-sm text-gray-500">
-                  Complete payment to confirm your order
+                  Complete payment to RenewCanvas Africa
                 </p>
               </div>
             </div>
@@ -259,7 +260,7 @@ export default function OrderConfirmationPage() {
                 Complete Payment
               </h3>
               <p className="text-sm text-gray-600">
-                Follow the instructions above to pay for your order
+                Follow the instructions above to pay RenewCanvas Africa
               </p>
             </div>
             <div className="bg-white/70 rounded-lg p-4">
@@ -270,7 +271,7 @@ export default function OrderConfirmationPage() {
                 Order Confirmed
               </h3>
               <p className="text-sm text-gray-600">
-                We will verify payment and prepare your artwork
+                We verify payment, notify the artist, and coordinate delivery
               </p>
             </div>
             <div className="bg-white/70 rounded-lg p-4">
@@ -278,10 +279,11 @@ export default function OrderConfirmationPage() {
                 <span className="font-bold text-green-600">3</span>
               </div>
               <h3 className="font-medium text-gray-900 mb-1">
-                Delivery
+                Return Window
               </h3>
               <p className="text-sm text-gray-600">
-                Receive your artwork carefully packaged at your doorstep
+                After delivery, artist payout is released only if no return
+                request is opened within 48 hours
               </p>
             </div>
           </div>

@@ -32,6 +32,7 @@ const orders = [
       id: "a1",
       title: "Ocean Waves",
       price: 42000,
+      ownerType: "artist",
     },
     artist: {
       id: "ar1",
@@ -45,8 +46,10 @@ const orders = [
     },
     status: "confirmed",
     paymentStatus: "paid",
+    payoutStatus: "held",
     paymentMethod: "momo",
     createdAt: "2026-04-28T10:30:00",
+    payoutEligibleAt: "After delivery + 48 hours",
     platformFee: 8400,
     artistEarnings: 33600,
   },
@@ -56,6 +59,7 @@ const orders = [
       id: "a2",
       title: "Mountain Sunrise",
       price: 35000,
+      ownerType: "artist",
     },
     artist: {
       id: "ar2",
@@ -69,8 +73,10 @@ const orders = [
     },
     status: "pending",
     paymentStatus: "pending",
+    payoutStatus: "not_ready",
     paymentMethod: "bank",
     createdAt: "2026-04-30T08:15:00",
+    payoutEligibleAt: "After payment, delivery, and return window",
     platformFee: 7000,
     artistEarnings: 28000,
   },
@@ -80,6 +86,7 @@ const orders = [
       id: "a3",
       title: "City Lights",
       price: 55000,
+      ownerType: "artist",
     },
     artist: {
       id: "ar1",
@@ -93,9 +100,11 @@ const orders = [
     },
     status: "shipped",
     paymentStatus: "paid",
+    payoutStatus: "held",
     paymentMethod: "card",
     createdAt: "2026-04-25T14:00:00",
     shippedAt: "2026-04-27T09:00:00",
+    payoutEligibleAt: "After delivery + 48 hours",
     trackingNumber: "RW123456789",
     platformFee: 11000,
     artistEarnings: 44000,
@@ -106,6 +115,7 @@ const orders = [
       id: "a4",
       title: "African Heritage",
       price: 85000,
+      ownerType: "artist",
     },
     artist: {
       id: "ar3",
@@ -119,10 +129,12 @@ const orders = [
     },
     status: "delivered",
     paymentStatus: "paid",
+    payoutStatus: "ready",
     paymentMethod: "momo",
     createdAt: "2026-04-15T11:30:00",
     shippedAt: "2026-04-17T10:00:00",
     deliveredAt: "2026-04-20T14:30:00",
+    payoutEligibleAt: "Ready for admin release",
     platformFee: 17000,
     artistEarnings: 68000,
   },
@@ -132,6 +144,7 @@ const orders = [
       id: "a5",
       title: "Sunset Reflections",
       price: 38000,
+      ownerType: "artist",
     },
     artist: {
       id: "ar4",
@@ -145,11 +158,42 @@ const orders = [
     },
     status: "cancelled",
     paymentStatus: "refunded",
+    payoutStatus: "cancelled",
     paymentMethod: "momo",
     createdAt: "2026-04-10T16:45:00",
     cancelledAt: "2026-04-12T09:00:00",
     cancelReason: "Buyer requested cancellation",
+    payoutEligibleAt: "Not eligible",
     platformFee: 0,
+    artistEarnings: 0,
+  },
+  {
+    id: "ORD-451",
+    artwork: {
+      id: "a6",
+      title: "RenewCanvas Studio Panel",
+      price: 62000,
+      ownerType: "renewcanvas",
+    },
+    artist: {
+      id: "renewcanvas",
+      name: "RenewCanvas Africa",
+    },
+    buyer: {
+      id: "b6",
+      name: "Aline Uwase",
+      email: "aline@example.com",
+      phone: "+250 788 678 901",
+    },
+    status: "delivered",
+    paymentStatus: "paid",
+    payoutStatus: "not_applicable",
+    paymentMethod: "card",
+    createdAt: "2026-04-18T13:20:00",
+    shippedAt: "2026-04-19T09:00:00",
+    deliveredAt: "2026-04-21T11:15:00",
+    payoutEligibleAt: "No artist payout: RenewCanvas-owned inventory",
+    platformFee: 62000,
     artistEarnings: 0,
   },
 ];
@@ -193,6 +237,15 @@ const paymentStatusConfig = {
   refunded: { label: "Refunded", color: "text-gray-600", bgColor: "bg-gray-100" },
 };
 
+const payoutStatusConfig = {
+  not_ready: { label: "Not Ready", color: "text-gray-600", bgColor: "bg-gray-100" },
+  held: { label: "Held", color: "text-blue-600", bgColor: "bg-blue-50" },
+  ready: { label: "Ready", color: "text-green-600", bgColor: "bg-green-50" },
+  released: { label: "Released", color: "text-teal-600", bgColor: "bg-teal-50" },
+  cancelled: { label: "Cancelled", color: "text-red-600", bgColor: "bg-red-50" },
+  not_applicable: { label: "N/A", color: "text-blue-600", bgColor: "bg-blue-50" },
+};
+
 export default function AdminOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -221,6 +274,13 @@ export default function AdminOrdersPage() {
     platformFees: orders
       .filter((o) => o.paymentStatus === "paid")
       .reduce((sum, o) => sum + o.platformFee, 0),
+    escrowHeld: orders
+      .filter((o) => o.paymentStatus === "paid" && o.payoutStatus === "held")
+      .reduce((sum, o) => sum + o.artistEarnings, 0),
+    payoutReady: orders.filter((o) => o.payoutStatus === "ready").length,
+    renewcanvasOwnedRevenue: orders
+      .filter((o) => o.paymentStatus === "paid" && o.artwork.ownerType === "renewcanvas")
+      .reduce((sum, o) => sum + o.artwork.price, 0),
   };
 
   const formatDate = (dateString: string) => {
@@ -244,7 +304,9 @@ export default function AdminOrdersPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
-            <p className="text-gray-500">Manage and track all orders</p>
+            <p className="text-gray-500">
+              Manage buyer payments, delivery mediation, returns, and artist payouts
+            </p>
           </div>
           <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
             <Download className="w-4 h-4" />
@@ -279,6 +341,34 @@ export default function AdminOrdersPage() {
               {(stats.platformFees / 1000).toFixed(0)}k
             </p>
             <p className="text-sm text-teal-600">Platform Fees (RWF)</p>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-3 gap-4">
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <p className="text-sm text-blue-700">Artist Payouts Held</p>
+            <p className="text-2xl font-bold text-blue-900">
+              {stats.escrowHeld.toLocaleString()} RWF
+            </p>
+            <p className="text-xs text-blue-700 mt-1">
+              Held until 48 hours after delivery with no approved return request.
+            </p>
+          </div>
+          <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+            <p className="text-sm text-green-700">Payouts Ready</p>
+            <p className="text-2xl font-bold text-green-900">{stats.payoutReady}</p>
+            <p className="text-xs text-green-700 mt-1">
+              Admin must release payouts. Buyers and artists do not coordinate directly.
+            </p>
+          </div>
+          <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+            <p className="text-sm text-purple-700">RenewCanvas-Owned Revenue</p>
+            <p className="text-2xl font-bold text-purple-900">
+              {stats.renewcanvasOwnedRevenue.toLocaleString()} RWF
+            </p>
+            <p className="text-xs text-purple-700 mt-1">
+              No artist payout is created for platform-owned artwork.
+            </p>
           </div>
         </div>
 
@@ -331,6 +421,10 @@ export default function AdminOrdersPage() {
                 paymentStatusConfig[
                   order.paymentStatus as keyof typeof paymentStatusConfig
                 ];
+              const payoutStatus =
+                payoutStatusConfig[
+                  order.payoutStatus as keyof typeof payoutStatusConfig
+                ];
               const StatusIcon = status.icon;
               const isExpanded = expandedOrder === order.id;
 
@@ -362,7 +456,9 @@ export default function AdminOrdersPage() {
                               {order.artwork.title}
                             </p>
                             <p className="text-sm text-gray-500">
-                              by {order.artist.name}
+                              {order.artwork.ownerType === "renewcanvas"
+                                ? "RenewCanvas-owned inventory"
+                                : `by ${order.artist.name}`}
                             </p>
                           </div>
                         </div>
@@ -432,6 +528,14 @@ export default function AdminOrdersPage() {
                           </h4>
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
+                              <span className="text-gray-500">
+                                Buyer Payment Destination
+                              </span>
+                              <span className="font-medium text-gray-900">
+                                RenewCanvas Africa
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
                               <span className="text-gray-500">Order Total</span>
                               <span className="font-medium text-gray-900">
                                 {order.artwork.price.toLocaleString()} RWF
@@ -439,7 +543,9 @@ export default function AdminOrdersPage() {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-500">
-                                Platform Fee (20%)
+                                {order.artwork.ownerType === "renewcanvas"
+                                  ? "RenewCanvas Revenue"
+                                  : "Platform Fee (20%)"}
                               </span>
                               <span className="font-medium text-teal-600">
                                 {order.platformFee.toLocaleString()} RWF
@@ -447,10 +553,26 @@ export default function AdminOrdersPage() {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-500">
-                                Artist Earnings (80%)
+                                Artist Payout
                               </span>
                               <span className="font-medium text-gray-900">
-                                {order.artistEarnings.toLocaleString()} RWF
+                                {order.artwork.ownerType === "renewcanvas"
+                                  ? "Not applicable"
+                                  : `${order.artistEarnings.toLocaleString()} RWF`}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Payout Status</span>
+                              <span
+                                className={`px-2 py-0.5 rounded text-xs font-medium ${payoutStatus.bgColor} ${payoutStatus.color}`}
+                              >
+                                {payoutStatus.label}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-3">
+                              <span className="text-gray-500">Release Rule</span>
+                              <span className="font-medium text-gray-900 text-right">
+                                {order.payoutEligibleAt}
                               </span>
                             </div>
                             <div className="pt-2 border-t border-gray-100">
@@ -481,7 +603,7 @@ export default function AdminOrdersPage() {
                           </div>
                           <button className="mt-3 inline-flex items-center gap-1 text-sm text-teal-600 hover:text-teal-700">
                             <Mail className="w-3 h-3" />
-                            Send Email
+                            Message Buyer as Admin
                           </button>
                         </div>
 
@@ -527,10 +649,25 @@ export default function AdminOrdersPage() {
                                 Tracking: {order.trackingNumber}
                               </div>
                             )}
-                          </div>
                         </div>
                       </div>
+
+                      <div className="md:col-span-3 bg-white p-4 rounded-lg border border-gray-100">
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Marketplace Mediation Rule
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          RenewCanvas Africa is the middleman for this order.
+                          Buyer payment is made to RenewCanvas, buyer and artist
+                          contact details are not exchanged, and artist payout
+                          information is visible only to admins and the artist.
+                          If the artwork is RenewCanvas-owned, no artist payout
+                          is created and 100% of net sale revenue belongs to
+                          RenewCanvas after payment and delivery costs.
+                        </p>
+                      </div>
                     </div>
+                  </div>
                   )}
                 </div>
               );

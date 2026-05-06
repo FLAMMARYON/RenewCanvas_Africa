@@ -27,6 +27,7 @@ const initialArtworks = [
   {
     id: "1",
     title: "Sunset Reflections",
+    ownerType: "artist",
     artist: {
       id: "a1",
       name: "Marie Uwimana",
@@ -46,6 +47,7 @@ const initialArtworks = [
   {
     id: "2",
     title: "Urban Dreams",
+    ownerType: "artist",
     artist: {
       id: "a2",
       name: "Jean Baptiste",
@@ -65,6 +67,7 @@ const initialArtworks = [
   {
     id: "3",
     title: "Nature's Embrace",
+    ownerType: "artist",
     artist: {
       id: "a3",
       name: "Claudine Mukiza",
@@ -85,6 +88,7 @@ const initialArtworks = [
   {
     id: "4",
     title: "Cultural Heritage",
+    ownerType: "artist",
     artist: {
       id: "a4",
       name: "Patrick Habimana",
@@ -107,6 +111,7 @@ const initialArtworks = [
   {
     id: "5",
     title: "Ocean Symphony",
+    ownerType: "artist",
     artist: {
       id: "a1",
       name: "Marie Uwimana",
@@ -126,6 +131,7 @@ const initialArtworks = [
   {
     id: "6",
     title: "Garden of Hope",
+    ownerType: "artist",
     artist: {
       id: "a5",
       name: "Grace Ingabire",
@@ -141,6 +147,27 @@ const initialArtworks = [
       "Decorative flowers made from recycled cardboard and paper, bringing nature indoors.",
     dimensions: "30cm x 20cm x 15cm",
     images: 3,
+  },
+  {
+    id: "7",
+    title: "RenewCanvas Studio Panel",
+    ownerType: "renewcanvas",
+    artist: {
+      id: "renewcanvas",
+      name: "RenewCanvas Africa",
+      verified: true,
+    },
+    category: "Wall Art",
+    price: 62000,
+    status: "approved",
+    materials: ["PET Bottles", "Cardboard"],
+    kgDiverted: 3.1,
+    submittedAt: "2026-04-26T12:00:00",
+    reviewedAt: "2026-04-26T14:00:00",
+    description:
+      "Platform-owned artwork created from RenewCanvas studio inventory and community collection materials.",
+    dimensions: "75cm x 55cm",
+    images: 4,
   },
 ];
 
@@ -187,6 +214,7 @@ export default function AdminArtworksPage() {
 
   const stats = {
     total: artworks.length,
+    renewcanvasOwned: artworks.filter((a) => a.ownerType === "renewcanvas").length,
     pending: artworks.filter((a) => a.status === "pending").length,
     approved: artworks.filter((a) => a.status === "approved").length,
     rejected: artworks.filter((a) => a.status === "rejected").length,
@@ -246,7 +274,9 @@ export default function AdminArtworksPage() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Artwork Moderation</h1>
-          <p className="text-gray-500">Review and approve artwork submissions</p>
+          <p className="text-gray-500">
+            Review artist submissions and manage RenewCanvas-owned inventory
+          </p>
         </div>
 
         {/* Stats */}
@@ -259,6 +289,9 @@ export default function AdminArtworksPage() {
               <div>
                 <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
                 <p className="text-sm text-gray-500">Total Artworks</p>
+                <p className="text-xs text-gray-400">
+                  {stats.renewcanvasOwned} RenewCanvas-owned
+                </p>
               </div>
             </div>
           </div>
@@ -386,6 +419,17 @@ export default function AdminArtworksPage() {
                               <CheckCircle className="w-3 h-3 text-blue-500" />
                             )}
                           </span>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs ${
+                              artwork.ownerType === "renewcanvas"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-purple-100 text-purple-700"
+                            }`}
+                          >
+                            {artwork.ownerType === "renewcanvas"
+                              ? "RenewCanvas-owned"
+                              : "Artist consignment"}
+                          </span>
                           <span className="px-2 py-0.5 bg-gray-100 rounded text-xs">
                             {artwork.category}
                           </span>
@@ -456,6 +500,14 @@ export default function AdminArtworksPage() {
                               <p className="text-gray-500">Category</p>
                               <p className="font-medium text-gray-900">
                                 {artwork.category}
+                              </p>
+                            </div>
+                            <div className="p-3 bg-white rounded-lg border border-gray-100">
+                              <p className="text-gray-500">Ownership</p>
+                              <p className="font-medium text-gray-900">
+                                {artwork.ownerType === "renewcanvas"
+                                  ? "100% RenewCanvas"
+                                  : "Artist payout applies"}
                               </p>
                             </div>
                             <div className="p-3 bg-white rounded-lg border border-gray-100">
