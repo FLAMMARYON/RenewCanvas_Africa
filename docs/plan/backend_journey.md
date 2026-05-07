@@ -53,6 +53,8 @@ Done when:
 
 Goal: persist buyer, artist, and admin profile data.
 
+Current status: verified. Buyer, artist, and admin profile persistence, default buyer address storage, authenticated profile API, role profile pages, seed data, migration, tests, typecheck, lint, build, and E2E gates have passed.
+
 Deliver:
 
 - Buyer profile.
@@ -69,9 +71,39 @@ Done when:
 - Artist profile edits survive refresh.
 - Role-specific pages use the real session user.
 
+## B2A: Commissioned Work Requests
+
+Goal: let buyers request custom commissioned work through admin mediation.
+
+Current status: verified. Buyer commission form, admin assignment queue, artist accept/reject queue, Prisma schema, API routes, migration, tests, seed, and migration status gates have passed.
+
+Deliver:
+
+- Buyer-side commissioned work request form.
+- Project description and product specifics.
+- Optional preferred recycled/upcycled materials.
+- Buyer budget amount.
+- Approximate size selection: small, medium, large, or specific dimensions.
+- Commission request table with lifecycle status.
+- Admin queue for reviewing buyer requests.
+- Admin assignment of a request to an active artist.
+- Artist queue for assigned commission requests.
+- Artist accept/reject response.
+- Keep buyer and artist contact mediated by RenewCanvas admins.
+
+Done when:
+
+- Buyer can submit a custom-work request to admins.
+- Admin can assign the request to an artist.
+- Assigned artist can accept or reject the request.
+- Requests are scoped by role: buyer sees own, admin sees all, artist sees assigned.
+- Workflow actions are role-protected.
+
 ## B3: Artwork Data And Media
 
 Goal: replace mock artwork data.
+
+Current status: verified. Artwork ownership, moderation fields, image upload metadata placeholders, artwork create/list/detail/update/delete/review APIs, marketplace/detail/artist/admin artwork page wiring, seed inventory, migration, tests, typecheck, lint, build, and E2E gates have passed.
 
 Deliver:
 
@@ -95,6 +127,8 @@ Done when:
 
 Goal: make browsing real.
 
+Current status: verified. Marketplace query filtering, sorting, pagination, persistent buyer wishlist, wishlist counters, artwork view tracking, migration, seed, tests, typecheck, lint, build, and E2E gates have passed.
+
 Deliver:
 
 - Marketplace listing API.
@@ -115,6 +149,8 @@ Done when:
 
 Goal: connect existing pricing and impact engines to real records.
 
+Current status: verified. Pricing and impact snapshot tables, artwork create/update recalculation, server-side demand input sanitization, artist/admin recommendation displays, migration, seed, typecheck, lint, build, and E2E gates have passed.
+
 Deliver:
 
 - Persist pricing recommendations.
@@ -134,6 +170,8 @@ Done when:
 ## B6: Admin Verification And Moderation
 
 Goal: make P1 admin verification operational.
+
+Current status: verified. Verification review and evidence tables, backend verification APIs, admin decision workflow, artist request-more-info evidence flow, audit logging, migration, seed, tests, typecheck, lint, build, and E2E gates have passed.
 
 Deliver:
 
@@ -361,19 +399,20 @@ Done when:
 1. B0 foundations
 2. B1 auth
 3. B2 profiles
-4. B3 artworks/media
-5. B4 marketplace/wishlist
-6. B5 pricing/impact persistence
-7. B6 admin verification
-8. B7 orders
-9. B8 payments
-10. B9 shipping
-11. B10 payouts
-12. B11 notifications
-13. B12 auctions
-14. B13 virtual room backend
-15. B14 analytics
-16. B15 production hardening
+4. B2A commissioned work requests
+5. B3 artworks/media
+6. B4 marketplace/wishlist
+7. B5 pricing/impact persistence
+8. B6 admin verification
+9. B7 orders
+10. B8 payments
+11. B9 shipping
+12. B10 payouts
+13. B11 notifications
+14. B12 auctions
+15. B13 virtual room backend
+16. B14 analytics
+17. B15 production hardening
 
 ## Sequencing Rules
 

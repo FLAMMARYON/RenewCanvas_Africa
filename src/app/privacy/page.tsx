@@ -192,7 +192,7 @@ export default function PrivacyPage() {
               <li>Withdraw consent at any time</li>
             </ul>
             <p className="text-gray-600 mb-4">
-              To exercise these rights, contact us at privacy@renewcanvas.africa.
+              To exercise these rights, contact us at hello.renewcanvas.africa@gmail.com.
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
@@ -259,10 +259,10 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-none text-gray-600 space-y-2 mb-4">
               <li>
-                <strong>Data Protection Officer:</strong> dpo@renewcanvas.africa
+                <strong>Data Protection Officer:</strong> hello.renewcanvas.africa@gmail.com
               </li>
               <li>
-                <strong>General Inquiries:</strong> privacy@renewcanvas.africa
+                <strong>General Inquiries:</strong> hello.renewcanvas.africa@gmail.com
               </li>
               <li>
                 <strong>Phone:</strong> +250 788 000 000

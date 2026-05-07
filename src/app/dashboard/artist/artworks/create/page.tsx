@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { saveArtworkDraft } from "@/lib/frontend/local-store";
+import { createArtwork } from "@/lib/frontend/artworks-api";
 
 const categories = [
   "Wall Art",
@@ -116,11 +116,7 @@ export default function CreateArtworkPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      // In production, this would upload to a server
-      // For now, we'll create object URLs
-      const newImages = Array.from(files).map((file) =>
-        URL.createObjectURL(file)
-      );
+      const newImages = Array.from(files).map((file) => `/placeholder-artwork/${file.name}`);
       setImages((prev) => [...prev, ...newImages].slice(0, 5));
     }
   };
@@ -168,7 +164,7 @@ export default function CreateArtworkPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
 
@@ -177,23 +173,27 @@ export default function CreateArtworkPage() {
       return;
     }
 
-    const draft = {
-      ...formData,
-      id: `ART-${Date.now()}`,
-      images,
-      materials: selectedMaterials,
-      submittedAt: new Date().toISOString(),
-      status: "pending",
-    };
-
-    saveArtworkDraft({
-      id: draft.id,
-      title: draft.title,
-      status: "submitted",
-      savedAt: draft.submittedAt,
-      values: draft,
-    });
-    router.push("/dashboard/artist/artworks");
+    try {
+      await createArtwork({
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        dimensions: formData.dimensions,
+        priceAmount: Number(formData.price),
+        images: images.map((url, index) => ({ url, altText: `${formData.title} image ${index + 1}` })),
+        materials: selectedMaterials.map((material) => ({
+          material,
+          weightKg: Number(formData.materialWeight) / selectedMaterials.length,
+          source: formData.materialSource,
+        })),
+        complexity: formData.complexity,
+        experienceLevel: formData.experienceLevel,
+        hoursWorked: 8,
+      });
+      router.push("/dashboard/artist/artworks");
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Could not submit artwork.");
+    }
   };
 
   return (

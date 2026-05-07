@@ -359,7 +359,7 @@ export default function AboutPage() {
             </div>
             <div>
               <Mail className="w-6 h-6 mx-auto mb-3 text-teal-400" />
-              <p className="font-medium">hello@renewcanvas.africa</p>
+              <p className="font-medium">hello.renewcanvas.africa@gmail.com</p>
               <p className="text-gray-400">We'd love to hear from you</p>
             </div>
             <div>

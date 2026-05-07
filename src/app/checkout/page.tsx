@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Recycle,
   ArrowLeft,
@@ -21,26 +21,16 @@ import {
   Lock,
   Info,
 } from "lucide-react";
-import { saveOrder } from "@/lib/frontend/local-store";
-
-// Mock artwork data - will come from URL params / API
-const artwork = {
-  id: "1",
-  title: "Ocean Waves",
-  artist: "Patrick Habimana",
-  artistId: "artist-1",
-  price: 42000,
-  materials: ["PET bottles", "fabric scraps"],
-  kgDiverted: 2.5,
-  category: "Wall Art",
-  dimensions: "60cm x 80cm",
-  image: null,
-};
+import { readArtwork, type FrontendArtwork } from "@/lib/frontend/artworks-api";
+import { createOrder } from "@/lib/frontend/orders-api";
 
 type PaymentMethod = "momo" | "bank" | "card";
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [artwork, setArtwork] = useState<FrontendArtwork | null>(null);
+  const [statusMessage, setStatusMessage] = useState("");
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("momo");
   const [formData, setFormData] = useState({
@@ -53,6 +43,17 @@ export default function CheckoutPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    const artworkId = searchParams.get("artworkId");
+    if (!artworkId) {
+      setStatusMessage("Choose an artwork before checkout.");
+      return;
+    }
+    readArtwork(artworkId)
+      .then(setArtwork)
+      .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load artwork for checkout."));
+  }, [searchParams]);
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -61,23 +62,43 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!artwork) return;
     setIsSubmitting(true);
-    const orderId = `ORD-${Date.now()}`;
+    setStatusMessage("");
 
-    saveOrder({
-      id: orderId,
-      artworkId: artwork.id,
-      artworkTitle: artwork.title,
-      amount: artwork.price,
-      customer: formData,
-      paymentMethod,
-      status: "pending_payment",
-      createdAt: new Date().toISOString(),
-    });
-
-    setIsSubmitting(false);
-    router.push(`/order-confirmation?order=${orderId}`);
+    try {
+      const order = await createOrder({
+        artworkId: artwork.id,
+        deliveryAddress: formData,
+        notes: formData.notes,
+        paymentMethod,
+      });
+      router.push(`/order-confirmation?order=${encodeURIComponent(order.id)}`);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "Could not place order.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (statusMessage && !artwork) {
+    return (
+      <main className="min-h-screen bg-gray-50 px-4 py-24">
+        <div className="mx-auto max-w-2xl rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">
+          {statusMessage}
+          <Link href="/marketplace" className="mt-4 block font-medium text-teal-700">Back to marketplace</Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (!artwork) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+      </main>
+    );
+  }
 
   const paymentMethods = [
     {
@@ -179,6 +200,11 @@ export default function CheckoutPage() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-8">
+        {statusMessage && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {statusMessage}
+          </div>
+        )}
         <div className="grid lg:grid-cols-5 gap-8">
           {/* Form Section */}
           <div className="lg:col-span-3">
@@ -562,7 +588,7 @@ export default function CheckoutPage() {
                   <h3 className="font-medium text-gray-900 truncate">
                     {artwork.title}
                   </h3>
-                  <p className="text-sm text-gray-500">by {artwork.artist}</p>
+                  <p className="text-sm text-gray-500">by {artwork.artist?.name ?? "RenewCanvas Africa"}</p>
                   <p className="text-sm text-gray-400">{artwork.dimensions}</p>
                 </div>
               </div>
@@ -573,10 +599,10 @@ export default function CheckoutPage() {
                 <div className="flex flex-wrap gap-1">
                   {artwork.materials.map((material) => (
                     <span
-                      key={material}
+                      key={material.id}
                       className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs"
                     >
-                      {material}
+                      {material.material}
                     </span>
                   ))}
                 </div>
@@ -587,7 +613,7 @@ export default function CheckoutPage() {
                 <div className="flex items-center gap-2 text-green-600">
                   <Recycle className="w-4 h-4" />
                   <span className="text-sm font-medium">
-                    {artwork.kgDiverted} kg waste diverted
+                    {artwork.kgDiverted.toFixed(1)} kg waste diverted
                   </span>
                 </div>
               </div>
@@ -597,7 +623,7 @@ export default function CheckoutPage() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500">Artwork Price</span>
                   <span className="text-gray-900">
-                    {artwork.price.toLocaleString()} RWF
+                    {artwork.priceAmount.toLocaleString()} RWF
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
@@ -611,7 +637,7 @@ export default function CheckoutPage() {
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-gray-900">Total</span>
                   <span className="text-xl font-bold text-gray-900">
-                    {artwork.price.toLocaleString()} RWF
+                    {artwork.priceAmount.toLocaleString()} RWF
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">

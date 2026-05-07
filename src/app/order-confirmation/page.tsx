@@ -1,347 +1,194 @@
 "use client";
 
 import Link from "next/link";
-import {
-  CheckCircle,
-  Recycle,
-  ArrowRight,
-  Copy,
-  Mail,
-  Phone,
-  Clock,
-  Package,
-  Smartphone,
-  Building2,
-  CreditCard,
-  Home,
-  ShoppingBag,
-  MessageCircle,
-} from "lucide-react";
-import { useState } from "react";
+import { ArrowRight, Building2, CheckCircle, Copy, CreditCard, Home, Mail, Package, Phone, Recycle, ShoppingBag, Smartphone } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { readOrder, type FrontendOrder } from "@/lib/frontend/orders-api";
 
-// Mock order data - will come from API
-const orderData = {
-  orderId: "ORD-1714579200000",
-  artwork: {
-    title: "Ocean Waves",
-    artist: "Patrick Habimana",
-    price: 42000,
-    kgDiverted: 2.5,
-  },
-  customer: {
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "+250 788 123 456",
-    address: "KG 123 St, Kimironko",
-    city: "Kigali",
-  },
-  paymentMethod: "momo",
-  status: "pending_payment",
-  createdAt: new Date().toISOString(),
-};
-
-const paymentInstructions = {
-  momo: {
-    title: "MTN MoMo Phone Approval",
-    icon: Smartphone,
-    steps: [
-      "Keep your MTN Mobile Money phone nearby",
-      "Open the RenewCanvas Africa payment prompt when it arrives",
-      `Confirm Amount: ${orderData.artwork.price.toLocaleString()} RWF`,
-      `Confirm Reference: ${orderData.orderId}`,
-      "Enter your MoMo PIN on your phone to approve",
-      "Wait for RenewCanvas Africa payment confirmation",
-    ],
-    note: "Payment goes to RenewCanvas Africa. If the phone approval prompt does not arrive, support can provide the fallback USSD path: dial *182*8*1#, select Pay Bill, enter merchant code 123456, and use your order reference.",
-  },
-  bank: {
-    title: "Bank Transfer Details",
-    icon: Building2,
-    steps: [
-      "Bank: Bank of Kigali",
-      "Account Name: RenewCanvas Africa Ltd",
-      "Account Number: 1234567890",
-      `Amount: ${orderData.artwork.price.toLocaleString()} RWF`,
-      `Reference: ${orderData.orderId}`,
-    ],
-    note: "Please complete the transfer within 48 hours. Send proof of payment to payments@renewcanvas.africa",
-  },
-  card: {
-    title: "Card Payment",
-    icon: CreditCard,
-    steps: [
-      "Click the payment link sent to your email",
-      "Enter your card details securely",
-      "Complete the 3D Secure verification",
-      "Receive instant confirmation",
-    ],
-    note: "A secure RenewCanvas Africa payment link has been sent to your email address.",
-  },
+const instructionMeta = {
+  momo: { title: "MTN MoMo Phone Approval", icon: Smartphone },
+  bank: { title: "Bank Transfer Details", icon: Building2 },
+  card: { title: "Card Payment", icon: CreditCard },
 };
 
 export default function OrderConfirmationPage() {
+  const searchParams = useSearchParams();
+  const [order, setOrder] = useState<FrontendOrder | null>(null);
+  const [statusMessage, setStatusMessage] = useState("");
   const [copied, setCopied] = useState(false);
-  const instructions =
-    paymentInstructions[
-      orderData.paymentMethod as keyof typeof paymentInstructions
-    ];
+
+  useEffect(() => {
+    const orderId = searchParams.get("order");
+    if (!orderId) {
+      setStatusMessage("Order reference is missing.");
+      return;
+    }
+    readOrder(orderId)
+      .then(setOrder)
+      .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load order."));
+  }, [searchParams]);
+
+  const item = order?.items[0];
+  const instructions = useMemo(() => {
+    if (!order || !item) return null;
+    const meta = instructionMeta[order.paymentMethod as keyof typeof instructionMeta] ?? instructionMeta.momo;
+    const amount = `${order.totalAmount.toLocaleString()} RWF`;
+    const steps =
+      order.paymentMethod === "bank"
+        ? ["Bank: Bank of Kigali", "Account Name: RenewCanvas Africa Ltd", "Account Number: 1234567890", `Amount: ${amount}`, `Reference: ${order.id}`]
+        : order.paymentMethod === "card"
+        ? ["Click the payment link sent to your email", "Enter your card details securely", "Complete the 3D Secure verification", "Receive confirmation from RenewCanvas Africa"]
+        : ["Keep your MTN Mobile Money phone nearby", "Open the RenewCanvas Africa payment prompt when it arrives", `Confirm Amount: ${amount}`, `Confirm Reference: ${order.id}`, "Enter your MoMo PIN to approve"];
+    return {
+      ...meta,
+      steps,
+      note:
+        order.paymentMethod === "bank"
+          ? "Please complete the transfer within 48 hours. Send proof of payment to hello.renewcanvas.africa@gmail.com."
+          : "Payment goes to RenewCanvas Africa. Admins confirm payment and coordinate delivery with the artist.",
+    };
+  }, [order, item]);
 
   const copyOrderId = () => {
-    navigator.clipboard.writeText(orderData.orderId);
+    if (!order) return;
+    navigator.clipboard.writeText(order.id);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  if (statusMessage && !order) {
+    return (
+      <main className="min-h-screen bg-gray-50 px-4 py-24">
+        <div className="mx-auto max-w-2xl rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">
+          {statusMessage}
+          <Link href="/marketplace" className="mt-4 block font-medium text-teal-700">Back to marketplace</Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (!order || !item || !instructions) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+      </main>
+    );
+  }
+
+  const delivery = order.deliveryAddress ?? {};
+  const InstructionsIcon = instructions.icon;
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="border-b border-gray-200 bg-white">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center">
-              <Recycle className="w-4 h-4 text-white" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-700">
+              <Recycle className="h-4 w-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
-            </span>
+            <span className="font-bold text-gray-900">Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span></span>
           </Link>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Success Message */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
-            <CheckCircle className="w-10 h-10 text-green-600" />
+      <main className="mx-auto max-w-4xl px-4 py-8">
+        <div className="mb-8 text-center">
+          <div className="mb-4 inline-flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+            <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            Order Placed Successfully!
-          </h1>
-          <p className="text-gray-600 max-w-lg mx-auto">
-            Thank you for your order. Please complete the payment to secure your
-            artwork. RenewCanvas Africa receives the payment and manages the
-            order between you and the artist.
-          </p>
+          <h1 className="mb-2 text-3xl font-bold text-gray-900">Order Placed Successfully</h1>
+          <p className="mx-auto max-w-lg text-gray-600">Complete payment to secure your artwork. RenewCanvas Africa receives payment and manages delivery communication.</p>
         </div>
 
-        {/* Order ID */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Order ID</p>
+              <p className="mb-1 text-sm text-gray-500">Order ID</p>
               <div className="flex items-center gap-2">
-                <p className="text-lg font-mono font-bold text-gray-900">
-                  {orderData.orderId}
-                </p>
-                <button
-                  onClick={copyOrderId}
-                  className="p-1.5 text-gray-400 hover:text-teal-600 transition-colors"
-                  title="Copy order ID"
-                >
-                  {copied ? (
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
+                <p className="font-mono text-lg font-bold text-gray-900">{order.id}</p>
+                <button onClick={copyOrderId} className="p-1.5 text-gray-400 hover:text-teal-600" title="Copy order ID">
+                  {copied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                 </button>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-lg">
-              <Clock className="w-5 h-5" />
-              <span className="font-medium">Awaiting Payment</span>
-            </div>
+            <div className="rounded-lg bg-amber-50 px-4 py-2 font-medium text-amber-700">Awaiting Payment</div>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Payment Instructions */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
-                <instructions.icon className="w-6 h-6 text-teal-600" />
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="rounded-xl border border-gray-200 bg-white p-6">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-teal-100">
+                <InstructionsIcon className="h-6 w-6 text-teal-600" />
               </div>
               <div>
-                <h2 className="font-semibold text-gray-900">
-                  {instructions.title}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  Complete payment to RenewCanvas Africa
-                </p>
+                <h2 className="font-semibold text-gray-900">{instructions.title}</h2>
+                <p className="text-sm text-gray-500">Complete payment to RenewCanvas Africa</p>
               </div>
             </div>
-
-            <div className="space-y-3 mb-6">
+            <div className="mb-6 space-y-3">
               {instructions.steps.map((step, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-teal-50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-medium text-teal-600">
-                      {index + 1}
-                    </span>
-                  </div>
+                <div key={step} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-teal-50 text-xs font-medium text-teal-600">{index + 1}</span>
                   <p className="text-gray-700">{step}</p>
                 </div>
               ))}
             </div>
+            <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700">{instructions.note}</div>
+          </section>
 
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-              <p className="text-sm text-blue-700">{instructions.note}</p>
-            </div>
-          </div>
-
-          {/* Order Details */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="font-semibold text-gray-900 mb-6">Order Details</h2>
-
-            {/* Artwork */}
-            <div className="flex gap-4 pb-4 border-b border-gray-100">
-              <div className="w-16 h-16 bg-gradient-to-br from-teal-50 to-amber-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Package className="w-8 h-8 text-teal-400" />
+          <section className="rounded-xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-6 font-semibold text-gray-900">Order Details</h2>
+            <div className="flex gap-4 border-b border-gray-100 pb-4">
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-teal-50">
+                <Package className="h-8 w-8 text-teal-400" />
               </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900">
-                  {orderData.artwork.title}
-                </h3>
-                <p className="text-sm text-gray-500">
-                  by {orderData.artwork.artist}
-                </p>
-                <p className="font-semibold text-gray-900 mt-1">
-                  {orderData.artwork.price.toLocaleString()} RWF
-                </p>
+              <div>
+                <h3 className="font-medium text-gray-900">{item.title}</h3>
+                <p className="text-sm text-gray-500">by {item.artistName}</p>
+                <p className="mt-1 font-semibold text-gray-900">{item.unitAmount.toLocaleString()} RWF</p>
               </div>
             </div>
-
-            {/* Impact */}
-            <div className="py-4 border-b border-gray-100">
-              <div className="flex items-center gap-2 text-green-600">
-                <Recycle className="w-5 h-5" />
-                <span className="font-medium">
-                  {orderData.artwork.kgDiverted} kg of waste will be diverted
-                </span>
-              </div>
+            <div className="border-b border-gray-100 py-4 text-green-600">
+              <Recycle className="mr-2 inline h-5 w-5" />
+              {item.kgDiverted.toFixed(1)} kg of waste diverted
             </div>
-
-            {/* Delivery Details */}
-            <div className="pt-4">
-              <h3 className="text-sm font-medium text-gray-500 mb-3">
-                Delivery To
-              </h3>
-              <div className="text-sm text-gray-700 space-y-1">
-                <p className="font-medium text-gray-900">
-                  {orderData.customer.name}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span>{orderData.customer.email}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span>{orderData.customer.phone}</span>
-                </div>
-                <p className="text-gray-500 mt-2">
-                  {orderData.customer.address}, {orderData.customer.city}
-                </p>
-              </div>
+            <div className="pt-4 text-sm text-gray-700">
+              <h3 className="mb-3 text-sm font-medium text-gray-500">Delivery To</h3>
+              <p className="font-medium text-gray-900">{String(delivery.fullName ?? "")}</p>
+              <p>{String(delivery.email ?? "")}</p>
+              <p>{String(delivery.phone ?? "")}</p>
+              <p className="mt-2 text-gray-500">{String(delivery.address ?? "")}, {String(delivery.city ?? "")}</p>
             </div>
-          </div>
+          </section>
         </div>
 
-        {/* What Happens Next */}
-        <div className="bg-gradient-to-br from-teal-50 to-amber-50 rounded-xl p-6 mt-6">
-          <h2 className="font-semibold text-gray-900 mb-4">
-            What Happens Next?
-          </h2>
-          <div className="grid sm:grid-cols-3 gap-4">
-            <div className="bg-white/70 rounded-lg p-4">
-              <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center mb-3">
-                <span className="font-bold text-teal-600">1</span>
-              </div>
-              <h3 className="font-medium text-gray-900 mb-1">
-                Complete Payment
-              </h3>
-              <p className="text-sm text-gray-600">
-                Follow the instructions above to pay RenewCanvas Africa
-              </p>
-            </div>
-            <div className="bg-white/70 rounded-lg p-4">
-              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mb-3">
-                <span className="font-bold text-amber-600">2</span>
-              </div>
-              <h3 className="font-medium text-gray-900 mb-1">
-                Order Confirmed
-              </h3>
-              <p className="text-sm text-gray-600">
-                We verify payment, notify the artist, and coordinate delivery
-              </p>
-            </div>
-            <div className="bg-white/70 rounded-lg p-4">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mb-3">
-                <span className="font-bold text-green-600">3</span>
-              </div>
-              <h3 className="font-medium text-gray-900 mb-1">
-                Return Window
-              </h3>
-              <p className="text-sm text-gray-600">
-                After delivery, artist payout is released only if no return
-                request is opened within 48 hours
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Need Help */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mt-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Need Help?</h2>
-          <div className="flex flex-wrap gap-4">
-            <a
-              href="mailto:support@renewcanvas.africa"
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <Mail className="w-4 h-4" />
-              Email Support
-            </a>
-            <a
-              href="https://wa.me/250788000000"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <MessageCircle className="w-4 h-4" />
-              WhatsApp
-            </a>
-            <a
-              href="tel:+250788000000"
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <Phone className="w-4 h-4" />
-              Call Us
-            </a>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 mt-8">
-          <Link
-            href="/dashboard/buyer/orders"
-            className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
-          >
-            <ShoppingBag className="w-5 h-5" />
+        <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+          <Link href="/dashboard/buyer/orders" className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 px-6 py-3 font-medium text-white hover:bg-teal-700">
+            <ShoppingBag className="h-5 w-5" />
             View My Orders
           </Link>
-          <Link
-            href="/marketplace"
-            className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-          >
+          <Link href="/marketplace" className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-200 px-6 py-3 font-medium text-gray-700 hover:bg-gray-50">
             Continue Shopping
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="h-5 w-5" />
           </Link>
-          <Link
-            href="/"
-            className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-          >
-            <Home className="w-5 h-5" />
+          <Link href="/" className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-200 px-6 py-3 font-medium text-gray-700 hover:bg-gray-50">
+            <Home className="h-5 w-5" />
             Back to Home
           </Link>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="mb-4 font-semibold text-gray-900">Need Help?</h2>
+          <a href="mailto:hello.renewcanvas.africa@gmail.com" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-50">
+            <Mail className="h-4 w-4" />
+            Email Support
+          </a>
+          <a href="tel:+250788000000" className="ml-3 inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-50">
+            <Phone className="h-4 w-4" />
+            Call Us
+          </a>
         </div>
       </main>
     </div>

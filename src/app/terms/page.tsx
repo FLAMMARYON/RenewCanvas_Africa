@@ -238,7 +238,7 @@ export default function TermsPage() {
             </p>
             <ul className="list-none text-gray-600 space-y-2 mb-4">
               <li>
-                <strong>Email:</strong> legal@renewcanvas.africa
+                <strong>Email:</strong> hello.renewcanvas.africa@gmail.com
               </li>
               <li>
                 <strong>Phone:</strong> +250 788 000 000

@@ -31,6 +31,17 @@ enum ArtworkStatus {
   archived
 }
 
+enum ArtworkOwnerType {
+  artist
+  renewcanvas
+}
+
+enum MediaUploadStatus {
+  pending
+  uploaded
+  failed
+}
+
 enum OrderStatus {
   pending_payment
   paid
@@ -40,6 +51,37 @@ enum OrderStatus {
   cancelled
   refunded
   failed
+}
+
+enum CommissionRequestStatus {
+  submitted
+  assigned
+  accepted
+  rejected
+  cancelled
+  completed
+}
+
+enum CommissionSizeCategory {
+  small
+  medium
+  large
+  custom
+}
+
+enum VerificationReviewStatus {
+  pending
+  approved
+  rejected
+  more_info_requested
+}
+
+enum VerificationEvidenceType {
+  material_photo
+  process_photo
+  identity_document
+  note
+  other
 }
 
 model User {
@@ -53,12 +95,22 @@ model User {
   updatedAt    DateTime      @updatedAt
 
   artistProfile ArtistProfile?
+  buyerProfile  BuyerProfile?
+  adminProfile  AdminProfile?
+  addresses     Address[]
   artworks      Artwork[]      @relation("ArtistArtworks")
+  wishlistItems WishlistItem[]  @relation("BuyerWishlistItems")
+  pricingRecommendations PricingRecommendation[] @relation("ArtistPricingRecommendations")
+  impactEstimates ImpactEstimate[] @relation("ArtistImpactEstimates")
+  decidedVerificationReviews VerificationReview[] @relation("VerificationDecider")
+  verificationEvidenceUploads VerificationEvidenceAttachment[] @relation("VerificationEvidenceUploader")
   orders        Order[]        @relation("BuyerOrders")
   auditLogs     AuditLog[]     @relation("ActorAuditLogs")
   sessions      AuthSession[]
   passwordResetTokens PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  buyerCommissionRequests CommissionRequest[] @relation("BuyerCommissionRequests")
+  assignedCommissionRequests CommissionRequest[] @relation("AssignedCommissionRequests")
 }
 
 model AuthSession {
@@ -109,16 +161,83 @@ model EmailVerificationToken {
 model ArtistProfile {
   id                 String   @id @default(cuid())
   userId             String   @unique
+  firstName          String?
+  lastName           String?
+  phone              String?
   bio                String?
   location           String?
   website            String?
+  instagram          String?
+  twitter            String?
+  facebook           String?
   verificationStatus String   @default("pending")
   specialties        String[] @default([])
+  techniques         String[] @default([])
   preferredMaterials String[] @default([])
+  yearsExperience    Int?
+  payoutMethod       String?
+  payoutAccountName  String?
+  payoutAccountNumber String?
+  payoutBankName     String?
+  avatarUrl          String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BuyerProfile {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  firstName            String?
+  lastName             String?
+  phone                String?
+  avatarUrl            String?
+  notifyOrderUpdates   Boolean  @default(true)
+  notifyPromotions     Boolean  @default(false)
+  notifyNewArtworks    Boolean  @default(true)
+  notifyArtistUpdates  Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AdminProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  firstName String?
+  lastName  String?
+  phone     String?
+  title     String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Address {
+  id            String   @id @default(cuid())
+  userId        String
+  seedKey       String?  @unique
+  label         String
+  recipientName String?
+  phone         String?
+  line1         String
+  line2         String?
+  city          String
+  region        String?
+  postalCode    String?
+  country       String
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([userId, label])
 }
 
 model Artwork {
@@ -128,17 +247,48 @@ model Artwork {
   title       String
   description String
   category    String
+  ownerType   ArtworkOwnerType @default(artist)
   status      ArtworkStatus @default(draft)
   priceCents  Int
   currency    String        @default("RWF")
+  dimensions  String?
   kgDiverted  Decimal       @default(0)
+  viewCount   Int           @default(0)
+  favouriteCount Int        @default(0)
+  rejectionReason String?
+  submittedAt DateTime?
+  reviewedAt  DateTime?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
   artist    User              @relation("ArtistArtworks", fields: [artistId], references: [id], onDelete: Restrict)
   images    ArtworkImage[]
   materials ArtworkMaterial[]
+  wishlistItems WishlistItem[]
+  pricingRecommendations PricingRecommendation[]
+  impactEstimates ImpactEstimate[]
+  verificationReview VerificationReview?
+  verificationEvidence VerificationEvidenceAttachment[]
   orderItems OrderItem[]
+
+  @@index([artistId])
+  @@index([ownerType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  buyerId   String
+  artworkId String
+  createdAt DateTime @default(now())
+
+  buyer   User    @relation("BuyerWishlistItems", fields: [buyerId], references: [id], onDelete: Cascade)
+  artwork Artwork @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+
+  @@unique([buyerId, artworkId])
+  @@index([buyerId])
+  @@index([artworkId])
 }
 
 model ArtworkImage {
@@ -146,10 +296,15 @@ model ArtworkImage {
   artworkId String
   url       String
   altText   String
+  storageProvider String?
+  storageKey String?
+  uploadStatus MediaUploadStatus @default(uploaded)
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
 
   artwork Artwork @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+
+  @@index([artworkId])
 }
 
 model ArtworkMaterial {
@@ -164,33 +319,165 @@ model ArtworkMaterial {
   artwork Artwork @relation(fields: [artworkId], references: [id], onDelete: Cascade)
 }
 
+model PricingRecommendation {
+  id                 String   @id @default(cuid())
+  artworkId          String
+  artistId           String
+  methodologyVersion String
+  currency           String   @default("RWF")
+  minCents           Int
+  maxCents           Int
+  suggestedCents     Int
+  confidence         String
+  explanation        String
+  factors            Json
+  input              Json
+  createdAt          DateTime @default(now())
+
+  artwork Artwork @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  artist  User    @relation("ArtistPricingRecommendations", fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@index([artworkId])
+  @@index([artistId])
+  @@index([createdAt])
+}
+
+model ImpactEstimate {
+  id                             String   @id @default(cuid())
+  artworkId                      String
+  artistId                       String
+  methodologyVersion             String
+  kgDiverted                     Decimal
+  co2eAvoidedKg                  Decimal
+  landfillVolumeAvoidedLitres    Decimal
+  confidence                     String
+  assumptions                    String[] @default([])
+  input                          Json
+  result                         Json
+  createdAt                      DateTime @default(now())
+
+  artwork Artwork @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  artist  User    @relation("ArtistImpactEstimates", fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@index([artworkId])
+  @@index([artistId])
+  @@index([createdAt])
+}
+
+model VerificationReview {
+  id                String                   @id @default(cuid())
+  artworkId         String                   @unique
+  status            VerificationReviewStatus @default(pending)
+  recommendedAction String?
+  reviewFlags       String[]                 @default([])
+  adminNotes        String?
+  artistMessage     String?
+  decidedById       String?
+  decidedAt         DateTime?
+  requestedInfoAt   DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  artwork   Artwork @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  decidedBy User?   @relation("VerificationDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  evidence  VerificationEvidenceAttachment[]
+
+  @@index([status])
+  @@index([decidedById])
+  @@index([createdAt])
+}
+
+model VerificationEvidenceAttachment {
+  id         String                   @id @default(cuid())
+  reviewId   String
+  artworkId  String
+  uploaderId String
+  type       VerificationEvidenceType @default(other)
+  url        String
+  label      String
+  notes      String?
+  createdAt  DateTime                 @default(now())
+
+  review   VerificationReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  artwork  Artwork            @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  uploader User               @relation("VerificationEvidenceUploader", fields: [uploaderId], references: [id], onDelete: Restrict)
+
+  @@index([reviewId])
+  @@index([artworkId])
+  @@index([uploaderId])
+  @@index([createdAt])
+}
+
 model Order {
   id              String      @id @default(cuid())
   buyerId         String
   status          OrderStatus @default(pending_payment)
   currency        String      @default("RWF")
+  paymentMethod   String      @default("momo")
   subtotalCents   Int
   deliveryCents   Int         @default(0)
   totalCents      Int
   deliveryAddress Json
+  notes           String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
   buyer User        @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Restrict)
   items OrderItem[]
+
+  @@index([buyerId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model OrderItem {
   id         String   @id @default(cuid())
   orderId    String
   artworkId  String
+  artistId   String
+  artistName String
   title      String
+  artworkSlug String?
+  ownerType  ArtworkOwnerType @default(artist)
+  kgDiverted Decimal @default(0)
   unitCents  Int
   quantity   Int      @default(1)
   createdAt  DateTime @default(now())
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   artwork Artwork @relation(fields: [artworkId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([artworkId])
+  @@index([artistId])
+}
+
+model CommissionRequest {
+  id                 String                  @id @default(cuid())
+  buyerId            String
+  assignedArtistId   String?
+  title              String
+  description        String
+  preferredMaterials String?
+  budgetCents        Int
+  currency           String                  @default("RWF")
+  sizeCategory       CommissionSizeCategory
+  dimensions         String?
+  status             CommissionRequestStatus @default(submitted)
+  adminNotes         String?
+  artistResponseNote String?
+  assignedAt         DateTime?
+  respondedAt        DateTime?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  buyer          User  @relation("BuyerCommissionRequests", fields: [buyerId], references: [id], onDelete: Restrict)
+  assignedArtist User? @relation("AssignedCommissionRequests", fields: [assignedArtistId], references: [id], onDelete: SetNull)
+
+  @@index([buyerId])
+  @@index([assignedArtistId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model AuditLog {

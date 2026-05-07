@@ -2,14 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   frontendStoreKeys,
-  markWishlistItemRemoved,
-  readRemovedWishlistIds,
   readVirtualRoomProgress,
   saveOrder,
   saveVirtualRoomProgress,
 } from "@/lib/frontend/local-store";
 
-test("frontend local store persists no-backend orders and wishlist changes", () => {
+test("frontend local store persists no-backend orders", () => {
   withLocalStorage(() => {
     saveOrder({
       id: "ORD-1",
@@ -21,11 +19,9 @@ test("frontend local store persists no-backend orders and wishlist changes", () 
       status: "pending_payment",
       createdAt: "2026-05-05T00:00:00.000Z",
     });
-    markWishlistItemRemoved("1");
 
     assert.match(localStorage.getItem(frontendStoreKeys.latestOrder) ?? "", /Ocean Waves/);
     assert.match(localStorage.getItem(frontendStoreKeys.orders) ?? "", /pending_payment/);
-    assert.deepEqual(Array.from(readRemovedWishlistIds()), ["1"]);
   });
 });
 

@@ -43,6 +43,7 @@ const navigationItems = {
   buyer: [
     { name: "Dashboard", href: "/dashboard/buyer", icon: LayoutDashboard },
     { name: "My Orders", href: "/dashboard/buyer/orders", icon: ShoppingBag },
+    { name: "Commissions", href: "/dashboard/buyer/commissions", icon: FileText },
     { name: "Wishlist", href: "/dashboard/buyer/wishlist", icon: Heart },
     { name: "Profile", href: "/dashboard/buyer/profile", icon: User },
     { name: "Settings", href: "/dashboard/buyer/settings", icon: Settings },
@@ -56,6 +57,7 @@ const navigationItems = {
       icon: Plus,
     },
     { name: "Orders", href: "/dashboard/artist/orders", icon: ShoppingBag },
+    { name: "Commissions", href: "/dashboard/artist/commissions", icon: FileText },
     { name: "Analytics", href: "/dashboard/artist/analytics", icon: BarChart3 },
     { name: "Profile", href: "/dashboard/artist/profile", icon: User },
     { name: "Settings", href: "/dashboard/artist/settings", icon: Settings },
@@ -89,6 +91,8 @@ const navigationItems = {
       icon: BarChart3,
     },
     { name: "Orders", href: "/dashboard/admin/orders", icon: Package },
+    { name: "Commissions", href: "/dashboard/admin/commissions", icon: FileText },
+    { name: "Profile", href: "/dashboard/admin/profile", icon: User },
     { name: "Settings", href: "/dashboard/admin/settings", icon: Settings },
   ],
 };

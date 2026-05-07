@@ -298,7 +298,7 @@ export default function FAQPage() {
               Contact Support
             </Link>
             <a
-              href="mailto:support@renewcanvas.africa"
+              href="mailto:hello.renewcanvas.africa@gmail.com"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-teal-600 border border-teal-600 rounded-lg font-medium hover:bg-teal-50 transition-colors"
             >
               <Mail className="w-5 h-5" />

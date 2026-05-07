@@ -24,33 +24,32 @@ import {
   CreditCard,
   Shield,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { saveArtistProfileDraft } from "@/lib/frontend/local-store";
+import { readProfile, saveProfile } from "@/lib/frontend/profile-api";
 
-// Mock profile data
 const initialProfile = {
-  firstName: "Marie",
-  lastName: "Uwimana",
-  email: "marie.uwimana@email.com",
-  phone: "+250 788 123 456",
-  bio: "I am a passionate artist from Kigali, Rwanda, dedicated to transforming waste materials into beautiful, meaningful art pieces. My work explores the intersection of environmental sustainability and African cultural heritage.",
-  location: "Kigali, Rwanda",
-  website: "www.marieuwimana.art",
-  instagram: "@marieuwimana_art",
-  twitter: "@marieuwimana",
-  facebook: "marieuwimana.art",
-  specialties: ["Sculpture", "Mixed Media", "Wall Art"],
-  techniques: ["Weaving", "Assemblage", "Mosaic"],
-  preferredMaterials: ["PET Bottles", "Fabric Scraps", "Metal Cans"],
-  yearsExperience: 5,
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  bio: "",
+  location: "",
+  website: "",
+  instagram: "",
+  twitter: "",
+  facebook: "",
+  specialties: [] as string[],
+  techniques: [] as string[],
+  preferredMaterials: [] as string[],
+  yearsExperience: 0,
   payoutMethod: "MTN Mobile Money",
-  payoutAccountName: "Marie Uwimana",
-  payoutAccountNumber: "+250 788 123 456",
+  payoutAccountName: "",
+  payoutAccountNumber: "",
   payoutBankName: "",
   isVerified: false,
-  verificationStatus: "pending",
-  completionPercentage: 75,
+  verificationStatus: "not_submitted",
+  completionPercentage: 0,
 };
 
 const availableSpecialties = [
@@ -88,11 +87,91 @@ const availableMaterials = [
   "Rubber/Tires",
 ];
 
+function stringValue(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function numberValue(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function stringArrayValue(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function completionPercentage(profile: typeof initialProfile): number {
+  const fields = [
+    profile.firstName,
+    profile.lastName,
+    profile.phone,
+    profile.bio,
+    profile.location,
+    profile.website,
+    profile.specialties.length ? "specialties" : "",
+    profile.techniques.length ? "techniques" : "",
+    profile.preferredMaterials.length ? "materials" : "",
+    profile.payoutMethod,
+    profile.payoutAccountName,
+    profile.payoutAccountNumber,
+  ];
+  return Math.round((fields.filter(Boolean).length / fields.length) * 100);
+}
+
 export default function ArtistProfilePage() {
   const [profile, setProfile] = useState(initialProfile);
   const [activeTab, setActiveTab] = useState<"profile" | "portfolio" | "verification" | "payout">("profile");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadProfile() {
+      try {
+        const payload = await readProfile();
+        if (!isCurrent) return;
+        const profileData = payload.profile;
+        const nextProfile = {
+          firstName: stringValue(profileData.firstName),
+          lastName: stringValue(profileData.lastName),
+          email: payload.user.email,
+          phone: stringValue(profileData.phone),
+          bio: stringValue(profileData.bio),
+          location: stringValue(profileData.location),
+          website: stringValue(profileData.website),
+          instagram: stringValue(profileData.instagram),
+          twitter: stringValue(profileData.twitter),
+          facebook: stringValue(profileData.facebook),
+          specialties: stringArrayValue(profileData.specialties),
+          techniques: stringArrayValue(profileData.techniques),
+          preferredMaterials: stringArrayValue(profileData.preferredMaterials),
+          yearsExperience: numberValue(profileData.yearsExperience),
+          payoutMethod: stringValue(profileData.payoutMethod) || "MTN Mobile Money",
+          payoutAccountName: stringValue(profileData.payoutAccountName),
+          payoutAccountNumber: stringValue(profileData.payoutAccountNumber),
+          payoutBankName: stringValue(profileData.payoutBankName),
+          isVerified: stringValue(profileData.verificationStatus) === "approved",
+          verificationStatus: stringValue(profileData.verificationStatus) || "not_submitted",
+          completionPercentage: 0,
+        };
+        setProfile({
+          ...nextProfile,
+          completionPercentage: completionPercentage(nextProfile),
+        });
+      } catch (error) {
+        if (isCurrent) {
+          setStatusMessage(error instanceof Error ? error.message : "Could not load profile.");
+        }
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
 
   const handleInputChange = (field: string, value: string | number) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
@@ -111,10 +190,39 @@ export default function ArtistProfilePage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    saveArtistProfileDraft({ savedAt: new Date().toISOString(), values: profile });
-    setIsSaving(false);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    setStatusMessage("");
+
+    try {
+      await saveProfile({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        phone: profile.phone,
+        bio: profile.bio,
+        location: profile.location,
+        website: profile.website,
+        instagram: profile.instagram,
+        twitter: profile.twitter,
+        facebook: profile.facebook,
+        specialties: profile.specialties,
+        techniques: profile.techniques,
+        preferredMaterials: profile.preferredMaterials,
+        yearsExperience: profile.yearsExperience,
+        payoutMethod: profile.payoutMethod,
+        payoutAccountName: profile.payoutAccountName,
+        payoutAccountNumber: profile.payoutAccountNumber,
+        payoutBankName: profile.payoutBankName,
+      });
+      setProfile((current) => ({
+        ...current,
+        completionPercentage: completionPercentage(current),
+      }));
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "Could not save profile.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const tabs = [
@@ -187,6 +295,12 @@ export default function ArtistProfilePage() {
             </button>
           </div>
         </div>
+
+        {statusMessage && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {statusMessage}
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
@@ -276,10 +390,8 @@ export default function ArtistProfilePage() {
                       <input
                         type="email"
                         value={profile.email}
-                        onChange={(e) =>
-                          handleInputChange("email", e.target.value)
-                        }
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        readOnly
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
                       />
                     </div>
                     <div>

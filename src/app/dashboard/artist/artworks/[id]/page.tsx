@@ -1,583 +1,264 @@
 "use client";
 
 import DashboardLayout from "@/components/DashboardLayout";
-import {
-  ArrowLeft,
-  Save,
-  Trash2,
-  Image as ImageIcon,
-  Plus,
-  X,
-  Recycle,
-  Sparkles,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  XCircle,
-  Eye,
-  Heart,
-  Package,
-} from "lucide-react";
+import { deleteArtwork, readArtwork, updateArtwork, type FrontendArtwork } from "@/lib/frontend/artworks-api";
+import { listVerificationItems, submitVerificationEvidence, type VerificationItem } from "@/lib/frontend/verification-api";
+import { AlertCircle, ArrowLeft, CheckCircle, Plus, Recycle, Save, Trash2, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-// Mock artwork data - will come from API
-const mockArtwork = {
-  id: "1",
-  title: "Ocean Waves",
-  description:
-    "A beautiful sculpture representing the power and serenity of ocean waves, created entirely from recycled PET bottles collected from Kigali's streets. Each wave is hand-crafted to capture the dynamic movement of water.",
-  category: "sculpture",
-  price: 42000,
-  dimensions: "45cm x 30cm x 20cm",
-  weight: 2.5,
-  status: "approved",
-  views: 245,
-  favourites: 18,
-  createdAt: "2026-04-10",
-  images: [
-    { id: "1", url: "/placeholder1.jpg", isPrimary: true },
-    { id: "2", url: "/placeholder2.jpg", isPrimary: false },
-    { id: "3", url: "/placeholder3.jpg", isPrimary: false },
-  ],
-  materials: [
-    { type: "PET Bottles", weight: 1.5 },
-    { type: "Fabric Scraps", weight: 1.0 },
-  ],
-  totalKgDiverted: 2.5,
-};
+const categories = ["Wall Art", "Sculpture", "Home Decor", "Jewelry", "Functional Art", "Mixed Media", "Installation", "Other"];
+const materialTypes = ["PET bottles", "Bottle caps", "Cardboard", "Paper", "Fabric scraps", "Aluminium cans", "Glass", "Electronic waste", "Plastic bags", "Metal scraps", "Other"];
 
-const categories = [
-  { value: "sculpture", label: "Sculpture" },
-  { value: "wall-art", label: "Wall Art" },
-  { value: "jewelry", label: "Jewelry" },
-  { value: "home-decor", label: "Home Decor" },
-  { value: "fashion", label: "Fashion & Accessories" },
-  { value: "functional", label: "Functional Art" },
-  { value: "mixed-media", label: "Mixed Media" },
-];
-
-const materialTypes = [
-  "PET Bottles",
-  "Fabric Scraps",
-  "Metal Cans",
-  "Bottle Caps",
-  "Cardboard",
-  "Glass",
-  "Electronic Waste",
-  "Plastic Bags",
-  "Paper",
-  "Rubber/Tires",
-  "Wood Scraps",
-  "Other",
-];
-
-const statusConfig = {
-  pending: {
-    label: "Pending Review",
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
-    borderColor: "border-amber-200",
-    icon: Clock,
-  },
-  approved: {
-    label: "Approved & Live",
-    color: "text-green-600",
-    bgColor: "bg-green-50",
-    borderColor: "border-green-200",
-    icon: CheckCircle,
-  },
-  rejected: {
-    label: "Rejected",
-    color: "text-red-600",
-    bgColor: "bg-red-50",
-    borderColor: "border-red-200",
-    icon: XCircle,
-  },
-  sold: {
-    label: "Sold",
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
-    borderColor: "border-purple-200",
-    icon: Package,
-  },
-};
+type EditableMaterial = { material: string; weightKg: number; source: string };
 
 export default function EditArtworkPage() {
-  const params = useParams();
-  const [artwork, setArtwork] = useState(mockArtwork);
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const [artwork, setArtwork] = useState<FrontendArtwork | null>(null);
+  const [materials, setMaterials] = useState<EditableMaterial[]>([]);
+  const [verificationRequest, setVerificationRequest] = useState<VerificationItem | null>(null);
+  const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [evidenceLabel, setEvidenceLabel] = useState("");
+  const [evidenceNotes, setEvidenceNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
 
-  const status = statusConfig[artwork.status as keyof typeof statusConfig];
-  const StatusIcon = status.icon;
+  useEffect(() => {
+    readArtwork(params.id)
+      .then((loaded) => {
+        setArtwork(loaded);
+        setMaterials(loaded.materials.map((material) => ({
+          material: material.material,
+          weightKg: material.weightKg,
+          source: material.source ?? "",
+        })));
+      })
+      .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load artwork."));
+    listVerificationItems()
+      .then((items) => setVerificationRequest(items.find((item) => item.artworkId === params.id) ?? null))
+      .catch(() => setVerificationRequest(null));
+  }, [params.id]);
 
-  const handleInputChange = (field: string, value: string | number) => {
-    setArtwork((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof FrontendArtwork, value: string | number) => {
+    setArtwork((current) => (current ? { ...current, [field]: value } : current));
   };
 
-  const handleMaterialChange = (index: number, field: string, value: string | number) => {
-    setArtwork((prev) => ({
-      ...prev,
-      materials: prev.materials.map((m, i) =>
-        i === index ? { ...m, [field]: value } : m
-      ),
-    }));
-  };
-
-  const addMaterial = () => {
-    setArtwork((prev) => ({
-      ...prev,
-      materials: [...prev.materials, { type: "", weight: 0 }],
-    }));
-  };
-
-  const removeMaterial = (index: number) => {
-    setArtwork((prev) => ({
-      ...prev,
-      materials: prev.materials.filter((_, i) => i !== index),
-    }));
+  const handleMaterialChange = (index: number, field: keyof EditableMaterial, value: string | number) => {
+    setMaterials((current) =>
+      current.map((material, itemIndex) => (itemIndex === index ? { ...material, [field]: value } : material))
+    );
   };
 
   const handleSave = async () => {
+    if (!artwork) return;
     setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSaving(false);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    setStatusMessage("");
+    try {
+      const saved = await updateArtwork(artwork.id, {
+        title: artwork.title,
+        description: artwork.description,
+        category: artwork.category,
+        dimensions: artwork.dimensions ?? "",
+        priceAmount: artwork.priceAmount,
+        images: artwork.images.map((image) => ({ url: image.url, altText: image.altText })),
+        materials,
+      });
+      setArtwork(saved);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "Could not save artwork.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = async () => {
-    // Would call API to delete
-    setShowDeleteModal(false);
-    // Redirect to artworks list
+    if (!artwork) return;
+    await deleteArtwork(artwork.id);
+    router.push("/dashboard/artist/artworks");
   };
 
-  const totalWeight = artwork.materials.reduce((sum, m) => sum + m.weight, 0);
+  const handleEvidenceSubmit = async () => {
+    if (!artwork) return;
+    setStatusMessage("");
+    try {
+      await submitVerificationEvidence(artwork.id, {
+        type: "material_photo",
+        url: evidenceUrl,
+        label: evidenceLabel,
+        notes: evidenceNotes,
+      });
+      setVerificationRequest(null);
+      setEvidenceUrl("");
+      setEvidenceLabel("");
+      setEvidenceNotes("");
+      setStatusMessage("Verification evidence submitted for admin review.");
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "Could not submit verification evidence.");
+    }
+  };
+
+  if (!artwork) {
+    return (
+      <DashboardLayout role="artist" userName="Marie Uwimana">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {statusMessage || "Loading artwork..."}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const totalWeight = materials.reduce((sum, material) => sum + Number(material.weightKg || 0), 0);
 
   return (
     <DashboardLayout role="artist" userName="Marie Uwimana">
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard/artist/artworks"
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
+            <Link href="/dashboard/artist/artworks" className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+              <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Edit Artwork</h1>
-              <p className="text-gray-500">Update your artwork listing</p>
+              <p className="text-gray-500">Changes resubmit artist-owned artwork for admin review.</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
+            <button onClick={handleDelete} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2.5 text-red-600 hover:bg-red-50">
+              <Trash2 className="h-4 w-4" />
               Delete
             </button>
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
-            >
-              {isSaving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Saving...
-                </>
-              ) : saveSuccess ? (
-                <>
-                  <CheckCircle className="w-4 h-4" />
-                  Saved!
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  Save Changes
-                </>
-              )}
+            <button onClick={handleSave} disabled={isSaving} className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-5 py-2.5 text-white hover:bg-teal-700 disabled:opacity-50">
+              {saveSuccess ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+              {isSaving ? "Saving..." : saveSuccess ? "Saved!" : "Save Changes"}
             </button>
           </div>
         </div>
 
-        {/* Status Banner */}
-        <div
-          className={`p-4 rounded-xl border ${status.bgColor} ${status.borderColor}`}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <StatusIcon className={`w-5 h-5 ${status.color}`} />
-              <span className={`font-medium ${status.color}`}>
-                {status.label}
-              </span>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <span className="flex items-center gap-1">
-                <Eye className="w-4 h-4" />
-                {artwork.views} views
-              </span>
-              <span className="flex items-center gap-1">
-                <Heart className="w-4 h-4" />
-                {artwork.favourites} favourites
-              </span>
-            </div>
+        {statusMessage && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{statusMessage}</div>
+        )}
+
+        {artwork.rejectionReason && (
+          <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+            <AlertCircle className="mt-0.5 h-5 w-5" />
+            <span>{artwork.rejectionReason}</span>
           </div>
-        </div>
+        )}
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Basic Info */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6">
-              <h2 className="font-semibold text-gray-900 mb-4">
-                Basic Information
-              </h2>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <section className="rounded-xl border border-gray-100 bg-white p-6">
+              <h2 className="mb-4 font-semibold text-gray-900">Basic Information</h2>
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Artwork Title *
-                  </label>
-                  <input
-                    type="text"
-                    value={artwork.title}
-                    onChange={(e) => handleInputChange("title", e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description *
-                  </label>
-                  <textarea
-                    value={artwork.description}
-                    onChange={(e) =>
-                      handleInputChange("description", e.target.value)
-                    }
-                    rows={4}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {artwork.description.length}/1000 characters
-                  </p>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Category *
-                    </label>
-                    <select
-                      value={artwork.category}
-                      onChange={(e) =>
-                        handleInputChange("category", e.target.value)
-                      }
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
-                    >
-                      {categories.map((cat) => (
-                        <option key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Dimensions
-                    </label>
-                    <input
-                      type="text"
-                      value={artwork.dimensions}
-                      onChange={(e) =>
-                        handleInputChange("dimensions", e.target.value)
-                      }
-                      placeholder="e.g., 45cm x 30cm x 20cm"
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    />
-                  </div>
+                <input value={artwork.title} onChange={(event) => handleInputChange("title", event.target.value)} className="w-full rounded-lg border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                <textarea value={artwork.description} onChange={(event) => handleInputChange("description", event.target.value)} rows={5} className="w-full rounded-lg border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <select value={artwork.category} onChange={(event) => handleInputChange("category", event.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+                  </select>
+                  <input value={artwork.dimensions ?? ""} onChange={(event) => handleInputChange("dimensions", event.target.value)} placeholder="Dimensions" className="rounded-lg border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500" />
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Images */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6">
-              <h2 className="font-semibold text-gray-900 mb-4">
-                Artwork Images
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
-                {artwork.images.map((image, index) => (
-                  <div
-                    key={image.id}
-                    className={`relative aspect-square bg-gradient-to-br from-teal-100 to-amber-100 rounded-lg overflow-hidden group ${
-                      image.isPrimary ? "ring-2 ring-teal-500" : ""
-                    }`}
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <ImageIcon className="w-12 h-12 text-teal-300" />
-                    </div>
-                    {image.isPrimary && (
-                      <div className="absolute top-2 left-2 px-2 py-1 bg-teal-600 text-white text-xs rounded font-medium">
-                        Primary
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      {!image.isPrimary && (
-                        <button className="px-3 py-1.5 bg-white text-gray-700 text-sm rounded hover:bg-gray-100">
-                          Set Primary
-                        </button>
-                      )}
-                      <button className="p-2 bg-red-500 rounded-full text-white hover:bg-red-600">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {artwork.images.length < 5 && (
-                  <button className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-teal-500 hover:text-teal-500 transition-colors">
-                    <Plus className="w-8 h-8 mb-1" />
-                    <span className="text-sm">Add</span>
-                  </button>
-                )}
-              </div>
-              <p className="text-sm text-gray-500">
-                Upload up to 5 high-quality images. First image will be the
-                primary display image.
-              </p>
-            </div>
-
-            {/* Materials */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-                    <Recycle className="w-5 h-5 text-green-600" />
-                    Recycled Materials
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    Document the materials used in this artwork
-                  </p>
-                </div>
-                <button
-                  onClick={addMaterial}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
+            <section className="rounded-xl border border-gray-100 bg-white p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="flex items-center gap-2 font-semibold text-gray-900">
+                  <Recycle className="h-5 w-5 text-green-600" />
+                  Recycled Materials
+                </h2>
+                <button onClick={() => setMaterials((current) => [...current, { material: "", weightKg: 0, source: "" }])} className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm text-teal-600 hover:bg-teal-50">
+                  <Plus className="h-4 w-4" />
                   Add Material
                 </button>
               </div>
               <div className="space-y-3">
-                {artwork.materials.map((material, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
-                        Material Type
-                      </label>
-                      <select
-                        value={material.type}
-                        onChange={(e) =>
-                          handleMaterialChange(index, "type", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white text-sm"
-                      >
-                        <option value="">Select material...</option>
-                        {materialTypes.map((type) => (
-                          <option key={type} value={type}>
-                            {type}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="w-32">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
-                        Weight (kg)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        value={material.weight}
-                        onChange={(e) =>
-                          handleMaterialChange(
-                            index,
-                            "weight",
-                            parseFloat(e.target.value) || 0
-                          )
-                        }
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
-                      />
-                    </div>
-                    <button
-                      onClick={() => removeMaterial(index)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors mt-5"
-                    >
-                      <X className="w-4 h-4" />
+                {materials.map((material, index) => (
+                  <div key={index} className="grid gap-3 rounded-lg bg-gray-50 p-4 sm:grid-cols-[1fr_120px_1fr_auto]">
+                    <select value={material.material} onChange={(event) => handleMaterialChange(index, "material", event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2">
+                      <option value="">Select material...</option>
+                      {materialTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                    </select>
+                    <input type="number" value={material.weightKg} onChange={(event) => handleMaterialChange(index, "weightKg", Number(event.target.value))} className="rounded-lg border border-gray-200 px-3 py-2" />
+                    <input value={material.source} onChange={(event) => handleMaterialChange(index, "source", event.target.value)} placeholder="Source" className="rounded-lg border border-gray-200 px-3 py-2" />
+                    <button onClick={() => setMaterials((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="rounded-lg p-2 text-red-500 hover:bg-red-50">
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 p-4 bg-green-50 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-green-700">
-                    Total Waste Diverted
-                  </span>
-                  <span className="text-lg font-bold text-green-700">
-                    {totalWeight.toFixed(1)} kg
-                  </span>
-                </div>
+              <div className="mt-4 rounded-lg bg-green-50 p-4 text-green-700">
+                Total waste diverted: <strong>{totalWeight.toFixed(1)} kg</strong>
               </div>
-            </div>
+            </section>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Pricing */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6">
-              <h2 className="font-semibold text-gray-900 mb-4">Pricing</h2>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Price (RWF) *
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={artwork.price}
-                    onChange={(e) =>
-                      handleInputChange("price", parseInt(e.target.value) || 0)
-                    }
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent pr-16"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    RWF
-                  </span>
+          <aside className="space-y-6">
+            {verificationRequest && (
+              <section className="rounded-xl border border-amber-100 bg-white p-6">
+                <h2 className="mb-2 font-semibold text-gray-900">Verification Request</h2>
+                <p className="text-sm text-amber-700">{verificationRequest.adminNotes}</p>
+                <div className="mt-4 space-y-3">
+                  <input value={evidenceLabel} onChange={(event) => setEvidenceLabel(event.target.value)} placeholder="Evidence label" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                  <input value={evidenceUrl} onChange={(event) => setEvidenceUrl(event.target.value)} placeholder="/placeholder-artwork/material-detail.jpg" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                  <textarea value={evidenceNotes} onChange={(event) => setEvidenceNotes(event.target.value)} rows={3} placeholder="Notes for admin review" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                  <button onClick={handleEvidenceSubmit} className="w-full rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-amber-700">
+                    Submit Evidence
+                  </button>
                 </div>
-              </div>
-              <div className="mt-4 p-3 bg-purple-50 rounded-lg">
-                <div className="flex items-center gap-2 text-purple-700 text-sm">
-                  <Sparkles className="w-4 h-4" />
-                  <span className="font-medium">AI Suggested: 38,000 - 46,000 RWF</span>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Your earnings (80%)</span>
-                  <span className="font-semibold text-gray-900">
-                    {Math.round(artwork.price * 0.8).toLocaleString()} RWF
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm mt-1">
-                  <span className="text-gray-500">Platform fee (20%)</span>
-                  <span className="text-gray-600">
-                    {Math.round(artwork.price * 0.2).toLocaleString()} RWF
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Artwork Stats */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6">
-              <h2 className="font-semibold text-gray-900 mb-4">
-                Artwork Statistics
-              </h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Eye className="w-4 h-4" />
-                    <span>Total Views</span>
+              </section>
+            )}
+            <section className="rounded-xl border border-gray-100 bg-white p-6">
+              <h2 className="mb-4 font-semibold text-gray-900">Pricing</h2>
+              <input type="number" value={artwork.priceAmount} onChange={(event) => handleInputChange("priceAmount", Number(event.target.value))} className="w-full rounded-lg border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              <p className="mt-2 text-sm text-gray-500">RWF listing price</p>
+            </section>
+            {artwork.latestPricingRecommendation && (
+              <section className="rounded-xl border border-purple-100 bg-white p-6">
+                <h2 className="mb-4 font-semibold text-gray-900">Price Recommendation</h2>
+                <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                  <div className="rounded-lg bg-gray-50 p-2">
+                    <p className="text-xs text-gray-500">Min</p>
+                    <p className="font-semibold">{artwork.latestPricingRecommendation.min.toLocaleString()}</p>
                   </div>
-                  <span className="font-semibold text-gray-900">
-                    {artwork.views}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Heart className="w-4 h-4" />
-                    <span>Favourites</span>
+                  <div className="rounded-lg bg-purple-50 p-2 text-purple-700">
+                    <p className="text-xs">Suggested</p>
+                    <p className="font-semibold">{artwork.latestPricingRecommendation.suggested.toLocaleString()}</p>
                   </div>
-                  <span className="font-semibold text-gray-900">
-                    {artwork.favourites}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Clock className="w-4 h-4" />
-                    <span>Listed</span>
+                  <div className="rounded-lg bg-gray-50 p-2">
+                    <p className="text-xs text-gray-500">Max</p>
+                    <p className="font-semibold">{artwork.latestPricingRecommendation.max.toLocaleString()}</p>
                   </div>
-                  <span className="font-semibold text-gray-900">
-                    {artwork.createdAt}
-                  </span>
                 </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-gradient-to-br from-teal-50 to-amber-50 rounded-xl p-6 border border-teal-100">
-              <h3 className="font-semibold text-gray-900 mb-3">Quick Actions</h3>
-              <div className="space-y-2">
-                <Link
-                  href={`/artwork/${artwork.id}`}
-                  target="_blank"
-                  className="flex items-center gap-2 w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium"
-                >
-                  <Eye className="w-4 h-4" />
-                  View Public Listing
-                </Link>
-                <Link
-                  href="/dashboard/artist/artworks/create"
-                  className="flex items-center gap-2 w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                  Create New Artwork
-                </Link>
-              </div>
-            </div>
-          </div>
+                <p className="mt-3 text-sm text-gray-600">{artwork.latestPricingRecommendation.explanation}</p>
+              </section>
+            )}
+            {artwork.latestImpactEstimate && (
+              <section className="rounded-xl border border-green-100 bg-white p-6">
+                <h2 className="mb-4 font-semibold text-gray-900">Impact Estimate</h2>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p><strong>{artwork.latestImpactEstimate.kgDiverted.toFixed(1)} kg</strong> diverted</p>
+                  <p><strong>{artwork.latestImpactEstimate.co2eAvoidedKg.toFixed(1)} kg</strong> CO2e avoided</p>
+                  <p><strong>{artwork.latestImpactEstimate.landfillVolumeAvoidedLitres.toFixed(1)} L</strong> landfill volume avoided</p>
+                  <p className="capitalize text-gray-500">Confidence: {artwork.latestImpactEstimate.confidence}</p>
+                </div>
+              </section>
+            )}
+            <section className="rounded-xl border border-gray-100 bg-white p-6">
+              <h2 className="mb-4 font-semibold text-gray-900">Status</h2>
+              <p className="capitalize text-gray-700">{artwork.status.replace("_", " ")}</p>
+              <Link href={`/artwork/${artwork.slug}`} target="_blank" className="mt-4 inline-flex text-sm font-medium text-teal-700">
+                View public listing
+              </Link>
+            </section>
+          </aside>
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-red-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Delete Artwork?</h3>
-                <p className="text-sm text-gray-500">
-                  This action cannot be undone
-                </p>
-              </div>
-            </div>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete &quot;{artwork.title}&quot;? This will
-              permanently remove the listing and all associated data.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-              >
-                Delete Artwork
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   );
 }

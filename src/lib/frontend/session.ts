@@ -17,7 +17,7 @@ export const frontendUsersKey = "renewcanvas.users";
 export function inferRoleFromEmail(email: string): FrontendUserRole {
   const normalized = email.trim().toLowerCase();
 
-  if (normalized.includes("admin")) {
+  if (normalized === "hello.renewcanvas.africa@gmail.com" || normalized.includes("admin")) {
     return "admin";
   }
 

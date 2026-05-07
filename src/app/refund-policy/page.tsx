@@ -159,7 +159,7 @@ export default function RefundPolicyPage() {
                   <div>
                     <p className="font-medium text-gray-900">Contact Us</p>
                     <p className="text-sm text-gray-600">
-                      Email support@renewcanvas.africa within 48 hours of delivery
+                      Email hello.renewcanvas.africa@gmail.com within 48 hours of delivery
                       with your order number and reason for return
                     </p>
                   </div>
@@ -343,7 +343,7 @@ export default function RefundPolicyPage() {
             </p>
             <ul className="list-none text-gray-600 space-y-2 mb-4">
               <li>
-                <strong>Email:</strong> returns@renewcanvas.africa
+                <strong>Email:</strong> hello.renewcanvas.africa@gmail.com
               </li>
               <li>
                 <strong>Phone:</strong> +250 788 000 000

@@ -8,7 +8,7 @@ import {
 } from "@/lib/frontend/session";
 
 test("infers frontend roles from demo login emails", () => {
-  assert.equal(inferRoleFromEmail("admin@renewcanvas.africa"), "admin");
+  assert.equal(inferRoleFromEmail("hello.renewcanvas.africa@gmail.com"), "admin");
   assert.equal(inferRoleFromEmail("artist@example.com"), "artist");
   assert.equal(inferRoleFromEmail("creator@example.com"), "artist");
   assert.equal(inferRoleFromEmail("buyer@example.com"), "buyer");

@@ -15,16 +15,16 @@ import {
   Trash2,
   AlertCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { readProfile, saveProfile } from "@/lib/frontend/profile-api";
 
-// Mock profile data
 const initialProfile = {
-  firstName: "John",
-  lastName: "Doe",
-  email: "john@example.com",
-  phone: "+250 788 123 456",
-  address: "KG 123 St, Kimironko",
-  city: "Kigali",
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  address: "",
+  city: "",
   country: "Rwanda",
   notifications: {
     orderUpdates: true,
@@ -34,11 +34,59 @@ const initialProfile = {
   },
 };
 
+function stringValue(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function booleanValue(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
 export default function BuyerProfilePage() {
   const [profile, setProfile] = useState(initialProfile);
   const [activeTab, setActiveTab] = useState<"profile" | "notifications" | "security">("profile");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadProfile() {
+      try {
+        const payload = await readProfile();
+        if (!isCurrent) return;
+        const profileData = payload.profile;
+        const address = payload.address;
+
+        setProfile({
+          firstName: stringValue(profileData.firstName),
+          lastName: stringValue(profileData.lastName),
+          email: payload.user.email,
+          phone: stringValue(profileData.phone),
+          address: stringValue(address?.line1),
+          city: stringValue(address?.city),
+          country: stringValue(address?.country) || "Rwanda",
+          notifications: {
+            orderUpdates: booleanValue(profileData.notifyOrderUpdates, true),
+            promotions: booleanValue(profileData.notifyPromotions, false),
+            newArtworks: booleanValue(profileData.notifyNewArtworks, true),
+            artistUpdates: booleanValue(profileData.notifyArtistUpdates, true),
+          },
+        });
+      } catch (error) {
+        if (isCurrent) {
+          setStatusMessage(error instanceof Error ? error.message : "Could not load profile.");
+        }
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
@@ -56,10 +104,27 @@ export default function BuyerProfilePage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSaving(false);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    setStatusMessage("");
+
+    try {
+      await saveProfile({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        phone: profile.phone,
+        notifications: profile.notifications,
+        address: {
+          line1: profile.address,
+          city: profile.city,
+          country: profile.country,
+        },
+      });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "Could not save profile.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const tabs = [
@@ -102,6 +167,12 @@ export default function BuyerProfilePage() {
             )}
           </button>
         </div>
+
+        {statusMessage && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {statusMessage}
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
@@ -189,10 +260,8 @@ export default function BuyerProfilePage() {
                       <input
                         type="email"
                         value={profile.email}
-                        onChange={(e) =>
-                          handleInputChange("email", e.target.value)
-                        }
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        readOnly
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
                       />
                     </div>
                     <div>

@@ -259,7 +259,7 @@ function ContactInfoSection() {
     {
       icon: Mail,
       title: "Email Us",
-      details: ["hello.renewcanvas.africa@xxxx", "nicholaseke04@gmail.com"],
+      details: ["hello.renewcanvas.africa@gmail.com"],
       color: "teal",
     },
     {
