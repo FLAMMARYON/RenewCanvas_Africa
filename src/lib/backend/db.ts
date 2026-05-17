@@ -1,5 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import { Pool } from "pg";
 import { requireBackendConfig } from "./config";
 
 const globalForPrisma = globalThis as typeof globalThis & {
@@ -28,8 +29,9 @@ export function createDatabaseClient(): PrismaClient {
     throw new Error("DATABASE_URL is required for database-backed backend operations.");
   }
 
+  const pool = new Pool({ connectionString: databaseUrl });
   return new PrismaClient({
-    adapter: new PrismaPg(databaseUrl),
+    adapter: new PrismaPg(pool),
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
   });
 }

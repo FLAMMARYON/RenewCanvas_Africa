@@ -194,6 +194,8 @@ Done when:
 
 Goal: real order creation before payment.
 
+Current status: verified. Order and order item persistence, address and price snapshots, artwork reservation during checkout, role-scoped order APIs, checkout/order-confirmation wiring, tests, typecheck, lint, Prisma validation, and build gates have passed.
+
 Deliver:
 
 - Order table.
@@ -214,6 +216,8 @@ Done when:
 ## B8: Payments
 
 Goal: collect buyer money safely into RenewCanvas-controlled accounts.
+
+Current status: verified. Payment transaction and refund schema, payment session creation, MTN MoMo prompt and USSD reference support, provider webhook reconciliation with signature/idempotency handling, paid-order inventory reconciliation, audit logging, APIs, tests, typecheck, lint, Prisma validation, and build gates have passed.
 
 Deliver:
 
@@ -248,6 +252,8 @@ Done when:
 
 Goal: operational delivery tracking.
 
+Current status: verified. Shipment schema, paid-order shipment creation, delivery fee/address snapshots, shipment lifecycle updates, order status synchronization, role-scoped shipment APIs, audit logging, tests, typecheck, lint, Prisma validation, and build gates have passed.
+
 Deliver:
 
 - Shipment table.
@@ -267,6 +273,8 @@ Done when:
 ## B10: Artist Payouts
 
 Goal: prepare marketplace economics with RenewCanvas as the order middleman.
+
+Current status: verified. Payout ledger schema, platform fee baseline, artist payout records for delivered marketplace orders, RenewCanvas-owned inventory exclusion, 48-hour return-window enforcement, admin payout status updates, role-scoped payout APIs, audit logging, tests, typecheck, lint, Prisma validation, and build gates have passed.
 
 Deliver:
 
@@ -293,6 +301,8 @@ Done when:
 
 Goal: users get operational messages.
 
+Current status: verified. Notification and preference schema, queued/sent/skipped status handling, channel/category preference enforcement, notification listing and preference APIs, tests, typecheck, lint, Prisma validation, and build gates have passed.
+
 Deliver:
 
 - Notification table.
@@ -311,6 +321,8 @@ Done when:
 ## B12: Auctions
 
 Goal: make auction pages operational.
+
+Current status: verified. Auction and bid schema, admin scheduling/closing, live bid validation, minimum increment enforcement, winner tracking, auction APIs, audit logging, tests, typecheck, lint, Prisma validation, and build gates have passed.
 
 Deliver:
 
@@ -334,6 +346,8 @@ Done when:
 
 Goal: make the 3D experience data-driven.
 
+Current status: verified. Virtual room state schema, approved/listed artwork feed, saved room state, public share tokens, viewed artwork tracking, APIs, tests, typecheck, lint, Prisma validation, and build gates have passed.
+
 Deliver:
 
 - Feed approved artworks into the virtual room.
@@ -353,6 +367,8 @@ Done when:
 
 Goal: understand usage and impact.
 
+Current status: verified. Analytics event and daily aggregate schema, event ingestion service/API, daily aggregation helper, user/session/entity metadata support, tests, typecheck, lint, Prisma validation, and build gates have passed.
+
 Deliver:
 
 - Analytics event API.
@@ -371,6 +387,8 @@ Done when:
 ## B15: Security, Compliance, And Production Hardening
 
 Goal: make the backend production-safe.
+
+Current status: verified. Security event schema, legal acceptance timestamps, CSRF helper, webhook signature verification, upload metadata validation, audit-oriented service hooks, API endpoint for legal acceptance, tests, typecheck, lint, Prisma validation, and build gates have passed. Production provider credentials, backup execution, and live monitoring integrations remain deployment responsibilities.
 
 Deliver:
 

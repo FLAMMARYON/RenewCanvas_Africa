@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(DATABASE_URL=\"postgresql://renewcanvas:renewcanvas_dev@localhost:5432/renewcanvas\" npx tsx:*)",
+      "Bash(rm:*)",
+      "Bash(npx tsx:*)",
+      "Bash(curl:*)",
+      "Bash(npx prisma:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git config:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(vercel --prod:*)"
+    ]
+  }
+}

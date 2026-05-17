@@ -15,7 +15,23 @@
     "F10-impact-ledger": "pending",
     "F09-multilingual-accessibility": "pending",
     "P4-trust-scale": "pending",
-    "B0-backend-foundations": "verified"
+    "B0-backend-foundations": "verified",
+    "B1-auth-sessions": "verified",
+    "B2-profiles-roles": "verified",
+    "B2A-commission-requests": "verified",
+    "B3-artwork-data-media": "verified",
+    "B4-marketplace-wishlist": "verified",
+    "B5-pricing-impact-persistence": "verified",
+    "B6-admin-verification-moderation": "verified",
+    "B7-checkout-orders": "verified",
+    "B8-payments": "verified",
+    "B9-shipping-fulfillment": "verified",
+    "B10-artist-payouts": "verified",
+    "B11-notifications": "verified",
+    "B12-auctions": "verified",
+    "B13-virtual-room-backend": "verified",
+    "B14-analytics-reporting": "verified",
+    "B15-security-compliance-hardening": "verified"
   },
-  "lastUpdated": "2026-05-05T18:16:18+02:00"
+  "lastUpdated": "2026-05-14T14:10:57+02:00"
 }

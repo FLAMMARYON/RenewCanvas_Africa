@@ -1,6 +1,7 @@
 "use client";
 
 import DashboardLayout from "@/components/DashboardLayout";
+import { readProfile } from "@/lib/frontend/profile-api";
 import {
   Palette,
   Eye,
@@ -19,6 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 // Mock data - will be replaced with API calls
 const stats = [
@@ -155,18 +157,27 @@ const statusConfig = {
 };
 
 export default function ArtistDashboard() {
+  const [userName, setUserName] = useState("Artist");
   const totalEarnings = 225000;
   const totalImpact = artworks.reduce((sum, a) => sum + a.kgDiverted, 0);
 
+  useEffect(() => {
+    readProfile()
+      .then((profile) => setUserName(profile.displayName || "Artist"))
+      .catch(() => {});
+  }, []);
+
+  const firstName = userName.split(" ")[0];
+
   return (
-    <DashboardLayout role="artist" userName="Marie Uwimana">
+    <DashboardLayout role="artist" userName={userName}>
       <div className="space-y-8">
         {/* Welcome Header */}
         <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-2xl p-6 text-white">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold mb-2">
-                Welcome back, Marie!
+                Welcome back, {firstName}!
               </h1>
               <p className="text-teal-100">
                 Manage your artworks, track orders, and grow your creative

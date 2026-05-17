@@ -248,7 +248,7 @@ export async function requestPasswordReset(
   db: AuthDatabase,
   emailInput: string,
   now = new Date()
-): Promise<{ resetToken?: string }> {
+): Promise<{ resetToken?: string; user?: { id: string; name: string; email: string } }> {
   const email = normalizeEmail(emailInput);
   const user = email ? await db.user.findUnique({ where: { email } }) : null;
 
@@ -265,7 +265,7 @@ export async function requestPasswordReset(
     },
   });
 
-  return { resetToken };
+  return { resetToken, user: { id: user.id, name: user.name, email: user.email } };
 }
 
 export async function resetPassword(

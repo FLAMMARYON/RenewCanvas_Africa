@@ -2,14 +2,16 @@
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { deleteArtwork, readArtwork, updateArtwork, type FrontendArtwork } from "@/lib/frontend/artworks-api";
+import { readProfile } from "@/lib/frontend/profile-api";
 import { listVerificationItems, submitVerificationEvidence, type VerificationItem } from "@/lib/frontend/verification-api";
 import { AlertCircle, ArrowLeft, CheckCircle, Plus, Recycle, Save, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { artworkCategories, recyclableMaterials } from "@/lib/ml/schemas";
 
-const categories = ["Wall Art", "Sculpture", "Home Decor", "Jewelry", "Functional Art", "Mixed Media", "Installation", "Other"];
-const materialTypes = ["PET bottles", "Bottle caps", "Cardboard", "Paper", "Fabric scraps", "Aluminium cans", "Glass", "Electronic waste", "Plastic bags", "Metal scraps", "Other"];
+const categories = [...artworkCategories];
+const materialTypes = [...recyclableMaterials];
 
 type EditableMaterial = { material: string; weightKg: number; source: string };
 
@@ -25,8 +27,12 @@ export default function EditArtworkPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [userName, setUserName] = useState("Artist");
 
   useEffect(() => {
+    readProfile()
+      .then((profile) => setUserName(profile.displayName || "Artist"))
+      .catch(() => {});
     readArtwork(params.id)
       .then((loaded) => {
         setArtwork(loaded);
@@ -104,7 +110,7 @@ export default function EditArtworkPage() {
 
   if (!artwork) {
     return (
-      <DashboardLayout role="artist" userName="Marie Uwimana">
+      <DashboardLayout role="artist" userName={userName}>
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           {statusMessage || "Loading artwork..."}
         </div>
@@ -115,7 +121,7 @@ export default function EditArtworkPage() {
   const totalWeight = materials.reduce((sum, material) => sum + Number(material.weightKg || 0), 0);
 
   return (
-    <DashboardLayout role="artist" userName="Marie Uwimana">
+    <DashboardLayout role="artist" userName={userName}>
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">

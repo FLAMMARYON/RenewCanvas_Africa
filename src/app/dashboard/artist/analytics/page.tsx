@@ -1,6 +1,7 @@
 "use client";
 
 import DashboardLayout from "@/components/DashboardLayout";
+import { readProfile } from "@/lib/frontend/profile-api";
 import {
   BarChart3,
   TrendingUp,
@@ -17,7 +18,7 @@ import {
   Users,
   Globe,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // Mock analytics data
 const overviewStats = [
@@ -118,11 +119,18 @@ const impactMetrics = {
 
 export default function ArtistAnalyticsPage() {
   const [timeRange, setTimeRange] = useState("30d");
+  const [userName, setUserName] = useState("Artist");
+
+  useEffect(() => {
+    readProfile()
+      .then((profile) => setUserName(profile.displayName || "Artist"))
+      .catch(() => {});
+  }, []);
 
   const maxMonthlyViews = Math.max(...monthlyData.map((d) => d.views));
 
   return (
-    <DashboardLayout role="artist" userName="Marie Uwimana">
+    <DashboardLayout role="artist" userName={userName}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

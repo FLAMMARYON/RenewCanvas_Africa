@@ -161,3 +161,17 @@ async function sendArtwork(url: string, method: "POST" | "PATCH", body: ArtworkP
   if (!response.ok || !payload.ok) throw new Error(payload.message ?? "Could not save artwork.");
   return payload.artwork;
 }
+
+type RecommendationsResponse = {
+  ok: boolean;
+  artworks: FrontendArtwork[];
+  source: "personalized" | "recent";
+  message?: string;
+};
+
+export async function listRecommendations(): Promise<{ artworks: FrontendArtwork[]; source: "personalized" | "recent" }> {
+  const response = await fetch("/api/marketplace/recommendations", { credentials: "include" });
+  const payload = (await response.json()) as RecommendationsResponse;
+  if (!response.ok || !payload.ok) throw new Error(payload.message ?? "Could not load recommendations.");
+  return { artworks: payload.artworks, source: payload.source };
+}

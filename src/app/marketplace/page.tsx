@@ -1,10 +1,12 @@
 "use client";
 
-import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api";
+import { listArtworks, listRecommendations, type FrontendArtwork } from "@/lib/frontend/artworks-api";
 import { addToWishlist } from "@/lib/frontend/wishlist-api";
-import { Grid3X3, Heart, LayoutList, Leaf, Package, Recycle, Search } from "lucide-react";
+import { ArrowRight, Filter, Gavel, Grid3X3, Heart, LayoutList, Leaf, Package, Recycle, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
+const categories = ["All", "Paintings", "Sculptures", "Jewelry", "Home Decor", "Fashion", "Mixed Media"];
 
 export default function MarketplacePage() {
   const [artworks, setArtworks] = useState<FrontendArtwork[]>([]);
@@ -15,78 +17,155 @@ export default function MarketplacePage() {
   const [pagination, setPagination] = useState({ page: 1, pageSize: 12, total: 0, pageCount: 1 });
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [statusMessage, setStatusMessage] = useState("");
-  const [availableCategories, setAvailableCategories] = useState(["All"]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [recommendations, setRecommendations] = useState<FrontendArtwork[]>([]);
+  const [recommendationsSource, setRecommendationsSource] = useState<"personalized" | "recent">("recent");
+
+  // Set to true when there are active auctions
+  const hasActiveAuctions = true;
+
+  // Fetch recommendations on mount
+  useEffect(() => {
+    listRecommendations()
+      .then((result) => {
+        setRecommendations(result.artworks);
+        setRecommendationsSource(result.source);
+      })
+      .catch(() => {
+        // Silently fail - recommendations are optional
+      });
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      listArtworks({ scope: "marketplace", search: query, category, sort, page, pageSize: 12 })
+      setIsLoading(true);
+      listArtworks({ scope: "marketplace", search: query, category: category === "All" ? undefined : category, sort, page, pageSize: 12 })
         .then((result) => {
           setArtworks(result.artworks);
           setPagination(result.pagination);
         })
-        .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load artworks."));
+        .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load artworks."))
+        .finally(() => setIsLoading(false));
     }, 200);
 
     return () => window.clearTimeout(timeout);
   }, [query, category, sort, page]);
 
-  useEffect(() => {
-    listArtworks({ scope: "marketplace", pageSize: 48 })
-      .then((result) => {
-        const allCategories = ["All", ...Array.from(new Set(result.artworks.map((artwork) => artwork.category)))];
-        setAvailableCategories(allCategories);
-      })
-      .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load artworks."));
-  }, []);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
+      {/* Header */}
       <header className="border-b border-gray-100 bg-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-700">
-              <Recycle className="h-6 w-6 text-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-600">
+              <Recycle className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">
-              Renew<span className="text-teal-700">Canvas</span> <span className="text-amber-600">Africa</span>
+            <span className="text-lg font-bold text-gray-900">
+              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
             </span>
           </Link>
-          <nav className="hidden items-center gap-6 text-sm font-medium text-gray-600 md:flex">
-            <Link href="/marketplace" className="text-teal-700">Marketplace</Link>
-            <Link href="/artists" className="hover:text-teal-700">Artists</Link>
-            <Link href="/virtual-room" className="hover:text-teal-700">Virtual Gallery</Link>
-            <Link href="/login" className="rounded-lg bg-teal-700 px-4 py-2 text-white">Sign In</Link>
+          <nav className="hidden items-center gap-8 text-sm font-medium text-gray-600 md:flex">
+            <Link href="/" className="hover:text-gray-900">Home</Link>
+            <Link href="/how-it-works" className="hover:text-gray-900">How It Works</Link>
+            <Link href="/marketplace" className="text-teal-600">Marketplace</Link>
+            <Link href="/artists" className="hover:text-gray-900">Artists</Link>
+            <Link href="/impact" className="hover:text-gray-900">Impact</Link>
+            <Link href="/contact" className="hover:text-gray-900">Contact</Link>
           </nav>
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              Sign In
+            </Link>
+            <Link href="/register" className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">
+              Get Started
+            </Link>
+          </div>
         </div>
       </header>
 
       <main>
-        <section className="bg-white py-12">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl">
-              <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">Marketplace</h1>
-              <p className="mt-3 text-lg text-gray-600">
-                Browse approved upcycled artwork with real inventory status and platform ownership labels.
-              </p>
-            </div>
-            <div className="mt-8 max-w-2xl">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search artwork, artists, or categories..."
-                  className="w-full rounded-xl border border-gray-200 bg-white py-4 pl-12 pr-4 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-teal-600"
-                />
+        {/* Hero Section */}
+        <section className="bg-white pb-6 pt-12">
+          <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+            <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+              Discover <span className="text-amber-500">Unique</span> Upcycled <span className="text-teal-600">Artwork</span>
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-base text-gray-600">
+              Browse our collection of stunning artwork created from recycled materials and discover unique
+              pieces by independent and professional artists. Each piece comes with verified environmental
+              impact.
+            </p>
+
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="mx-auto mt-8 max-w-xl">
+              <div className="flex items-center rounded-lg border border-gray-200 bg-white shadow-sm">
+                <div className="flex flex-1 items-center px-4">
+                  <Search className="h-5 w-5 text-gray-400" />
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Search artwork, artists, or categories..."
+                    className="w-full border-0 bg-transparent py-3 pl-3 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="m-1.5 rounded-md bg-teal-600 px-5 py-2 text-sm font-medium text-white hover:bg-teal-700"
+                >
+                  Search
+                </button>
               </div>
+            </form>
+
+            {/* Feature Cards */}
+            <div className="mt-6 flex flex-wrap justify-center gap-4">
+              <Link
+                href="/virtual-room"
+                className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-5 py-3 shadow-sm transition hover:shadow-md"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-100">
+                  <Sparkles className="h-4 w-4 text-teal-600" />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-semibold text-gray-900">Virtual Gallery</div>
+                  <div className="text-xs text-gray-500">Walk through our 3D museum</div>
+                </div>
+                <ArrowRight className="ml-1 h-4 w-4 text-gray-400" />
+              </Link>
+
+              {hasActiveAuctions && (
+                <Link
+                  href="/auctions"
+                  className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-5 py-3 shadow-sm transition hover:shadow-md"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100">
+                    <Gavel className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div className="text-left">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                      Live Auctions
+                      <span className="rounded bg-rose-500 px-1.5 py-0.5 text-[10px] font-medium text-white">3 LIVE</span>
+                    </div>
+                    <div className="text-xs text-gray-500">Bid on exclusive pieces</div>
+                  </div>
+                  <ArrowRight className="ml-1 h-4 w-4 text-amber-500" />
+                </Link>
+              )}
             </div>
           </div>
         </section>
 
-        <section className="py-10">
+        {/* Filters Section */}
+        <section className="border-y border-gray-100 bg-white py-4">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-wrap gap-2">
-                {availableCategories.map((item) => (
+                {categories.map((item) => (
                   <button
                     key={item}
                     type="button"
@@ -94,72 +173,112 @@ export default function MarketplacePage() {
                       setCategory(item);
                       setPage(1);
                     }}
-                    className={`rounded-full px-4 py-2 text-sm font-medium ${
+                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
                       category === item
-                        ? "bg-teal-700 text-white"
-                        : "border border-gray-200 bg-white text-gray-600 hover:bg-teal-50"
+                        ? "bg-teal-600 text-white"
+                        : "border border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                     }`}
                   >
                     {item}
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-3">
-                <label htmlFor="marketplace-sort" className="sr-only">
-                  Sort artworks
-                </label>
-                <select
-                  id="marketplace-sort"
-                  value={sort}
-                  onChange={(event) => {
-                    setSort(event.target.value as typeof sort);
-                    setPage(1);
-                  }}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600"
-                >
-                  <option value="newest">Newest</option>
-                  <option value="popular">Most saved</option>
-                  <option value="price_low">Price: low to high</option>
-                  <option value="price_high">Price: high to low</option>
-                </select>
-                <div className="flex w-fit overflow-hidden rounded-lg border border-gray-200 bg-white">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5">
+                  <Filter className="h-4 w-4 text-gray-400" />
+                  <label htmlFor="marketplace-sort" className="sr-only">
+                    Sort artworks
+                  </label>
+                  <select
+                    id="marketplace-sort"
+                    value={sort}
+                    onChange={(event) => {
+                      setSort(event.target.value as typeof sort);
+                      setPage(1);
+                    }}
+                    className="border-0 bg-transparent pr-6 text-sm text-gray-600 focus:outline-none focus:ring-0"
+                  >
+                    <option value="newest">Sort by</option>
+                    <option value="newest">Newest</option>
+                    <option value="popular">Most saved</option>
+                    <option value="price_low">Price: low to high</option>
+                    <option value="price_high">Price: high to low</option>
+                  </select>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setViewMode("grid")}
-                  aria-label="Show artwork grid"
-                  className={`p-2 ${viewMode === "grid" ? "bg-teal-700 text-white" : "text-gray-600"}`}
+                  className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
                 >
-                  <Grid3X3 className="h-4 w-4" />
+                  <Filter className="h-4 w-4" />
+                  Filters
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("list")}
-                  aria-label="Show artwork list"
-                  className={`p-2 ${viewMode === "list" ? "bg-teal-700 text-white" : "text-gray-600"}`}
-                >
-                  <LayoutList className="h-4 w-4" />
-                </button>
+                <div className="flex overflow-hidden rounded-md border border-gray-200 bg-white">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("grid")}
+                    aria-label="Show artwork grid"
+                    className={`p-1.5 transition ${viewMode === "grid" ? "bg-teal-600 text-white" : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"}`}
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("list")}
+                    aria-label="Show artwork list"
+                    className={`p-1.5 transition ${viewMode === "list" ? "bg-teal-600 text-white" : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"}`}
+                  >
+                    <LayoutList className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             </div>
+          </div>
+        </section>
 
+        {/* Artworks Section */}
+        <section className="bg-gray-50 py-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {statusMessage && (
               <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 {statusMessage}
               </div>
             )}
 
-            {artworks.length > 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent"></div>
+              </div>
+            ) : artworks.length > 0 ? (
               <div className={viewMode === "grid" ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3" : "space-y-4"}>
                 {artworks.map((artwork) => (
                   <ArtworkCard key={artwork.id} artwork={artwork} compact={viewMode === "list"} onStatus={setStatusMessage} />
                 ))}
               </div>
             ) : (
-              <div className="rounded-xl border border-gray-200 bg-white p-12 text-center">
-                <Package className="mx-auto mb-4 h-12 w-12 text-gray-300" />
-                <h2 className="font-semibold text-gray-900">No listed artworks found</h2>
-                <p className="mt-1 text-gray-500">Approved artwork will appear here after admin review.</p>
+              /* Empty State - Artwork Coming Soon */
+              <div className="rounded-xl border border-gray-200 bg-white px-6 py-16 text-center">
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-teal-50">
+                  <Recycle className="h-8 w-8 text-teal-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">Artwork Coming Soon</h2>
+                <p className="mx-auto mt-3 max-w-md text-sm text-gray-500">
+                  We are currently onboarding talented artists and curating our first collection of unique upcycled artwork. Be the first to know when we launch!
+                </p>
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  <Link
+                    href="/contact"
+                    className="inline-flex items-center gap-2 rounded-md bg-teal-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-teal-700"
+                  >
+                    Get Notified
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/register?role=artist"
+                    className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Join as Artist
+                  </Link>
+                </div>
               </div>
             )}
 
@@ -169,7 +288,7 @@ export default function MarketplacePage() {
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm disabled:opacity-50"
+                  className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm disabled:opacity-50"
                 >
                   Previous
                 </button>
@@ -180,7 +299,7 @@ export default function MarketplacePage() {
                   type="button"
                   disabled={page >= pagination.pageCount}
                   onClick={() => setPage((current) => Math.min(pagination.pageCount, current + 1))}
-                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm disabled:opacity-50"
+                  className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm disabled:opacity-50"
                 >
                   Next
                 </button>
@@ -188,7 +307,165 @@ export default function MarketplacePage() {
             )}
           </div>
         </section>
+
+        {/* You Might Also Like Section */}
+        {recommendations.length > 0 && (
+          <section className="bg-white py-12">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {recommendationsSource === "personalized" ? "You Might Also Like" : "Recently Added"}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {recommendationsSource === "personalized"
+                      ? "Based on your wishlist and past orders"
+                      : "Fresh artworks just added to our collection"}
+                  </p>
+                </div>
+                <Link
+                  href="/marketplace"
+                  className="text-sm font-medium text-teal-600 hover:text-teal-700"
+                >
+                  View All
+                </Link>
+              </div>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {recommendations.map((artwork) => (
+                  <ArtworkCard key={artwork.id} artwork={artwork} compact={false} onStatus={setStatusMessage} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Promotional Cards */}
+        {artworks.length === 0 && (
+          <section className="bg-gray-50 pb-16">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Looking for Unique Art Card */}
+                <div className="rounded-xl bg-teal-50 p-8">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-teal-100">
+                    <Recycle className="h-5 w-5 text-teal-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900">Looking for Unique Art?</h3>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Sign up to be notified when our marketplace launches. Get early access to exclusive upcycled artwork with verified impact stories.
+                  </p>
+                  <Link
+                    href="/contact"
+                    className="mt-5 inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
+                  >
+                    Join Waitlist
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+
+                {/* Are You an Artist Card */}
+                <div className="relative rounded-xl bg-amber-50 p-8">
+                  <span className="absolute right-6 top-6 rounded-md bg-teal-600 px-2.5 py-1 text-xs font-medium text-white">
+                    Coming Soon
+                  </span>
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-amber-100">
+                    <Sparkles className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900">Are You an Artist?</h3>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Join our platform and showcase your upcycled creations to buyers who value sustainability. We provide materials and support.
+                  </p>
+                  <Link
+                    href="/register?role=artist"
+                    className="mt-5 inline-flex items-center gap-2 rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+                  >
+                    Apply as Artist
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
       </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 py-12 text-gray-400">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-8 md:grid-cols-5">
+            {/* Brand */}
+            <div className="md:col-span-1">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-600">
+                  <Recycle className="h-5 w-5 text-white" />
+                </div>
+                <div className="text-base font-bold leading-tight">
+                  <span className="text-white">Renew</span>
+                  <span className="text-teal-400">Canvas</span>
+                  <br />
+                  <span className="text-amber-500">Africa</span>
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-gray-500">
+                Transforming waste into art, one masterpiece at a time.
+              </p>
+              <p className="mt-2 text-sm text-gray-600">Kigali, Rwanda</p>
+            </div>
+
+            {/* Platform */}
+            <div>
+              <h4 className="font-semibold text-white">Platform</h4>
+              <ul className="mt-4 space-y-2 text-sm">
+                <li><Link href="/how-it-works" className="hover:text-white">How It Works</Link></li>
+                <li><Link href="/marketplace" className="hover:text-white">Marketplace</Link></li>
+                <li><Link href="/artists" className="hover:text-white">Artists</Link></li>
+                <li><Link href="/impact" className="hover:text-white">Impact</Link></li>
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h4 className="font-semibold text-white">Company</h4>
+              <ul className="mt-4 space-y-2 text-sm">
+                <li><Link href="/about" className="hover:text-white">About Us</Link></li>
+                <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
+                <li><Link href="#" className="hover:text-white">Careers</Link></li>
+                <li><Link href="#" className="hover:text-white">Press</Link></li>
+              </ul>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h4 className="font-semibold text-white">Support</h4>
+              <ul className="mt-4 space-y-2 text-sm">
+                <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
+                <li><Link href="#" className="hover:text-white">Help Center</Link></li>
+                <li><Link href="#" className="hover:text-white">Shipping</Link></li>
+                <li><Link href="/refund-policy" className="hover:text-white">Returns</Link></li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="font-semibold text-white">Legal</h4>
+              <ul className="mt-4 space-y-2 text-sm">
+                <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
+                <li><Link href="/refund-policy" className="hover:text-white">Refund Policy</Link></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-800 pt-8 text-sm text-gray-500 md:flex-row">
+            <p>
+              &copy; 2026 RenewCanvas <span className="text-amber-500">Africa</span>. All rights reserved.
+            </p>
+            <p className="flex items-center gap-2">
+              <Leaf className="h-4 w-4 text-teal-500" />
+              Built for a sustainable future
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -222,11 +499,11 @@ function ArtworkCard({
         </span>
       </Link>
       <div className="p-5">
-        <div className="flex items-center gap-2 text-xs font-medium text-teal-700">
+        <div className="flex items-center gap-2 text-xs font-medium text-teal-600">
           <Leaf className="h-4 w-4" />
           {artwork.kgDiverted.toFixed(1)} kg diverted
         </div>
-        <h2 className="mt-2 text-lg font-semibold text-gray-900 group-hover:text-teal-700">{artwork.title}</h2>
+        <h2 className="mt-2 text-lg font-semibold text-gray-900 group-hover:text-teal-600">{artwork.title}</h2>
         <p className="mt-1 text-sm text-gray-500">by {artwork.artist?.name ?? "RenewCanvas Africa"}</p>
         <p className="mt-3 line-clamp-2 text-sm text-gray-600">{artwork.description}</p>
         <div className="mt-4 flex items-center justify-between">
@@ -241,7 +518,7 @@ function ArtworkCard({
                 onStatus(error instanceof Error ? error.message : "Sign in as a buyer to save artwork.");
               }
             }}
-            className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-rose-50 hover:text-rose-600"
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-rose-50 hover:text-rose-600"
           >
             <Heart className="h-4 w-4" />
             {artwork.favouriteCount}

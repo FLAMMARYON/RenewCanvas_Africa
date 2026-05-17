@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -23,10 +23,27 @@ import {
 } from "lucide-react";
 import { readArtwork, type FrontendArtwork } from "@/lib/frontend/artworks-api";
 import { createOrder } from "@/lib/frontend/orders-api";
+import { createPaymentSession } from "@/lib/frontend/payments-api";
 
 type PaymentMethod = "momo" | "bank" | "card";
 
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<CheckoutLoading />}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+function CheckoutLoading() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+    </main>
+  );
+}
+
+function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [artwork, setArtwork] = useState<FrontendArtwork | null>(null);
@@ -73,7 +90,13 @@ export default function CheckoutPage() {
         notes: formData.notes,
         paymentMethod,
       });
-      router.push(`/order-confirmation?order=${encodeURIComponent(order.id)}`);
+      const payment = await createPaymentSession({
+        orderId: order.id,
+        provider: paymentMethod === "card" ? "stripe" : paymentMethod === "bank" ? "manual_bank" : "mtn_momo",
+        momoPhone: formData.phone,
+        idempotencyKey: `checkout:${order.id}:${paymentMethod}`,
+      });
+      router.push(`/order-confirmation?order=${encodeURIComponent(order.id)}&payment=${encodeURIComponent(payment.id)}`);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "Could not place order.");
     } finally {

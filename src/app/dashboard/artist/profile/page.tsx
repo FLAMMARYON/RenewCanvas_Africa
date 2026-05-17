@@ -123,6 +123,7 @@ export default function ArtistProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [userName, setUserName] = useState("Artist");
 
   useEffect(() => {
     let isCurrent = true;
@@ -159,6 +160,7 @@ export default function ArtistProfilePage() {
           ...nextProfile,
           completionPercentage: completionPercentage(nextProfile),
         });
+        setUserName(nextProfile.firstName ? `${nextProfile.firstName} ${nextProfile.lastName}`.trim() : "Artist");
       } catch (error) {
         if (isCurrent) {
           setStatusMessage(error instanceof Error ? error.message : "Could not load profile.");
@@ -233,7 +235,7 @@ export default function ArtistProfilePage() {
   ];
 
   return (
-    <DashboardLayout role="artist" userName="Marie Uwimana">
+    <DashboardLayout role="artist" userName={userName}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

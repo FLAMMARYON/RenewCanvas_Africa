@@ -167,12 +167,25 @@ export async function listVerificationQueue(db: VerificationDatabase, user: Auth
   return artworks.map((artwork, index) => normalizeVerificationItem(artwork, reviews[index], queueItems.get(artwork.id)));
 }
 
+export type VerificationDecisionResult = {
+  review: VerificationReviewRecord;
+  artwork: {
+    id: string;
+    title: string;
+    artistId: string;
+    artistName: string;
+    artistEmail: string;
+  };
+  decision: VerificationDecision;
+  note: string | null;
+};
+
 export async function decideVerificationReview(
   db: VerificationDatabase,
   admin: AuthPublicUser,
   input: { artworkId: string; decision: VerificationDecision; note?: string },
   now = new Date()
-) {
+): Promise<VerificationDecisionResult> {
   if (admin.role !== "admin") {
     throw new AuthError("forbidden", "Only admins can decide verification reviews.", 403);
   }
@@ -185,7 +198,7 @@ export async function decideVerificationReview(
 
   const queueItem = queueForArtworks([artwork]).get(artwork.id);
   await ensureReview(db, artwork, queueItem);
-  const note = normalizeOptionalText(input.note);
+  const note = normalizeOptionalText(input.note) ?? null;
 
   if (input.decision === "reject" && !note) {
     throw new AuthError("missing_note", "A rejection note is required.", 400);
@@ -202,7 +215,7 @@ export async function decideVerificationReview(
     where: { artworkId: artwork.id },
     data: {
       status,
-      adminNotes: note ?? null,
+      adminNotes: note,
       decidedById: admin.id,
       decidedAt: now,
       requestedInfoAt: input.decision === "request_more_info" ? now : null,
@@ -231,7 +244,18 @@ export async function decideVerificationReview(
     },
   });
 
-  return review;
+  return {
+    review,
+    artwork: {
+      id: artwork.id,
+      title: artwork.title,
+      artistId: artwork.artistId,
+      artistName: artwork.artist?.name ?? "Artist",
+      artistEmail: artwork.artist?.email ?? "",
+    },
+    decision: input.decision,
+    note,
+  };
 }
 
 export async function submitVerificationEvidence(

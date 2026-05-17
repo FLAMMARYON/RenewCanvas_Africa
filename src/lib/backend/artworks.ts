@@ -461,20 +461,6 @@ export function normalizeArtwork(artwork: ArtworkRecord) {
   };
 }
 
-export function mediaUploadPlaceholder(filename: string, contentType: string) {
-  if (!/^image\//.test(contentType)) {
-    throw new AuthError("invalid_media_type", "Artwork media must be an image.", 400);
-  }
-  const safeName = filename.trim().replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 80) || "artwork-image";
-  return {
-    provider: "placeholder",
-    uploadUrl: "/api/artwork-media/uploads",
-    publicUrl: `/placeholder-artwork/${safeName}`,
-    fields: {},
-    expiresInSeconds: 900,
-  };
-}
-
 function normalizeArtworkInput(input: ArtworkInput) {
   const title = cleanText(input.title, 120);
   const description = cleanText(input.description, 1200);

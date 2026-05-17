@@ -2,6 +2,7 @@
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api";
+import { readProfile } from "@/lib/frontend/profile-api";
 import { AlertCircle, CheckCircle, Clock, Edit3, Eye, Palette, Plus, Recycle, Search, ShoppingBag, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -23,11 +24,15 @@ export default function ArtistArtworksPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [statusMessage, setStatusMessage] = useState("");
+  const [userName, setUserName] = useState("Artist");
 
   useEffect(() => {
     listArtworks("artist")
       .then((result) => setArtworks(result.artworks))
       .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load artworks."));
+    readProfile()
+      .then((profile) => setUserName(profile.displayName || "Artist"))
+      .catch(() => {});
   }, []);
 
   const filteredArtworks = artworks.filter((artwork) => {
@@ -47,7 +52,7 @@ export default function ArtistArtworksPage() {
   );
 
   return (
-    <DashboardLayout role="artist" userName="Marie Uwimana">
+    <DashboardLayout role="artist" userName={userName}>
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

@@ -1,53 +1,36 @@
 "use client";
 
 import DashboardLayout from "@/components/DashboardLayout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Upload,
   X,
-  Plus,
   Sparkles,
   Info,
   Check,
   Recycle,
   Scale,
   Clock,
-  Palette,
   ChevronDown,
   Loader2,
   AlertCircle,
-  Image as ImageIcon,
+  Lightbulb,
+  Tag,
+  TrendingUp,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createArtwork } from "@/lib/frontend/artworks-api";
+import { readProfile } from "@/lib/frontend/profile-api";
+import { getListingSuggestions, type ListingAssistantResponse } from "@/lib/frontend/listing-assistant-api";
+import { uploadArtworkImage, type UploadResult } from "@/lib/frontend/upload-api";
+import { artworkCategories, recyclableMaterials } from "@/lib/ml/schemas";
 
-const categories = [
-  "Wall Art",
-  "Sculpture",
-  "Home Decor",
-  "Jewelry",
-  "Functional Art",
-  "Mixed Media",
-  "Installation",
-  "Other",
-];
-
-const materialTypes = [
-  "PET bottles",
-  "Bottle caps",
-  "Cardboard",
-  "Paper",
-  "Fabric scraps",
-  "Aluminium cans",
-  "Glass",
-  "Electronic waste",
-  "Burlap/grain sacks",
-  "Plastic bags",
-  "Metal scraps",
-  "Other",
-];
+// Use centralized schemas instead of hardcoded arrays
+const categories = [...artworkCategories];
+const materialTypes = [...recyclableMaterials];
 
 const materialSources = [
   "Self-collected",
@@ -74,16 +57,26 @@ const complexityLevels = [
 export default function CreateArtworkPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<Array<{
+    file?: File;
+    preview: string;
+    uploaded?: UploadResult;
+    uploading?: boolean;
+    error?: string;
+  }>>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [isLoadingPrice, setIsLoadingPrice] = useState(false);
+  const [isLoadingAiSuggestions, setIsLoadingAiSuggestions] = useState(false);
   const [aiPriceSuggestion, setAiPriceSuggestion] = useState<{
     min: number;
     max: number;
     suggested: number;
     explanation: string;
   } | null>(null);
+  const [aiListingSuggestions, setAiListingSuggestions] = useState<ListingAssistantResponse | null>(null);
   const [formError, setFormError] = useState("");
+  const [userName, setUserName] = useState("Artist");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -94,8 +87,20 @@ export default function CreateArtworkPage() {
     complexity: "",
     experienceLevel: "",
     price: "",
+    hoursWorked: "",
     notes: "",
   });
+
+  // Load user profile on mount
+  useEffect(() => {
+    readProfile()
+      .then((profile) => {
+        setUserName(profile.displayName || "Artist");
+      })
+      .catch(() => {
+        // User not logged in or profile fetch failed
+      });
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -113,15 +118,60 @@ export default function CreateArtworkPage() {
     );
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      const newImages = Array.from(files).map((file) => `/placeholder-artwork/${file.name}`);
-      setImages((prev) => [...prev, ...newImages].slice(0, 5));
+    if (!files || files.length === 0) return;
+
+    const newFiles = Array.from(files).slice(0, 5 - images.length);
+
+    // Add files with preview URLs
+    const newImages = newFiles.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      uploading: true,
+    }));
+
+    const startIndex = images.length;
+    setImages((prev) => [...prev, ...newImages].slice(0, 5));
+    setIsUploading(true);
+
+    // Upload files sequentially
+    for (let i = 0; i < newFiles.length; i++) {
+      const file = newFiles[i];
+      const imageIndex = startIndex + i;
+
+      try {
+        const result = await uploadArtworkImage(file);
+        setImages((prev) =>
+          prev.map((img, idx) =>
+            idx === imageIndex
+              ? { ...img, uploaded: result, uploading: false }
+              : img
+          )
+        );
+      } catch (error) {
+        setImages((prev) =>
+          prev.map((img, idx) =>
+            idx === imageIndex
+              ? {
+                  ...img,
+                  uploading: false,
+                  error: error instanceof Error ? error.message : "Upload failed",
+                }
+              : img
+          )
+        );
+      }
     }
+
+    setIsUploading(false);
   };
 
   const removeImage = (index: number) => {
+    const imageToRemove = images[index];
+    if (imageToRemove.preview.startsWith("blob:")) {
+      URL.revokeObjectURL(imageToRemove.preview);
+    }
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -130,6 +180,8 @@ export default function CreateArtworkPage() {
     setFormError("");
 
     try {
+      const hoursWorked = formData.hoursWorked ? Number(formData.hoursWorked) : undefined;
+
       const response = await fetch("/api/pricing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -140,7 +192,7 @@ export default function CreateArtworkPage() {
           dimensions: formData.dimensions || undefined,
           complexity: formData.complexity,
           experienceLevel: formData.experienceLevel,
-          hoursWorked: 8,
+          hoursWorked,
           previousArtistSales: [],
           views: 0,
           wishlistCount: 0,
@@ -164,6 +216,51 @@ export default function CreateArtworkPage() {
     }
   };
 
+  const getAiListingSuggestions = async () => {
+    if (!formData.title && !formData.description && selectedMaterials.length === 0) {
+      setFormError("Enter at least a title, description, or select materials to get AI suggestions.");
+      return;
+    }
+
+    setIsLoadingAiSuggestions(true);
+    setFormError("");
+
+    try {
+      const result = await getListingSuggestions({
+        title: formData.title || "Untitled Artwork",
+        description: formData.description || "",
+        materials: selectedMaterials.length > 0 ? selectedMaterials : ["Recycled materials"],
+        price: Number(formData.price) || 25000,
+        category: formData.category || undefined,
+        dimensions: formData.dimensions || undefined,
+      });
+
+      setAiListingSuggestions(result);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Could not get AI suggestions. Please try again.");
+    } finally {
+      setIsLoadingAiSuggestions(false);
+    }
+  };
+
+  const applyImprovedDescription = () => {
+    if (aiListingSuggestions?.improvedDescription) {
+      setFormData((current) => ({
+        ...current,
+        description: aiListingSuggestions.improvedDescription,
+      }));
+    }
+  };
+
+  const applyTitleSuggestion = () => {
+    if (aiListingSuggestions?.titleSuggestion) {
+      setFormData((current) => ({
+        ...current,
+        title: aiListingSuggestions.titleSuggestion!,
+      }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
@@ -173,14 +270,35 @@ export default function CreateArtworkPage() {
       return;
     }
 
+    // Check all images are uploaded
+    const pendingUploads = images.filter((img) => img.uploading);
+    if (pendingUploads.length > 0) {
+      setFormError("Please wait for all images to finish uploading.");
+      return;
+    }
+
+    const uploadedImages = images
+      .filter((img) => img.uploaded)
+      .map((img, index) => ({
+        url: img.uploaded!.publicUrl,
+        altText: `${formData.title} image ${index + 1}`,
+      }));
+
+    if (uploadedImages.length === 0) {
+      setFormError("Please upload at least one image of your artwork.");
+      return;
+    }
+
     try {
+      const hoursWorked = formData.hoursWorked ? Number(formData.hoursWorked) : undefined;
+
       await createArtwork({
         title: formData.title,
         description: formData.description,
         category: formData.category,
         dimensions: formData.dimensions,
         priceAmount: Number(formData.price),
-        images: images.map((url, index) => ({ url, altText: `${formData.title} image ${index + 1}` })),
+        images: uploadedImages,
         materials: selectedMaterials.map((material) => ({
           material,
           weightKg: Number(formData.materialWeight) / selectedMaterials.length,
@@ -188,7 +306,7 @@ export default function CreateArtworkPage() {
         })),
         complexity: formData.complexity,
         experienceLevel: formData.experienceLevel,
-        hoursWorked: 8,
+        hoursWorked,
       });
       router.push("/dashboard/artist/artworks");
     } catch (error) {
@@ -197,7 +315,7 @@ export default function CreateArtworkPage() {
   };
 
   return (
-    <DashboardLayout role="artist" userName="Marie Uwimana">
+    <DashboardLayout role="artist" userName={userName}>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -268,6 +386,153 @@ export default function CreateArtworkPage() {
           {/* Step 1: Basic Information */}
           {step === 1 && (
             <div className="space-y-6">
+              {/* AI Listing Assistant Card */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Lightbulb className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-gray-900">
+                      AI Listing Assistant
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      Get AI-powered suggestions to improve your listing
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={getAiListingSuggestions}
+                  disabled={isLoadingAiSuggestions}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+                >
+                  {isLoadingAiSuggestions ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Getting AI Suggestions...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      Get AI Suggestions
+                    </>
+                  )}
+                </button>
+
+                {/* AI Suggestions Results */}
+                {aiListingSuggestions && (
+                  <div className="mt-6 space-y-4">
+                    {/* Title Suggestion */}
+                    {aiListingSuggestions.titleSuggestion && (
+                      <div className="p-4 bg-white rounded-lg border border-blue-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                            <Lightbulb className="w-4 h-4 text-blue-600" />
+                            Suggested Title
+                          </span>
+                          <button
+                            type="button"
+                            onClick={applyTitleSuggestion}
+                            className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                          >
+                            Use This
+                          </button>
+                        </div>
+                        <p className="text-gray-900 font-medium">{aiListingSuggestions.titleSuggestion}</p>
+                      </div>
+                    )}
+
+                    {/* Improved Description */}
+                    <div className="p-4 bg-white rounded-lg border border-blue-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-blue-600" />
+                          Improved Description
+                        </span>
+                        <button
+                          type="button"
+                          onClick={applyImprovedDescription}
+                          className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                        >
+                          Use This
+                        </button>
+                      </div>
+                      <p className="text-gray-700 text-sm whitespace-pre-wrap">
+                        {aiListingSuggestions.improvedDescription.slice(0, 500)}
+                        {aiListingSuggestions.improvedDescription.length > 500 && "..."}
+                      </p>
+                    </div>
+
+                    {/* Suggested Tags */}
+                    <div className="p-4 bg-white rounded-lg border border-blue-200">
+                      <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
+                        <Tag className="w-4 h-4 text-blue-600" />
+                        Suggested Tags
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {aiListingSuggestions.suggestedTags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Price Range Suggestion */}
+                    <div className="p-4 bg-white rounded-lg border border-blue-200">
+                      <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
+                        <TrendingUp className="w-4 h-4 text-blue-600" />
+                        AI Price Suggestion
+                      </span>
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1 text-center p-2 bg-gray-50 rounded-lg">
+                          <p className="text-xs text-gray-500">Min</p>
+                          <p className="font-semibold text-gray-700">
+                            {aiListingSuggestions.priceRange.min.toLocaleString()} RWF
+                          </p>
+                        </div>
+                        <div className="flex-1 text-center p-2 bg-blue-50 rounded-lg border border-blue-200">
+                          <p className="text-xs text-blue-600">Suggested Range</p>
+                          <p className="font-bold text-blue-700">
+                            {aiListingSuggestions.priceRange.min.toLocaleString()} - {aiListingSuggestions.priceRange.max.toLocaleString()} RWF
+                          </p>
+                        </div>
+                        <div className="flex-1 text-center p-2 bg-gray-50 rounded-lg">
+                          <p className="text-xs text-gray-500">Max</p>
+                          <p className="font-semibold text-gray-700">
+                            {aiListingSuggestions.priceRange.max.toLocaleString()} RWF
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">{aiListingSuggestions.priceRange.reasoning}</p>
+                    </div>
+
+                    {/* Marketing Tips */}
+                    {aiListingSuggestions.marketingTips.length > 0 && (
+                      <div className="p-4 bg-white rounded-lg border border-blue-200">
+                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
+                          <Lightbulb className="w-4 h-4 text-blue-600" />
+                          Marketing Tips
+                        </span>
+                        <ul className="space-y-2">
+                          {aiListingSuggestions.marketingTips.map((tip, index) => (
+                            <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                              <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                              {tip}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Image Upload */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="font-semibold text-gray-900 mb-4">
@@ -285,10 +550,25 @@ export default function CreateArtworkPage() {
                       className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group"
                     >
                       <img
-                        src={image}
+                        src={image.preview}
                         alt={`Artwork ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
+                      {image.uploading && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                          <Loader2 className="w-6 h-6 text-white animate-spin" />
+                        </div>
+                      )}
+                      {image.error && (
+                        <div className="absolute inset-0 bg-red-500/50 flex items-center justify-center">
+                          <AlertCircle className="w-6 h-6 text-white" />
+                        </div>
+                      )}
+                      {image.uploaded && (
+                        <div className="absolute top-2 left-2">
+                          <Check className="w-5 h-5 text-green-500 bg-white rounded-full p-0.5" />
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
@@ -304,15 +584,20 @@ export default function CreateArtworkPage() {
                     </div>
                   ))}
                   {images.length < 5 && (
-                    <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-teal-500 hover:bg-teal-50 transition-colors">
-                      <Upload className="w-6 h-6 text-gray-400 mb-2" />
-                      <span className="text-xs text-gray-500">Add Photo</span>
+                    <label className={`aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-teal-500 hover:bg-teal-50 transition-colors ${isUploading ? "opacity-50 pointer-events-none" : ""}`}>
+                      {isUploading ? (
+                        <Loader2 className="w-6 h-6 text-gray-400 mb-2 animate-spin" />
+                      ) : (
+                        <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                      )}
+                      <span className="text-xs text-gray-500">{isUploading ? "Uploading..." : "Add Photo"}</span>
                       <input
                         type="file"
                         accept="image/*"
                         multiple
                         onChange={handleImageUpload}
                         className="hidden"
+                        disabled={isUploading}
                       />
                     </label>
                   )}
@@ -622,6 +907,29 @@ export default function CreateArtworkPage() {
                       ))}
                     </div>
                   </div>
+                </div>
+
+                {/* Hours Worked */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hours Worked (Optional)
+                  </label>
+                  <div className="relative max-w-xs">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="number"
+                      name="hoursWorked"
+                      value={formData.hoursWorked}
+                      onChange={handleChange}
+                      placeholder="e.g., 12"
+                      min="0"
+                      max="500"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Helps calculate fair labor compensation
+                  </p>
                 </div>
 
                 <button

@@ -84,6 +84,77 @@ enum VerificationEvidenceType {
   other
 }
 
+enum PaymentProvider {
+  mtn_momo
+  manual_bank
+}
+
+enum PaymentStatus {
+  requires_action
+  pending
+  paid
+  failed
+  cancelled
+  refunded
+}
+
+enum ShipmentStatus {
+  pending
+  preparing
+  ready_for_pickup
+  in_transit
+  delivered
+  failed
+  returned
+}
+
+enum PayoutStatus {
+  pending
+  eligible
+  approved
+  paid
+  failed
+  cancelled
+}
+
+enum NotificationChannel {
+  email
+  sms
+  whatsapp
+  in_app
+}
+
+enum NotificationStatus {
+  queued
+  sent
+  failed
+  skipped
+}
+
+enum AuctionStatus {
+  draft
+  scheduled
+  live
+  ended
+  cancelled
+  settled
+}
+
+enum BidStatus {
+  active
+  outbid
+  winning
+  rejected
+  cancelled
+}
+
+enum ReturnRequestStatus {
+  open
+  approved
+  rejected
+  closed
+}
+
 model User {
   id           String        @id @default(cuid())
   email        String        @unique
@@ -105,12 +176,24 @@ model User {
   decidedVerificationReviews VerificationReview[] @relation("VerificationDecider")
   verificationEvidenceUploads VerificationEvidenceAttachment[] @relation("VerificationEvidenceUploader")
   orders        Order[]        @relation("BuyerOrders")
+  paymentTransactions PaymentTransaction[] @relation("BuyerPaymentTransactions")
+  shipments     Shipment[]     @relation("BuyerShipments")
+  payoutLedger  PayoutLedger[] @relation("ArtistPayoutLedger")
+  notifications Notification[]
+  notificationPreference NotificationPreference?
+  auctionBids   AuctionBid[]   @relation("BidderAuctionBids")
+  virtualRooms  VirtualRoomState[]
+  analyticsEvents AnalyticsEvent[]
+  returnRequests ReturnRequest[] @relation("BuyerReturnRequests")
   auditLogs     AuditLog[]     @relation("ActorAuditLogs")
   sessions      AuthSession[]
   passwordResetTokens PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
   buyerCommissionRequests CommissionRequest[] @relation("BuyerCommissionRequests")
   assignedCommissionRequests CommissionRequest[] @relation("AssignedCommissionRequests")
+  termsAcceptedAt DateTime?
+  privacyAcceptedAt DateTime?
+  deletedAt    DateTime?
 }
 
 model AuthSession {
@@ -270,6 +353,7 @@ model Artwork {
   verificationReview VerificationReview?
   verificationEvidence VerificationEvidenceAttachment[]
   orderItems OrderItem[]
+  auctions Auction[]
 
   @@index([artistId])
   @@index([ownerType])
@@ -409,21 +493,26 @@ model VerificationEvidenceAttachment {
 }
 
 model Order {
-  id              String      @id @default(cuid())
-  buyerId         String
-  status          OrderStatus @default(pending_payment)
-  currency        String      @default("RWF")
-  paymentMethod   String      @default("momo")
-  subtotalCents   Int
-  deliveryCents   Int         @default(0)
-  totalCents      Int
-  deliveryAddress Json
-  notes           String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id                   String      @id @default(cuid())
+  buyerId              String
+  status               OrderStatus @default(pending_payment)
+  currency             String      @default("RWF")
+  paymentMethod        String      @default("momo")
+  transactionReference String?     // MTN MoMo X-Reference-Id
+  subtotalCents        Int
+  deliveryCents        Int         @default(0)
+  totalCents           Int
+  deliveryAddress      Json
+  notes                String?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
 
   buyer User        @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Restrict)
   items OrderItem[]
+  payments PaymentTransaction[]
+  shipment Shipment?
+  payouts PayoutLedger[]
+  returnRequests ReturnRequest[]
 
   @@index([buyerId])
   @@index([status])
@@ -446,10 +535,273 @@ model OrderItem {
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   artwork Artwork @relation(fields: [artworkId], references: [id], onDelete: Restrict)
+  payouts PayoutLedger[]
 
   @@index([orderId])
   @@index([artworkId])
   @@index([artistId])
+}
+
+model PaymentTransaction {
+  id                    String          @id @default(cuid())
+  orderId               String
+  buyerId               String
+  provider              PaymentProvider
+  status                PaymentStatus   @default(pending)
+  amountCents           Int
+  currency              String          @default("RWF")
+  providerReference     String?
+  providerCheckoutUrl   String?
+  momoPhone             String?
+  ussdReference         String?
+  idempotencyKey        String          @unique
+  webhookEventId        String?         @unique
+  rawProviderPayload    Json?
+  failureReason         String?
+  paidAt                DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  buyer User  @relation("BuyerPaymentTransactions", fields: [buyerId], references: [id], onDelete: Restrict)
+  refunds Refund[]
+
+  @@index([orderId])
+  @@index([buyerId])
+  @@index([status])
+  @@index([providerReference])
+}
+
+model Refund {
+  id                   String        @id @default(cuid())
+  paymentTransactionId String
+  amountCents          Int
+  reason               String
+  status               PaymentStatus @default(pending)
+  providerReference    String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  paymentTransaction PaymentTransaction @relation(fields: [paymentTransactionId], references: [id], onDelete: Cascade)
+
+  @@index([paymentTransactionId])
+  @@index([status])
+}
+
+model Shipment {
+  id                String         @id @default(cuid())
+  orderId           String         @unique
+  buyerId           String
+  status            ShipmentStatus @default(pending)
+  carrier           String?
+  trackingNumber    String?
+  deliveryAddress   Json
+  deliveryFeeCents  Int            @default(0)
+  artistPrepDueAt   DateTime?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  buyer User  @relation("BuyerShipments", fields: [buyerId], references: [id], onDelete: Restrict)
+
+  @@index([buyerId])
+  @@index([status])
+}
+
+model PayoutLedger {
+  id              String       @id @default(cuid())
+  orderId         String
+  orderItemId     String?
+  artistId        String
+  status          PayoutStatus @default(pending)
+  grossCents      Int
+  platformFeeCents Int
+  deliveryCostCents Int @default(0)
+  payoutCents     Int
+  currency        String       @default("RWF")
+  eligibleAt      DateTime
+  approvedAt      DateTime?
+  paidAt          DateTime?
+  failedAt        DateTime?
+  failureReason   String?
+  providerReference String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItem OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+  artist User @relation("ArtistPayoutLedger", fields: [artistId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([artistId])
+  @@index([status])
+  @@index([eligibleAt])
+}
+
+model ReturnRequest {
+  id        String              @id @default(cuid())
+  orderId   String
+  buyerId   String
+  reason    String
+  status    ReturnRequestStatus @default(open)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  buyer User  @relation("BuyerReturnRequests", fields: [buyerId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([buyerId])
+  @@index([status])
+}
+
+model Notification {
+  id           String              @id @default(cuid())
+  userId       String
+  channel      NotificationChannel
+  status       NotificationStatus  @default(queued)
+  templateKey  String
+  subject      String?
+  body         String
+  metadata     Json?
+  errorMessage String?
+  sentAt       DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([channel])
+  @@index([createdAt])
+}
+
+model NotificationPreference {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  emailEnabled    Boolean  @default(true)
+  smsEnabled      Boolean  @default(false)
+  whatsappEnabled Boolean  @default(false)
+  orderUpdates    Boolean  @default(true)
+  moderation      Boolean  @default(true)
+  auctions        Boolean  @default(true)
+  marketing       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Auction {
+  id                String        @id @default(cuid())
+  artworkId         String
+  status            AuctionStatus @default(draft)
+  title             String
+  startsAt          DateTime
+  endsAt            DateTime
+  startingBidCents  Int
+  reserveCents      Int?
+  minIncrementCents Int           @default(1000)
+  currency          String        @default("RWF")
+  winnerBidId       String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  artwork Artwork @relation(fields: [artworkId], references: [id], onDelete: Restrict)
+  bids AuctionBid[]
+
+  @@index([artworkId])
+  @@index([status])
+  @@index([startsAt])
+  @@index([endsAt])
+}
+
+model AuctionBid {
+  id        String    @id @default(cuid())
+  auctionId String
+  bidderId  String
+  amountCents Int
+  status    BidStatus @default(active)
+  createdAt DateTime  @default(now())
+
+  auction Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidder User    @relation("BidderAuctionBids", fields: [bidderId], references: [id], onDelete: Restrict)
+
+  @@index([auctionId])
+  @@index([bidderId])
+  @@index([status])
+  @@unique([auctionId, bidderId, amountCents])
+}
+
+model VirtualRoomState {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  isPublic    Boolean  @default(false)
+  shareToken  String?  @unique
+  roomState   Json
+  viewedArtworkIds String[] @default([])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isPublic])
+}
+
+model AnalyticsEvent {
+  id          String   @id @default(cuid())
+  userId      String?
+  sessionId   String?
+  eventName   String
+  entityType  String?
+  entityId    String?
+  metadata    Json?
+  occurredAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([eventName])
+  @@index([entityType, entityId])
+  @@index([occurredAt])
+}
+
+model AnalyticsDailyAggregate {
+  id         String   @id @default(cuid())
+  date       DateTime
+  metric     String
+  entityType String?
+  entityId   String?
+  value      Int
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([date, metric, entityType, entityId])
+  @@index([date])
+  @@index([metric])
+}
+
+model SecurityEvent {
+  id          String   @id @default(cuid())
+  actorId     String?
+  eventType   String
+  severity    String
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([actorId])
+  @@index([eventType])
+  @@index([severity])
+  @@index([createdAt])
 }
 
 model CommissionRequest {

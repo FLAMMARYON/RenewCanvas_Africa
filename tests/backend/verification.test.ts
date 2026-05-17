@@ -41,13 +41,13 @@ test("admin verification decisions update artwork and create audit logs", async 
   const db = createMemoryVerificationDatabase();
   await listVerificationQueue(db, admin);
 
-  const review = await decideVerificationReview(db, admin, {
+  const result = await decideVerificationReview(db, admin, {
     artworkId: "artwork_1",
     decision: "request_more_info",
     note: "Add clearer material source photos.",
   });
 
-  assert.equal(review.status, "more_info_requested");
+  assert.equal(result.review.status, "more_info_requested");
   assert.equal(db.artworks[0].status, "under_review");
   assert.equal(db.auditLogs.length, 1);
   assert.equal(db.auditLogs[0].action, "verification.request_more_info");
