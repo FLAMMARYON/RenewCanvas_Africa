@@ -3,9 +3,9 @@ import "./globals.css";
 import GoogleTranslate from "@/components/GoogleTranslate";
 
 export const metadata: Metadata = {
-  title: "RenewCanvas Africa | Circular Art Platform",
+  title: "RenewCanvas Africa",
   description:
-    "Transforming plastic waste into sustainable creative value across Africa. Buy unique upcycled artwork with verified environmental impact.",
+    "Turning waste into art, and art into impact through circular African creativity.",
   keywords: [
     "upcycled art",
     "sustainable art",
@@ -16,25 +16,32 @@ export const metadata: Metadata = {
     "plastic waste art",
     "Rwanda art",
     "Africa art marketplace",
+    "circular art",
+    "waste to art",
   ],
   authors: [{ name: "RenewCanvas Africa" }],
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/icon.svg", type: "image/svg+xml", sizes: "360x80" },
-      { url: "/icon-300.svg", type: "image/svg+xml", sizes: "300x300" },
-      { url: "/icon-mark-300.svg", type: "image/svg+xml", sizes: "300x300" },
+      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon/favicon-48x48.png", sizes: "48x48", type: "image/png" },
+      { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
     ],
-    apple: [{ url: "/apple-touch-icon.svg", type: "image/svg+xml", sizes: "180x180" }],
+    apple: "/apple-touch-icon.png",
   },
   manifest: "/site.webmanifest",
   openGraph: {
-    title: "RenewCanvas Africa | Circular Art Platform",
-    description:
-      "Transforming plastic waste into sustainable creative value across Africa.",
+    title: "RenewCanvas Africa",
+    description: "Turning waste into art, and art into impact.",
     type: "website",
     locale: "en_US",
     siteName: "RenewCanvas Africa",
+    images: ["/brand/linkedin-banner.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RenewCanvas Africa",
+    description: "Turning waste into art, and art into impact.",
+    images: ["/brand/linkedin-banner.png"],
   },
 };
 

@@ -106,10 +106,15 @@ function OrderConfirmationContent() {
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-700">
-              <Recycle className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-bold text-gray-900">Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span></span>
+            <img
+              src="/brand/renewcanvas-icon-full-color.png"
+              alt="RenewCanvas Africa logo"
+              className="w-8 h-8"
+            />
+            <span className="font-bold">
+              <span style={{ color: "#0D5C4D" }}>RenewCanvas</span>{" "}
+              <span style={{ color: "#F7941D" }}>Africa</span>
+            </span>
           </Link>
         </div>
       </header>

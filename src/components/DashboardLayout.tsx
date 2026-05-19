@@ -23,6 +23,7 @@ import {
   Scale,
   Gavel,
   ChevronDown,
+  MessageSquare,
 } from "lucide-react";
 import {
   dashboardPathForRole,
@@ -30,6 +31,7 @@ import {
   readServerSession,
   type FrontendSession,
 } from "@/lib/frontend/auth-api";
+import AnimatedLogo from "@/components/AnimatedLogo";
 
 type UserRole = "buyer" | "artist" | "admin";
 
@@ -64,6 +66,7 @@ const navigationItems = {
   ],
   admin: [
     { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
+    { name: "Messages", href: "/dashboard/admin/messages", icon: MessageSquare },
     { name: "Users", href: "/dashboard/admin/users", icon: Users },
     {
       name: "Artist Verification",
@@ -162,11 +165,9 @@ export default function DashboardLayout({
 
   if (!authChecked) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="flex items-center gap-3 text-sm text-gray-600">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
-          Checking account access...
-        </div>
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+        <AnimatedLogo size={80} animate />
+        <p className="mt-4 text-sm text-gray-500">Checking account access...</p>
       </div>
     );
   }
@@ -190,11 +191,14 @@ export default function DashboardLayout({
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center">
-              <Recycle className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-lg font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
+            <img
+              src="/brand/renewcanvas-icon-full-color.png"
+              alt="RenewCanvas Africa logo"
+              className="w-9 h-9"
+            />
+            <span className="text-lg font-bold">
+              <span style={{ color: "#0D5C4D" }}>RenewCanvas</span>{" "}
+              <span style={{ color: "#F7941D" }}>Africa</span>
             </span>
           </Link>
           <button
@@ -231,7 +235,7 @@ export default function DashboardLayout({
               >
                 <item.icon
                   className={`w-5 h-5 ${
-                    isActive ? "text-teal-600" : "text-gray-400"
+                    isActive ? "text-[#007A68]" : "text-gray-400"
                   }`}
                 />
                 {item.name}
@@ -287,7 +291,7 @@ export default function DashboardLayout({
               className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
-                <User className="w-4 h-4 text-teal-600" />
+                <User className="w-4 h-4 text-[#007A68]" />
               </div>
               <span className="hidden sm:block text-sm font-medium text-gray-700">
                 {displayName}

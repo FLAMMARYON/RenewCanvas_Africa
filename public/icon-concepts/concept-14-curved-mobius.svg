@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <defs>
+    <linearGradient id="bg14" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amber14" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="32" cy="32" r="32" fill="url(#bg14)"/>
+
+  <!-- Smooth curved Möbius arrows -->
+  <g fill="#ffffff" transform="translate(32,32)">
+    <!-- Arrow 1: curves from top-left to top, arrowhead points right -->
+    <path d="M-6,-10
+             C-18,-10 -24,0 -20,12
+             L-16,8
+             C-18,2 -14,-4 -6,-6
+             Z"/>
+    <path d="M-6,-10 L2,-16 L2,-4 Z"/>
+
+    <!-- Arrow 2: curves from top-right to bottom-right, arrowhead points bottom-left -->
+    <path d="M10,-4
+             C18,2 20,14 12,22
+             L16,18
+             C20,12 16,4 10,0
+             Z"/>
+    <path d="M12,22 L20,20 L14,28 Z"/>
+
+    <!-- Arrow 3: curves from bottom to bottom-left, arrowhead points up -->
+    <path d="M-4,14
+             C0,24 -12,26 -20,18
+             L-16,22
+             C-10,26 -2,22 0,14
+             Z"/>
+    <path d="M-20,18 L-22,10 L-14,14 Z"/>
+  </g>
+
+  <!-- Palette -->
+  <ellipse cx="32" cy="34" rx="10" ry="8" fill="#ffffff"/>
+
+  <!-- Thumb hole -->
+  <ellipse cx="26" cy="34" rx="2.5" ry="3" fill="url(#bg14)"/>
+
+  <!-- Paint dots -->
+  <circle cx="35" cy="30" r="2" fill="url(#amber14)"/>
+  <circle cx="38" cy="35" r="1.5" fill="#8b5cf6"/>
+  <circle cx="34" cy="39" r="1.5" fill="#0f766e"/>
+</svg>

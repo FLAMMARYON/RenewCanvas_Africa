@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <defs>
+    <linearGradient id="bg12b" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amber12b" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="32" cy="32" r="32" fill="url(#bg12b)"/>
+
+  <!-- Professional recycling symbol - 3 identical arrows rotated 120° -->
+  <g fill="#ffffff">
+    <!-- Top arrow pointing right -->
+    <polygon points="32,4 40,16 36,16 42,24 22,24 28,16 24,16"/>
+
+    <!-- Bottom-right arrow pointing bottom-left -->
+    <polygon points="56,46 48,38 50,42 40,40 32,56 38,48 34,48"/>
+
+    <!-- Bottom-left arrow pointing up -->
+    <polygon points="8,46 16,38 14,42 24,40 32,56 26,48 30,48"/>
+  </g>
+
+  <!-- Palette - simple clean ellipse -->
+  <ellipse cx="32" cy="35" rx="11" ry="9" fill="#ffffff"/>
+
+  <!-- Thumb hole -->
+  <ellipse cx="26" cy="35" rx="3" ry="3" fill="url(#bg12b)"/>
+
+  <!-- Paint dots -->
+  <circle cx="35" cy="30" r="2.5" fill="url(#amber12b)"/>
+  <circle cx="39" cy="36" r="2" fill="#8b5cf6"/>
+  <circle cx="34" cy="41" r="2" fill="#0f766e"/>
+</svg>

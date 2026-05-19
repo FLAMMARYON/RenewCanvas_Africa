@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <!-- Concept 5B: Palette shaped like Africa continent -->
+  <defs>
+    <linearGradient id="tealGrad5b" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amberGrad5b" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Circular background -->
+  <circle cx="32" cy="32" r="30" fill="url(#tealGrad5b)"/>
+
+  <!-- Africa-shaped palette (simplified Africa silhouette) -->
+  <path d="M28 10 Q34 8 38 12 L42 14 Q46 18 44 24 L46 30 Q48 36 46 42 L44 48 Q40 54 34 54 Q28 56 24 52 L20 46 Q16 40 18 34 L16 28 Q14 22 18 16 L22 12 Q24 10 28 10 Z"
+        fill="#ffffff" opacity="0.95"/>
+
+  <!-- Thumb hole (placed like a lake in Africa) -->
+  <ellipse cx="26" cy="28" rx="4" ry="4.5" fill="url(#tealGrad5b)"/>
+
+  <!-- Paint dots representing art/materials across the continent -->
+  <circle cx="36" cy="18" r="3.5" fill="url(#amberGrad5b)"/>
+  <circle cx="40" cy="30" r="3" fill="#8b5cf6"/>
+  <circle cx="36" cy="42" r="3.5" fill="#0f766e"/>
+  <circle cx="28" cy="46" r="2.5" fill="#f59e0b"/>
+
+  <!-- Small leaf/sustainability accent -->
+  <path d="M48 14 Q52 10 50 6 Q48 8 48 14 Z" fill="#14b8a6"/>
+</svg>

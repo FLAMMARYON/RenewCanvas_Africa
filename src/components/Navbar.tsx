@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Recycle, Menu, X, ChevronRight } from "lucide-react";
+import { Menu, X, ChevronRight } from "lucide-react";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -64,11 +64,14 @@ export default function Navbar() {
             <div className="flex items-center justify-between h-16">
               {/* Logo */}
               <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center shadow-md">
-                  <Recycle className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-bold text-xl text-gray-900">
-                  Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
+                <img
+                  src="/brand/renewcanvas-icon-full-color.png"
+                  alt="RenewCanvas Africa logo"
+                  className="w-10 h-10"
+                />
+                <span className="font-bold text-xl">
+                  <span style={{ color: "#0D5C4D" }}>RenewCanvas</span>{" "}
+                  <span style={{ color: "#F7941D" }}>Africa</span>
                 </span>
               </Link>
 
@@ -78,7 +81,7 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium transition-colors rounded-lg hover:bg-teal-50"
+                    className="px-4 py-2 text-gray-600 hover:text-[#007A68] font-medium transition-colors rounded-lg hover:bg-teal-50"
                   >
                     {link.label}
                   </Link>
@@ -89,13 +92,13 @@ export default function Navbar() {
               <div className="hidden lg:flex items-center gap-3">
                 <Link
                   href="/login"
-                  className="px-4 py-2 text-gray-700 hover:text-teal-600 font-medium transition-colors"
+                  className="px-4 py-2 text-gray-700 hover:text-[#007A68] font-medium transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className="px-5 py-2.5 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors shadow-sm"
+                  className="px-5 py-2.5 bg-[#007A68] text-white rounded-lg font-medium hover:bg-[#005A4D] transition-colors shadow-sm"
                 >
                   Get Started
                 </Link>
@@ -104,7 +107,7 @@ export default function Navbar() {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="lg:hidden p-2 text-gray-600 hover:text-teal-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="lg:hidden p-2 text-gray-600 hover:text-[#007A68] hover:bg-gray-100 rounded-lg transition-colors"
                 aria-label="Toggle menu"
               >
                 {isMenuOpen ? (
@@ -145,11 +148,14 @@ export default function Navbar() {
               className="flex items-center gap-2"
               onClick={() => setIsMenuOpen(false)}
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center">
-                <Recycle className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-bold text-gray-900">
-                Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
+              <img
+                src="/brand/renewcanvas-icon-full-color.png"
+                alt="RenewCanvas Africa logo"
+                className="w-9 h-9"
+              />
+              <span className="font-bold">
+                <span style={{ color: "#0D5C4D" }}>RenewCanvas</span>{" "}
+                <span style={{ color: "#F7941D" }}>Africa</span>
               </span>
             </Link>
             <button
@@ -167,7 +173,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsMenuOpen(false)}
-                className="flex items-center justify-between p-3 text-gray-700 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors font-medium"
+                className="flex items-center justify-between p-3 text-gray-700 hover:text-[#007A68] hover:bg-teal-50 rounded-lg transition-colors font-medium"
               >
                 {link.label}
                 <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -187,7 +193,7 @@ export default function Navbar() {
             <Link
               href="/register"
               onClick={() => setIsMenuOpen(false)}
-              className="block w-full py-3 text-center text-white font-medium bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors"
+              className="block w-full py-3 text-center text-white font-medium bg-[#007A68] rounded-lg hover:bg-[#005A4D] transition-colors"
             >
               Get Started
             </Link>

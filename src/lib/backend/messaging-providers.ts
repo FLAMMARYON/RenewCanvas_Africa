@@ -79,3 +79,17 @@ async function sendTwilioMessage(input: MessageRequest): Promise<MessageResult> 
   if (!response.ok) return { status: "failed", errorMessage: body.message ?? "Messaging provider rejected the message." };
   return { status: "sent", providerReference: body.sid };
 }
+
+/**
+ * Convenience function to send an email directly.
+ * Used by API routes that need to send emails without going through the notification queue.
+ */
+export async function sendEmail(input: { to: string; subject: string; body: string }): Promise<MessageResult> {
+  const client = createMessagingProviderClient();
+  return client.send({
+    channel: "email",
+    to: input.to,
+    subject: input.subject,
+    body: input.body,
+  });
+}

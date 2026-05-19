@@ -1,34 +1,29 @@
 {
   "name": "RenewCanvas Africa",
   "short_name": "RenewCanvas",
-  "description": "Circular art marketplace for upcycled African artwork.",
+  "description": "Turning waste into art, and art into impact.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#007A68",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "360x80",
-      "type": "image/svg+xml",
+      "src": "/favicon/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-300.svg",
-      "sizes": "300x300",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-mark-300.svg",
-      "sizes": "300x300",
-      "type": "image/svg+xml",
+      "src": "/favicon/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/apple-touch-icon.svg",
+      "src": "/favicon/apple-touch-icon.png",
       "sizes": "180x180",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     }
-  ],
-  "theme_color": "#0f766e",
-  "background_color": "#ecfdf5",
-  "display": "standalone"
+  ]
 }

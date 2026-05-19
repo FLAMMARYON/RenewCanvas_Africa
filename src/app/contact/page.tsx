@@ -15,14 +15,28 @@ import {
   Users,
   Palette,
   Building,
-  Link,
+  ExternalLink,
   Briefcase,
   Image,
   FileText,
   Globe,
   Truck,
 } from "lucide-react";
+
+// LinkedIn icon as inline SVG since lucide-react doesn't have it
+const LinkedInIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+  </svg>
+);
+
 import { useState } from "react";
+import Footer from "@/components/Footer";
 
 export default function ContactPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -81,11 +95,14 @@ function Navigation({
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <a href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center">
-              <Recycle className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
+            <img
+              src="/brand/renewcanvas-icon-full-color.png"
+              alt="RenewCanvas Africa logo"
+              className="w-10 h-10"
+            />
+            <span className="text-xl font-bold">
+              <span className="text-black">Renew</span><span style={{ color: "#0D5C4D" }}>Canvas</span>{" "}
+              <span style={{ color: "#F7941D" }}>Africa</span>
             </span>
           </a>
 
@@ -261,13 +278,15 @@ function ContactInfoSection() {
       title: "Email Us",
       details: ["hello.renewcanvas.africa@gmail.com"],
       color: "teal",
+      href: "mailto:hello.renewcanvas.africa@gmail.com",
     },
     {
       icon: Phone,
       title: "Call Us",
-      details: ["+250 XXX XXX XXX"],
+      details: ["+250 798 654 776"],
       subtext: "Mon-Fri, 9am-5pm EAT",
       color: "purple",
+      href: "tel:+250798654776",
     },
     {
       icon: MapPin,
@@ -275,12 +294,15 @@ function ContactInfoSection() {
       details: ["Kigali, Rwanda"],
       subtext: "By appointment only",
       color: "amber",
+      href: "https://maps.google.com/?q=Kigali,Rwanda",
     },
     {
-      icon: Clock,
-      title: "Working Hours",
-      details: ["Monday - Friday", "9:00 AM - 5:00 PM EAT"],
-      color: "green",
+      icon: LinkedInIcon,
+      title: "LinkedIn",
+      details: ["RenewCanvas Africa"],
+      subtext: "Follow us for updates",
+      color: "blue",
+      href: "https://www.linkedin.com/company/renewcanvas-africa/",
     },
   ];
 
@@ -288,7 +310,7 @@ function ContactInfoSection() {
     teal: { bg: "bg-teal-50", iconBg: "bg-teal-100", icon: "text-teal-600", border: "border-teal-200" },
     purple: { bg: "bg-purple-50", iconBg: "bg-purple-100", icon: "text-purple-600", border: "border-purple-200" },
     amber: { bg: "bg-amber-50", iconBg: "bg-amber-100", icon: "text-amber-600", border: "border-amber-200" },
-    green: { bg: "bg-green-50", iconBg: "bg-green-100", icon: "text-green-600", border: "border-green-200" },
+    blue: { bg: "bg-blue-50", iconBg: "bg-blue-100", icon: "text-blue-600", border: "border-blue-200" },
   };
 
   return (
@@ -298,31 +320,49 @@ function ContactInfoSection() {
           {contactInfo.map((info, index) => {
             const colors = colorClasses[info.color];
             return (
-              <div
+              <a
                 key={index}
-                className={`${colors.bg} border ${colors.border} rounded-2xl p-6 text-center hover:shadow-lg [transition:all_0.3s_ease] hover:-translate-y-1`}
+                href={info.href}
+                target={info.href.startsWith("http") ? "_blank" : undefined}
+                rel={info.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                className={`${colors.bg} border ${colors.border} rounded-2xl p-6 text-center hover:shadow-lg [transition:all_0.3s_ease] hover:-translate-y-1 block`}
               >
                 <div className={`w-16 h-16 ${colors.iconBg} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
                   <info.icon className={`w-8 h-8 ${colors.icon}`} />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">{info.title}</h3>
                 {info.details.map((detail, i) => (
-                  <p key={i} className="text-gray-700 font-medium">
+                  <p key={i} className="text-gray-700 font-medium text-sm break-all">
                     {detail}
                   </p>
                 ))}
                 {info.subtext && (
                   <p className="text-sm text-gray-500 mt-2">{info.subtext}</p>
                 )}
-              </div>
+              </a>
             );
           })}
         </div>
 
         {/* Social Links */}
         <div className="mt-12 text-center">
-          <h3 className="font-semibold text-gray-900 mb-4">Follow Us</h3>
-          <p className="text-gray-500 text-sm">Social media links coming soon.</p>
+          <h3 className="font-semibold text-gray-900 mb-4">Connect With Us</h3>
+          <div className="flex justify-center gap-4">
+            <a
+              href="https://www.linkedin.com/company/renewcanvas-africa/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors"
+            >
+              <LinkedInIcon className="w-6 h-6 text-blue-600" />
+            </a>
+            <a
+              href="mailto:hello.renewcanvas.africa@gmail.com"
+              className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center hover:bg-teal-200 transition-colors"
+            >
+              <Mail className="w-6 h-6 text-teal-600" />
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -387,6 +427,120 @@ function BookCollectionCTA() {
    ============================================ */
 function ContactFormSection() {
   const [selectedInquiry, setSelectedInquiry] = useState("general");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
+    location: "",
+    portfolio: "",
+    artStyle: "",
+    experience: "",
+    organization: "",
+    website: "",
+    partnershipType: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    // Validate required fields
+    if (!formData.name || !formData.email || !formData.message) {
+      setSubmitStatus({
+        type: "error",
+        message: "Please fill in all required fields (Name, Email, and Message).",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Map inquiry type to API type
+    const typeMap: Record<string, string> = {
+      general: "contact_form",
+      artist: "artist_application",
+      partnership: "partnership_inquiry",
+    };
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: typeMap[selectedInquiry],
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || undefined,
+          subject: formData.subject || undefined,
+          message: formData.message,
+          metadata:
+            selectedInquiry === "artist"
+              ? {
+                  location: formData.location,
+                  portfolio: formData.portfolio,
+                  artStyle: formData.artStyle,
+                  experience: formData.experience,
+                }
+              : selectedInquiry === "partnership"
+              ? {
+                  organization: formData.organization,
+                  website: formData.website,
+                  partnershipType: formData.partnershipType,
+                }
+              : undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubmitStatus({
+          type: "success",
+          message: data.message || "Thank you! Your message has been sent successfully.",
+        });
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          subject: "",
+          message: "",
+          location: "",
+          portfolio: "",
+          artStyle: "",
+          experience: "",
+          organization: "",
+          website: "",
+          partnershipType: "",
+        });
+      } else {
+        setSubmitStatus({
+          type: "error",
+          message: data.error || "Failed to send message. Please try again.",
+        });
+      }
+    } catch {
+      setSubmitStatus({
+        type: "error",
+        message: "Network error. Please check your connection and try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const inquiryTypes = [
     { icon: Users, label: "General Inquiry", value: "general", color: "teal" },
@@ -424,7 +578,20 @@ function ContactFormSection() {
         </div>
 
         <div className="bg-white rounded-3xl p-8 shadow-xl">
-          <form className="space-y-6">
+          {/* Status Message */}
+          {submitStatus && (
+            <div
+              className={`mb-6 p-4 rounded-xl ${
+                submitStatus.type === "success"
+                  ? "bg-green-50 border border-green-200 text-green-700"
+                  : "bg-red-50 border border-red-200 text-red-700"
+              }`}
+            >
+              {submitStatus.message}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Inquiry Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -465,15 +632,15 @@ function ContactFormSection() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                      Your Name
+                      Your Name <span className="text-red-500">*</span>
                     </label>
-                    <input type="text" id="name" name="name" placeholder="John Doe" className={inputClasses} />
+                    <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Your full name" required className={inputClasses} />
                   </div>
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
+                      Email Address <span className="text-red-500">*</span>
                     </label>
-                    <input type="email" id="email" name="email" placeholder="john@example.com" className={inputClasses} />
+                    <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="you@example.com" required className={inputClasses} />
                   </div>
                 </div>
 
@@ -481,14 +648,14 @@ function ContactFormSection() {
                   <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
                     Subject
                   </label>
-                  <input type="text" id="subject" name="subject" placeholder="How can we help?" className={inputClasses} />
+                  <input type="text" id="subject" name="subject" value={formData.subject} onChange={handleInputChange} placeholder="How can we help?" className={inputClasses} />
                 </div>
 
                 <div>
                   <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                    Message
+                    Message <span className="text-red-500">*</span>
                   </label>
-                  <textarea id="message" name="message" rows={5} placeholder="Tell us more about your inquiry..." className={`${inputClasses} resize-none`} />
+                  <textarea id="message" name="message" value={formData.message} onChange={handleInputChange} rows={5} placeholder="Tell us more about your inquiry..." required className={`${inputClasses} resize-none`} />
                 </div>
               </div>
             )}
@@ -505,16 +672,16 @@ function ContactFormSection() {
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="artistName" className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name <span className="text-red-500">*</span>
                     </label>
-                    <input type="text" id="artistName" name="artistName" placeholder="Your full name" className={inputClasses} />
+                    <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Your full name" required className={inputClasses} />
                   </div>
                   <div>
-                    <label htmlFor="artistEmail" className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address <span className="text-red-500">*</span>
                     </label>
-                    <input type="email" id="artistEmail" name="artistEmail" placeholder="artist@example.com" className={inputClasses} />
+                    <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="artist@example.com" required className={inputClasses} />
                   </div>
                 </div>
 
@@ -523,22 +690,22 @@ function ContactFormSection() {
                     <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                       Phone Number
                     </label>
-                    <input type="tel" id="phone" name="phone" placeholder="+250 XXX XXX XXX" className={inputClasses} />
+                    <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="+250 798 654 776" className={inputClasses} />
                   </div>
                   <div>
                     <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
                       Location / City
                     </label>
-                    <input type="text" id="location" name="location" placeholder="Kigali, Rwanda" className={inputClasses} />
+                    <input type="text" id="location" name="location" value={formData.location} onChange={handleInputChange} placeholder="Kigali, Rwanda" className={inputClasses} />
                   </div>
                 </div>
 
                 <div>
                   <label htmlFor="portfolio" className="block text-sm font-medium text-gray-700 mb-2">
-                    <Link className="w-4 h-4 inline mr-1" />
+                    <ExternalLink className="w-4 h-4 inline mr-1" />
                     Portfolio Link (Website, Instagram, etc.)
                   </label>
-                  <input type="url" id="portfolio" name="portfolio" placeholder="https://your-portfolio.com" className={inputClasses} />
+                  <input type="url" id="portfolio" name="portfolio" value={formData.portfolio} onChange={handleInputChange} placeholder="https://your-portfolio.com" className={inputClasses} />
                 </div>
 
                 <div>
@@ -546,14 +713,14 @@ function ContactFormSection() {
                     <Image className="w-4 h-4 inline mr-1" />
                     Art Style / Medium
                   </label>
-                  <input type="text" id="artStyle" name="artStyle" placeholder="e.g., Sculpture, Painting, Mixed Media, Textile Art" className={inputClasses} />
+                  <input type="text" id="artStyle" name="artStyle" value={formData.artStyle} onChange={handleInputChange} placeholder="e.g., Sculpture, Painting, Mixed Media, Textile Art" className={inputClasses} />
                 </div>
 
                 <div>
                   <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-2">
                     Experience with Recycled Materials
                   </label>
-                  <select id="experience" name="experience" className={inputClasses}>
+                  <select id="experience" name="experience" value={formData.experience} onChange={handleInputChange} className={inputClasses}>
                     <option value="">Select your experience level</option>
                     <option value="beginner">Beginner - New to upcycled art</option>
                     <option value="intermediate">Intermediate - Some experience</option>
@@ -563,10 +730,10 @@ function ContactFormSection() {
                 </div>
 
                 <div>
-                  <label htmlFor="artistBio" className="block text-sm font-medium text-gray-700 mb-2">
-                    Tell Us About Yourself
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                    Tell Us About Yourself <span className="text-red-500">*</span>
                   </label>
-                  <textarea id="artistBio" name="artistBio" rows={4} placeholder="Share your artistic journey, inspiration, and why you want to join RenewCanvas..." className={`${inputClasses} resize-none`} />
+                  <textarea id="message" name="message" value={formData.message} onChange={handleInputChange} rows={4} placeholder="Share your artistic journey, inspiration, and why you want to join RenewCanvas..." required className={`${inputClasses} resize-none`} />
                 </div>
               </div>
             )}
@@ -583,16 +750,16 @@ function ContactFormSection() {
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="contactName" className="block text-sm font-medium text-gray-700 mb-2">
-                      Contact Person
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                      Contact Person <span className="text-red-500">*</span>
                     </label>
-                    <input type="text" id="contactName" name="contactName" placeholder="Your full name" className={inputClasses} />
+                    <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Your full name" required className={inputClasses} />
                   </div>
                   <div>
-                    <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-2">
-                      Business Email
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      Business Email <span className="text-red-500">*</span>
                     </label>
-                    <input type="email" id="contactEmail" name="contactEmail" placeholder="contact@company.com" className={inputClasses} />
+                    <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="contact@company.com" required className={inputClasses} />
                   </div>
                 </div>
 
@@ -602,14 +769,14 @@ function ContactFormSection() {
                       <Briefcase className="w-4 h-4 inline mr-1" />
                       Organization / Company
                     </label>
-                    <input type="text" id="organization" name="organization" placeholder="Company name" className={inputClasses} />
+                    <input type="text" id="organization" name="organization" value={formData.organization} onChange={handleInputChange} placeholder="Company name" className={inputClasses} />
                   </div>
                   <div>
                     <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
                       <Globe className="w-4 h-4 inline mr-1" />
                       Website
                     </label>
-                    <input type="url" id="website" name="website" placeholder="https://company.com" className={inputClasses} />
+                    <input type="url" id="website" name="website" value={formData.website} onChange={handleInputChange} placeholder="https://company.com" className={inputClasses} />
                   </div>
                 </div>
 
@@ -617,7 +784,7 @@ function ContactFormSection() {
                   <label htmlFor="partnershipType" className="block text-sm font-medium text-gray-700 mb-2">
                     Partnership Type
                   </label>
-                  <select id="partnershipType" name="partnershipType" className={inputClasses}>
+                  <select id="partnershipType" name="partnershipType" value={formData.partnershipType} onChange={handleInputChange} className={inputClasses}>
                     <option value="">Select partnership type</option>
                     <option value="sponsor">Sponsorship</option>
                     <option value="material">Material Supply Partnership</option>
@@ -630,11 +797,11 @@ function ContactFormSection() {
                 </div>
 
                 <div>
-                  <label htmlFor="proposal" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
                     <FileText className="w-4 h-4 inline mr-1" />
-                    Partnership Proposal
+                    Partnership Proposal <span className="text-red-500">*</span>
                   </label>
-                  <textarea id="proposal" name="proposal" rows={5} placeholder="Describe your partnership idea, what you hope to achieve, and how we can work together..." className={`${inputClasses} resize-none`} />
+                  <textarea id="message" name="message" value={formData.message} onChange={handleInputChange} rows={5} placeholder="Describe your partnership idea, what you hope to achieve, and how we can work together..." required className={`${inputClasses} resize-none`} />
                 </div>
               </div>
             )}
@@ -642,7 +809,8 @@ function ContactFormSection() {
             {/* Submit Button */}
             <button
               type="submit"
-              className={`inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 text-white rounded-xl [transition:all_0.4s_ease] font-medium hover:scale-[1.02] shadow-lg ${
+              disabled={isSubmitting}
+              className={`inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 text-white rounded-xl [transition:all_0.4s_ease] font-medium hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
                 selectedInquiry === "general"
                   ? "bg-teal-600 hover:bg-teal-700 shadow-teal-600/30"
                   : selectedInquiry === "artist"
@@ -650,8 +818,17 @@ function ContactFormSection() {
                   : "bg-amber-600 hover:bg-amber-700 shadow-amber-600/30"
               }`}
             >
-              {selectedInquiry === "artist" ? "Submit Application" : selectedInquiry === "partnership" ? "Submit Proposal" : "Send Message"}
-              <Send className="w-5 h-5" />
+              {isSubmitting ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  {selectedInquiry === "artist" ? "Submit Application" : selectedInquiry === "partnership" ? "Submit Proposal" : "Send Message"}
+                  <Send className="w-5 h-5" />
+                </>
+              )}
             </button>
           </form>
         </div>
@@ -729,139 +906,3 @@ function FAQSection() {
   );
 }
 
-/* ============================================
-   FOOTER COMPONENT
-   ============================================ */
-function Footer() {
-  const currentYear = new Date().getFullYear();
-
-  const footerLinks = {
-    platform: [
-      { name: "How It Works", href: "/how-it-works" },
-      { name: "Marketplace", href: "/marketplace" },
-      { name: "Artists", href: "/artists" },
-      { name: "Impact", href: "/impact" },
-    ],
-    company: [
-      { name: "About Us", href: "/#about" },
-      { name: "Contact", href: "/contact" },
-      { name: "Careers", href: "/careers" },
-      { name: "Press", href: "/press" },
-    ],
-    support: [
-      { name: "FAQ", href: "/faq" },
-      { name: "Help Center", href: "/help" },
-      { name: "Shipping", href: "/shipping" },
-      { name: "Returns", href: "/returns" },
-    ],
-    legal: [
-      { name: "Privacy Policy", href: "/privacy" },
-      { name: "Terms of Service", href: "/terms" },
-      { name: "Refund Policy", href: "/refund-policy" },
-    ],
-  };
-
-  return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-          {/* Brand Column */}
-          <div className="col-span-2 md:col-span-1">
-            <a href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center">
-                <Recycle className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">
-                Renew<span className="text-teal-400">Canvas</span> <span className="text-amber-500">Africa</span>
-              </span>
-            </a>
-            <p className="text-sm text-gray-400 mb-4">
-              Transforming waste into art, one masterpiece at a time.
-            </p>
-            <p className="text-sm text-gray-500">Kigali, Rwanda</p>
-          </div>
-
-          {/* Platform Links */}
-          <div>
-            <h4 className="font-semibold text-white mb-4">Platform</h4>
-            <ul className="space-y-2">
-              {footerLinks.platform.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-teal-400 transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company Links */}
-          <div>
-            <h4 className="font-semibold text-white mb-4">Company</h4>
-            <ul className="space-y-2">
-              {footerLinks.company.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-teal-400 transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Support Links */}
-          <div>
-            <h4 className="font-semibold text-white mb-4">Support</h4>
-            <ul className="space-y-2">
-              {footerLinks.support.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-teal-400 transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Legal Links */}
-          <div>
-            <h4 className="font-semibold text-white mb-4">Legal</h4>
-            <ul className="space-y-2">
-              {footerLinks.legal.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-teal-400 transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
-          <p className="text-sm text-gray-500">
-            &copy; {currentYear} RenewCanvas <span className="text-amber-500">Africa</span>. All rights reserved.
-          </p>
-          <span className="hidden sm:inline text-gray-600">|</span>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Leaf className="w-4 h-4 text-teal-500" />
-            <span>Built for a sustainable future</span>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}

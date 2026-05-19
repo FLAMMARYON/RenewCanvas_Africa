@@ -64,11 +64,14 @@ export default function ArtworkDetailPage() {
       <header className="border-b border-gray-100 bg-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-700">
-              <Recycle className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">
-              Renew<span className="text-teal-700">Canvas</span> <span className="text-amber-600">Africa</span>
+            <img
+              src="/brand/renewcanvas-icon-full-color.png"
+              alt="RenewCanvas Africa logo"
+              className="w-10 h-10"
+            />
+            <span className="text-xl font-bold">
+              <span style={{ color: "#0D5C4D" }}>RenewCanvas</span>{" "}
+              <span style={{ color: "#F7941D" }}>Africa</span>
             </span>
           </Link>
           <Link href="/marketplace" className="text-sm font-medium text-teal-700">Marketplace</Link>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <!-- Concept 5E: Complete - Palette + Africa outline + Leaf + Circular arrows -->
+  <defs>
+    <linearGradient id="tealGrad5e" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amberGrad5e" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Circular background with subtle pattern -->
+  <circle cx="32" cy="32" r="30" fill="url(#tealGrad5e)"/>
+
+  <!-- Subtle circular arrows in background (recycling/circular economy) -->
+  <g opacity="0.2">
+    <path d="M32 8 A24 24 0 0 1 56 32" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+    <path d="M56 32 A24 24 0 0 1 32 56" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+    <path d="M32 56 A24 24 0 0 1 8 32" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+    <path d="M8 32 A24 24 0 0 1 32 8" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Palette shape -->
+  <path d="M20 26 Q16 34 20 42 Q24 48 32 46 Q40 44 44 36 Q48 28 44 22 Q40 16 32 18 Q24 20 20 26 Z"
+        fill="#ffffff" opacity="0.95"/>
+
+  <!-- Thumb hole with leaf inside (sustainability) -->
+  <circle cx="26" cy="34" r="5" fill="url(#tealGrad5e)"/>
+  <path d="M26 37 Q29 34 28 30 Q26 32 26 37 Z" fill="#ffffff" opacity="0.9"/>
+  <path d="M26 37 Q23 34 24 30 Q26 32 26 37 Z" fill="#ffffff" opacity="0.6"/>
+
+  <!-- Paint dots -->
+  <circle cx="34" cy="24" r="3.5" fill="url(#amberGrad5e)"/>
+  <circle cx="40" cy="32" r="3" fill="#8b5cf6"/>
+  <circle cx="36" cy="40" r="2.5" fill="#0f766e"/>
+
+  <!-- Small Africa silhouette accent -->
+  <path d="M48 16 Q50 14 51 16 L52 18 Q53 20 52 22 L51 24 Q50 26 48 25 L47 23 Q46 21 47 19 L48 17 Z"
+        fill="url(#amberGrad5e)" opacity="0.9"/>
+</svg>

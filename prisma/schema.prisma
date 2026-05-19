@@ -155,6 +155,20 @@ enum ReturnRequestStatus {
   closed
 }
 
+enum ContactMessageType {
+  contact_form
+  artist_application
+  partnership_inquiry
+  waste_supply_request
+}
+
+enum ContactMessageStatus {
+  unread
+  read
+  replied
+  archived
+}
+
 model User {
   id           String        @id @default(cuid())
   email        String        @unique
@@ -828,6 +842,26 @@ model CommissionRequest {
 
   @@index([buyerId])
   @@index([assignedArtistId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ContactMessage {
+  id        String               @id @default(cuid())
+  type      ContactMessageType
+  status    ContactMessageStatus @default(unread)
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  metadata  Json?
+  repliedAt DateTime?
+  replyNote String?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@index([type])
   @@index([status])
   @@index([createdAt])
 }

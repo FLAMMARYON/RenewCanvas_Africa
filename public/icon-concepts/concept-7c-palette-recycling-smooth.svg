@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <!-- Concept 7C: Palette with smooth continuous recycling arrows -->
+  <defs>
+    <linearGradient id="tealGrad7c" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amberGrad7c" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Circular background -->
+  <circle cx="32" cy="32" r="30" fill="url(#tealGrad7c)"/>
+
+  <!-- Smooth recycling arrows forming a circle -->
+  <!-- Continuous circular path with 3 arrow heads -->
+  <circle cx="32" cy="32" r="24" fill="none" stroke="#ffffff" stroke-width="4" stroke-opacity="0.3"/>
+
+  <!-- Arrow segment 1 -->
+  <path d="M32 8 A24 24 0 0 1 53 44" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="51,40 58,46 50,50" fill="#ffffff"/>
+
+  <!-- Arrow segment 2 -->
+  <path d="M48 50 A24 24 0 0 1 11 44" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="15,47 6,46 10,38" fill="#ffffff"/>
+
+  <!-- Arrow segment 3 -->
+  <path d="M14 38 A24 24 0 0 1 32 8" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="29,12 32,2 38,10" fill="#ffffff"/>
+
+  <!-- Artist Palette in center -->
+  <path d="M22 28 Q18 34 22 40 Q26 46 34 44 Q42 42 44 36 Q46 30 44 26 Q42 22 34 24 Q26 26 22 28 Z"
+        fill="#ffffff"/>
+
+  <!-- Thumb hole -->
+  <ellipse cx="28" cy="34" rx="3.5" ry="4" fill="url(#tealGrad7c)"/>
+
+  <!-- Paint dots -->
+  <circle cx="36" cy="28" r="3" fill="url(#amberGrad7c)"/>
+  <circle cx="40" cy="34" r="2.5" fill="#8b5cf6"/>
+  <circle cx="36" cy="40" r="2" fill="#0f766e"/>
+</svg>

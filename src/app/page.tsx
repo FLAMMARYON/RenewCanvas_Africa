@@ -14,11 +14,38 @@ import {
   Menu,
   X,
   Truck,
+  User,
+  LogOut,
+  LayoutDashboard,
+  Settings,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Footer from "@/components/Footer";
+
+interface UserSession {
+  id: string;
+  name: string | null;
+  email: string;
+  role: "buyer" | "artist" | "admin";
+}
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [session, setSession] = useState<UserSession | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+
+  // Fetch session on mount
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user) {
+          setSession(data.user);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setSessionLoading(false));
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -26,6 +53,8 @@ export default function HomePage() {
       <Navigation
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
+        session={session}
+        sessionLoading={sessionLoading}
       />
 
       {/* Hero Section */}
@@ -58,11 +87,17 @@ export default function HomePage() {
 function Navigation({
   mobileMenuOpen,
   setMobileMenuOpen,
+  session,
+  sessionLoading,
 }: {
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
+  session: UserSession | null;
+  sessionLoading: boolean;
 }) {
   const [isVisible, setIsVisible] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -79,6 +114,18 @@ function Navigation({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "How It Works", href: "/how-it-works" },
@@ -89,19 +136,52 @@ function Navigation({
     { name: "Contact", href: "/contact" },
   ];
 
+  // Get user initials for avatar
+  const getInitials = (name: string | null, email: string) => {
+    if (name) {
+      const parts = name.split(" ");
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return name.substring(0, 2).toUpperCase();
+    }
+    return email.substring(0, 2).toUpperCase();
+  };
+
+  // Get dashboard URL based on role
+  const getDashboardUrl = () => {
+    if (!session) return "/dashboard/buyer";
+    switch (session.role) {
+      case "admin":
+        return "/dashboard/admin";
+      case "artist":
+        return "/dashboard/artist";
+      default:
+        return "/dashboard/buyer";
+    }
+  };
+
+  const handleSignOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/";
+  };
+
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center">
-              <Recycle className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">
-              Renew<span className="text-teal-700">Canvas</span> <span className="text-amber-500">Africa</span>
+          <a href="/" className="flex items-center gap-2">
+            <img
+              src="/brand/renewcanvas-icon-full-color.png"
+              alt="RenewCanvas Africa logo"
+              className="w-10 h-10"
+            />
+            <span className="text-xl font-bold">
+              <span className="text-black">Renew</span><span style={{ color: "#0D5C4D" }}>Canvas</span>{" "}
+              <span style={{ color: "#F7941D" }}>Africa</span>
             </span>
-          </div>
+          </a>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
@@ -116,20 +196,86 @@ function Navigation({
             ))}
           </div>
 
-          {/* CTA Buttons */}
-          <div className="group hidden md:flex items-center gap-3">
-            <a
-              href="/login"
-              className="px-4 py-2 text-sm font-medium text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
-            >
-              Sign In
-            </a>
-            <a
-              href="/register"
-              className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] group-hover:scale-105"
-            >
-              Get Started
-            </a>
+          {/* Auth Section - Desktop */}
+          <div className="hidden md:flex items-center gap-3">
+            {sessionLoading ? (
+              // Loading skeleton
+              <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
+            ) : session ? (
+              // Logged in - Show avatar with dropdown
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white font-semibold text-sm">
+                    {getInitials(session.name, session.email)}
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="font-medium text-gray-900 truncate">
+                        {session.name || "User"}
+                      </p>
+                      <p className="text-sm text-gray-500 truncate">{session.email}</p>
+                      <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700 rounded capitalize">
+                        {session.role}
+                      </span>
+                    </div>
+                    <a
+                      href={getDashboardUrl()}
+                      className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      Dashboard
+                    </a>
+                    <a
+                      href={`${getDashboardUrl()}/profile`}
+                      className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <User className="w-4 h-4" />
+                      Profile
+                    </a>
+                    <a
+                      href={`${getDashboardUrl()}/settings`}
+                      className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Settings
+                    </a>
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-3 w-full px-4 py-2 text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Not logged in - Show Sign In / Get Started
+              <div className="group flex items-center gap-3">
+                <a
+                  href="/login"
+                  className="px-4 py-2 text-sm font-medium text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
+                >
+                  Sign In
+                </a>
+                <a
+                  href="/register"
+                  className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] group-hover:scale-105"
+                >
+                  Get Started
+                </a>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -162,20 +308,57 @@ function Navigation({
                 {link.name}
               </a>
             ))}
-            <div className="group pt-4 flex flex-col gap-2">
-              <a
-                href="/login"
-                className="w-full py-2 text-center text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
-              >
-                Sign In
-              </a>
-              <a
-                href="/register"
-                className="w-full py-2 text-center text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] group-hover:scale-105"
-              >
-                Get Started
-              </a>
-            </div>
+
+            {/* Mobile Auth Section */}
+            {session ? (
+              <div className="pt-4 border-t border-gray-100">
+                <div className="flex items-center gap-3 py-2">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white font-semibold text-sm">
+                    {getInitials(session.name, session.email)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{session.name || "User"}</p>
+                    <p className="text-sm text-gray-500">{session.email}</p>
+                  </div>
+                </div>
+                <a
+                  href={getDashboardUrl()}
+                  className="flex items-center gap-3 py-2 text-gray-700"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </a>
+                <a
+                  href={`${getDashboardUrl()}/profile`}
+                  className="flex items-center gap-3 py-2 text-gray-700"
+                >
+                  <User className="w-4 h-4" />
+                  Profile
+                </a>
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-3 w-full py-2 text-red-600"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div className="group pt-4 flex flex-col gap-2">
+                <a
+                  href="/login"
+                  className="w-full py-2 text-center text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
+                >
+                  Sign In
+                </a>
+                <a
+                  href="/register"
+                  className="w-full py-2 text-center text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] group-hover:scale-105"
+                >
+                  Get Started
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -545,21 +728,52 @@ function HowItWorksSection() {
    IMPACT SECTION
    ============================================ */
 function ImpactSection() {
+  const [metrics, setMetrics] = useState({
+    kgDiverted: 0,
+    artistCount: 0,
+    artworkCount: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/metrics")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setMetrics({
+            kgDiverted: data.kgDiverted || 0,
+            artistCount: data.artistCount || 0,
+            artworkCount: data.artworkCount || 0,
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Format metric value - show "-" for zero/null, otherwise format nicely
+  const formatValue = (value: number): string => {
+    if (value === 0) return "-";
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+    return value.toLocaleString();
+  };
+
   const stats = [
     {
-      value: "-",
+      value: loading ? "..." : formatValue(metrics.kgDiverted),
       label: "Kg Waste Diverted",
       description: "Recyclable materials transformed into art",
       icon: Recycle,
     },
     {
-      value: "-",
+      value: loading ? "..." : formatValue(metrics.artistCount),
       label: "Artists Onboarded",
       description: "Talented creators joining our platform",
       icon: Users,
     },
     {
-      value: "-",
+      value: loading ? "..." : formatValue(metrics.artworkCount),
       label: "Artworks Created",
       description: "Unique pieces with verified impact stories",
       icon: Palette,
@@ -748,139 +962,3 @@ function CTASection() {
   );
 }
 
-/* ============================================
-   FOOTER COMPONENT
-   ============================================ */
-function Footer() {
-  const currentYear = new Date().getFullYear();
-
-  const footerLinks = {
-    platform: [
-      { name: "How It Works", href: "/how-it-works" },
-      { name: "Marketplace", href: "/marketplace" },
-      { name: "Artists", href: "/artists" },
-      { name: "Impact", href: "/impact" },
-    ],
-    company: [
-      { name: "About Us", href: "/#about" },
-      { name: "Contact", href: "/contact" },
-      { name: "Careers", href: "/careers" },
-      { name: "Press", href: "/press" },
-    ],
-    support: [
-      { name: "FAQ", href: "/faq" },
-      { name: "Help Center", href: "/help" },
-      { name: "Shipping", href: "/shipping" },
-      { name: "Returns", href: "/returns" },
-    ],
-    legal: [
-      { name: "Privacy Policy", href: "/privacy" },
-      { name: "Terms of Service", href: "/terms" },
-      { name: "Refund Policy", href: "/refund-policy" },
-    ],
-  };
-
-  return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-          {/* Brand Column */}
-          <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center">
-                <Recycle className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">
-                Renew<span className="text-teal-400">Canvas</span> <span className="text-amber-500">Africa</span>
-              </span>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">
-              Transforming waste into art, one masterpiece at a time.
-            </p>
-            <p className="text-sm text-gray-400">Kigali, Rwanda</p>
-          </div>
-
-          {/* Platform Links */}
-          <div>
-            <h4 className="font-semibold text-white mb-4">Platform</h4>
-            <ul className="space-y-2">
-              {footerLinks.platform.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-teal-400 transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company Links */}
-          <div>
-            <h4 className="font-semibold text-white mb-4">Company</h4>
-            <ul className="space-y-2">
-              {footerLinks.company.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-teal-400 transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Support Links */}
-          <div>
-            <h4 className="font-semibold text-white mb-4">Support</h4>
-            <ul className="space-y-2">
-              {footerLinks.support.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-teal-400 transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Legal Links */}
-          <div>
-            <h4 className="font-semibold text-white mb-4">Legal</h4>
-            <ul className="space-y-2">
-              {footerLinks.legal.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-teal-400 transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
-          <p className="text-sm text-gray-400">
-            &copy; {currentYear} RenewCanvas <span className="text-amber-500">Africa</span>. All rights reserved.
-          </p>
-          <span className="hidden sm:inline text-gray-600">|</span>
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <Leaf className="w-4 h-4 text-teal-500" />
-            <span>Built for a sustainable future</span>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}

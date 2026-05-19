@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <!-- Concept 8A: Tight, defined palette with fitted recycling arrows -->
+  <defs>
+    <linearGradient id="tealGrad8a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amberGrad8a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Circular background -->
+  <circle cx="32" cy="32" r="31" fill="url(#tealGrad8a)"/>
+  <circle cx="32" cy="32" r="29" fill="url(#tealGrad8a)" stroke="#0f766e" stroke-width="1"/>
+
+  <!-- Recycling arrows - tight fit around palette -->
+  <!-- Arrow 1 - top right -->
+  <path d="M26 6 A26 26 0 0 1 56 32" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M52 26 L58 32 L52 38" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Arrow 2 - bottom -->
+  <path d="M56 36 A26 26 0 0 1 20 56" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M26 52 L20 58 L14 52" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Arrow 3 - left -->
+  <path d="M16 52 A26 26 0 0 1 26 6" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M20 12 L26 6 L32 12" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Artist Palette - centered, defined -->
+  <path d="M24 26 Q20 32 24 38 Q28 44 34 42 Q40 40 42 34 Q44 28 40 24 Q36 20 30 22 Q26 24 24 26 Z"
+        fill="#ffffff" stroke="#e5e5e5" stroke-width="0.5"/>
+
+  <!-- Thumb hole - crisp -->
+  <ellipse cx="28" cy="32" rx="3" ry="3.5" fill="url(#tealGrad8a)"/>
+
+  <!-- Paint dots - defined -->
+  <circle cx="35" cy="26" r="2.5" fill="url(#amberGrad8a)"/>
+  <circle cx="38" cy="32" r="2" fill="#8b5cf6"/>
+  <circle cx="34" cy="38" r="2" fill="#0f766e"/>
+</svg>

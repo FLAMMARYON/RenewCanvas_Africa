@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <defs>
+    <linearGradient id="bg15d" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amber15d" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="32" cy="32" r="32" fill="url(#bg15d)"/>
+
+  <!-- Three curved arrows chasing each other -->
+  <g fill="#ffffff">
+    <!-- Arrow 1: Left side curving up to top -->
+    <path d="M10,40
+             Q4,28 16,14
+             Q20,10 28,10
+             L26,16
+             Q20,16 18,20
+             Q10,30 14,38
+             Z"/>
+    <polygon points="32,6 42,16 30,18"/>
+
+    <!-- Arrow 2: Top curving right to bottom-right -->
+    <path d="M38,10
+             Q50,12 56,26
+             Q58,34 54,42
+             L48,38
+             Q52,32 50,26
+             Q46,18 38,16
+             Z"/>
+    <polygon points="58,46 52,58 48,46"/>
+
+    <!-- Arrow 3: Bottom-right curving left to bottom-left -->
+    <path d="M52,48
+             Q44,56 30,56
+             Q18,56 12,48
+             L16,44
+             Q22,50 32,50
+             Q42,50 48,44
+             Z"/>
+    <polygon points="8,44 14,32 20,44"/>
+  </g>
+
+  <!-- Palette -->
+  <ellipse cx="32" cy="35" rx="10" ry="8" fill="#ffffff"/>
+
+  <!-- Thumb hole -->
+  <ellipse cx="26" cy="35" rx="3" ry="3.5" fill="url(#bg15d)"/>
+
+  <!-- Paint dots -->
+  <circle cx="35" cy="30" r="2.5" fill="url(#amber15d)"/>
+  <circle cx="39" cy="36" r="2" fill="#8b5cf6"/>
+  <circle cx="34" cy="40" r="2" fill="#0f766e"/>
+</svg>

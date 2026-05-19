@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <defs>
+    <linearGradient id="bg16d" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amber16d" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="32" cy="32" r="32" fill="url(#bg16d)"/>
+
+  <!-- Clean recycling arrows using thick strokes -->
+  <g fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round">
+    <path d="M14,46 C4,32 8,14 24,8"/>
+    <path d="M32,6 C52,6 60,26 56,44"/>
+    <path d="M54,52 C44,62 18,62 10,52"/>
+  </g>
+
+  <!-- Sharp arrowheads -->
+  <g fill="#ffffff">
+    <polygon points="28,2 42,14 28,18"/>
+    <polygon points="60,48 52,62 48,48"/>
+    <polygon points="6,50 18,40 18,54"/>
+  </g>
+
+  <!-- Large centered palette -->
+  <ellipse cx="32" cy="36" rx="14" ry="11" fill="#ffffff"/>
+
+  <!-- Thumb hole -->
+  <ellipse cx="23" cy="36" rx="4" ry="5" fill="url(#bg16d)"/>
+
+  <!-- Paint dots -->
+  <circle cx="36" cy="29" r="3.5" fill="url(#amber16d)"/>
+  <circle cx="43" cy="37" r="2.5" fill="#8b5cf6"/>
+  <circle cx="36" cy="44" r="2" fill="#0f766e"/>
+</svg>

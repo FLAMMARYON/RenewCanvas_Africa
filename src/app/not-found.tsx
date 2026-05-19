@@ -8,12 +8,15 @@ export default function NotFound() {
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-amber-50 flex items-center justify-center px-4">
       <div className="max-w-2xl mx-auto text-center">
         {/* Logo */}
-        <Link href="/" className="inline-flex items-center gap-2 mb-12">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center shadow-lg">
-            <Recycle className="w-7 h-7 text-white" />
-          </div>
-          <span className="text-2xl font-bold text-gray-900">
-            Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
+        <Link href="/" className="inline-flex items-center gap-3 mb-12">
+          <img
+            src="/brand/renewcanvas-icon-full-color.png"
+            alt="RenewCanvas Africa logo"
+            className="w-14 h-14"
+          />
+          <span className="text-2xl font-bold">
+            <span style={{ color: "#0D5C4D" }}>RenewCanvas</span>{" "}
+            <span style={{ color: "#F7941D" }}>Africa</span>
           </span>
         </Link>
 

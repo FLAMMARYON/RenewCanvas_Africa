@@ -78,12 +78,15 @@ export default function LoginPage() {
       <div className="relative z-10 min-h-screen flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-12">
         <div className="mx-auto w-full max-w-md">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2 mb-8 justify-center">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center">
-              <Recycle className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-gray-900">
-              Renew<span className="text-teal-700">Canvas</span> <span className="text-amber-600">Africa</span>
+          <a href="/" className="flex items-center gap-3 mb-8 justify-center">
+            <img
+              src="/brand/renewcanvas-icon-full-color.png"
+              alt="RenewCanvas Africa logo"
+              className="w-14 h-14"
+            />
+            <span className="text-2xl font-bold">
+              <span style={{ color: "#0D5C4D" }}>RenewCanvas</span>{" "}
+              <span style={{ color: "#F7941D" }}>Africa</span>
             </span>
           </a>
 

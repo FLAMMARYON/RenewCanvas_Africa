@@ -48,6 +48,7 @@ export default function BuyerProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [userName, setUserName] = useState("User");
 
   useEffect(() => {
     let isCurrent = true;
@@ -74,6 +75,14 @@ export default function BuyerProfilePage() {
             artistUpdates: booleanValue(profileData.notifyArtistUpdates, true),
           },
         });
+
+        // Set user name for layout
+        const firstName = stringValue(profileData.firstName);
+        if (firstName) {
+          setUserName(firstName);
+        } else if (payload.user.name) {
+          setUserName(payload.user.name.split(" ")[0]);
+        }
       } catch (error) {
         if (isCurrent) {
           setStatusMessage(error instanceof Error ? error.message : "Could not load profile.");
@@ -134,7 +143,7 @@ export default function BuyerProfilePage() {
   ];
 
   return (
-    <DashboardLayout role="buyer" userName="John Doe">
+    <DashboardLayout role="buyer" userName={userName}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

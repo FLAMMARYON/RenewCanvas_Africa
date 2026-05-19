@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <defs>
+    <linearGradient id="teal9a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amber9a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="32" cy="32" r="32" fill="url(#teal9a)"/>
+
+  <!-- Professional 3-arrow recycling symbol circling center -->
+  <g fill="#ffffff" transform="translate(32,32)">
+    <!-- Arrow 1 - Top -->
+    <path d="M-3,-24 L0,-28 L3,-24 L1.5,-24 L1.5,-18 L-1.5,-18 L-1.5,-24 Z"/>
+    <path d="M1.5,-18 Q8,-18 12,-12 L10,-10 Q7,-15 1.5,-15 L1.5,-18 Z"/>
+
+    <!-- Arrow 2 - Bottom Right -->
+    <path d="M21,12 L25,14 L22,18 L21,16.5 L16,19.5 L14.5,17 L19.5,14 Z"/>
+    <path d="M14.5,17 Q12,22 6,24 L5,21 Q10,20 12,16 L14.5,17 Z"/>
+
+    <!-- Arrow 3 - Bottom Left -->
+    <path d="M-21,12 L-25,14 L-22,18 L-21,16.5 L-16,19.5 L-14.5,17 L-19.5,14 Z"/>
+    <path d="M-14.5,17 Q-12,22 -6,24 L-5,21 Q-10,20 -12,16 L-14.5,17 Z"/>
+
+    <!-- Connecting arcs -->
+    <path d="M12,-12 A16 16 0 0 1 19.5,14" fill="none" stroke="#ffffff" stroke-width="3"/>
+    <path d="M5,21 A16 16 0 0 1 -5,21" fill="none" stroke="#ffffff" stroke-width="3"/>
+    <path d="M-12,-12 A16 16 0 0 0 -19.5,14" fill="none" stroke="#ffffff" stroke-width="3"/>
+    <path d="M-1.5,-15 A16 16 0 0 0 -10,-10" fill="none" stroke="#ffffff" stroke-width="3"/>
+  </g>
+
+  <!-- Clean Palette in center -->
+  <ellipse cx="32" cy="34" rx="10" ry="8" fill="#ffffff"/>
+  <ellipse cx="28" cy="34" rx="2.5" ry="3" fill="url(#teal9a)"/>
+
+  <!-- Paint dots -->
+  <circle cx="34" cy="30" r="2" fill="url(#amber9a)"/>
+  <circle cx="38" cy="34" r="1.8" fill="#8b5cf6"/>
+  <circle cx="35" cy="38" r="1.5" fill="#0f766e"/>
+</svg>

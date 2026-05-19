@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <defs>
+    <linearGradient id="teal10c" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amber10c" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="32" cy="32" r="32" fill="url(#teal10c)"/>
+
+  <!-- Standard triangular recycling symbol -->
+  <g fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">
+    <!-- Triangle path -->
+    <path d="M32 8 L54 48 L10 48 Z"/>
+  </g>
+
+  <!-- Arrow heads on each side -->
+  <g fill="#ffffff">
+    <!-- Top arrow -->
+    <polygon points="32,4 38,14 26,14"/>
+    <!-- Bottom right arrow -->
+    <polygon points="56,52 50,42 58,44"/>
+    <!-- Bottom left arrow -->
+    <polygon points="8,52 14,42 6,44"/>
+  </g>
+
+  <!-- Classic curved artist palette -->
+  <path d="M23 30
+           Q20 26 26 24
+           Q34 22 40 26
+           Q44 30 42 36
+           Q40 42 32 42
+           Q24 42 22 36
+           Q20 32 23 30 Z"
+        fill="#ffffff"/>
+
+  <!-- Thumb hole - proper position -->
+  <ellipse cx="27" cy="33" rx="3" ry="3.5" fill="url(#teal10c)"/>
+
+  <!-- Paint dots arranged on palette -->
+  <circle cx="35" cy="28" r="2.5" fill="url(#amber10c)"/>
+  <circle cx="39" cy="34" r="2" fill="#8b5cf6"/>
+  <circle cx="34" cy="39" r="2" fill="#0f766e"/>
+</svg>

@@ -168,11 +168,10 @@ function CheckoutContent() {
             <span className="hidden sm:inline">Back to Marketplace</span>
           </Link>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center">
-              <Recycle className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
+            <img src="/brand/renewcanvas-icon-full-color.png" alt="RenewCanvas Africa logo" className="w-8 h-8" />
+            <span className="font-bold">
+              <span style={{ color: "#0D5C4D" }}>RenewCanvas</span>{" "}
+              <span style={{ color: "#F7941D" }}>Africa</span>
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-500">

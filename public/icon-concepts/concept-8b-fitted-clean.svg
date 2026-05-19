@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <!-- Concept 8B: Clean, minimal, fitted design -->
+  <defs>
+    <linearGradient id="tealGrad8b" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amberGrad8b" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Circular background -->
+  <circle cx="32" cy="32" r="31" fill="url(#tealGrad8b)"/>
+
+  <!-- Three recycling arrows - evenly spaced, fitted -->
+  <g fill="#ffffff">
+    <!-- Arrow 1 - top -->
+    <path d="M32 4 L32 10 L38 10 L32 18 L26 10 L32 10 Z"/>
+    <path d="M38 10 A20 20 0 0 1 54 32 L50 32 A16 16 0 0 0 38 14 Z"/>
+
+    <!-- Arrow 2 - bottom right -->
+    <path d="M56 38 L52 44 L54 48 L44 48 L46 38 L50 42 Z"/>
+    <path d="M50 44 A20 20 0 0 1 20 54 L22 50 A16 16 0 0 0 46 44 Z"/>
+
+    <!-- Arrow 3 - bottom left -->
+    <path d="M8 32 L14 38 L10 40 L16 48 L20 38 L14 36 Z"/>
+    <path d="M14 44 A20 20 0 0 1 28 8 L30 12 A16 16 0 0 0 18 42 Z"/>
+  </g>
+
+  <!-- Palette - tight in center -->
+  <path d="M24 28 Q22 32 24 36 Q27 40 32 39 Q37 38 38 34 Q39 30 37 27 Q35 24 31 25 Q27 26 24 28 Z"
+        fill="#ffffff"/>
+
+  <!-- Thumb hole -->
+  <circle cx="27" cy="32" r="2.5" fill="url(#tealGrad8b)"/>
+
+  <!-- Paint dots -->
+  <circle cx="33" cy="28" r="2" fill="url(#amberGrad8b)"/>
+  <circle cx="35" cy="33" r="1.5" fill="#8b5cf6"/>
+  <circle cx="32" cy="36" r="1.5" fill="#0f766e"/>
+</svg>

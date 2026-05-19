@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RenewCanvas Africa - Presentation Template</title>
+  <style>
+    /* ============================================
+       RenewCanvas Africa Brand Presentation Template
+       ============================================
+
+       Brand Colors:
+       - Primary Teal: #0f766e (dark), #14b8a6 (medium), #2dd4bf (light)
+       - Accent Amber: #f59e0b (primary), #fbbf24 (light)
+       - Neutral: #111827 (dark text), #6b7280 (gray), #f9fafb (light bg)
+
+       Fonts:
+       - Headings: System UI / Inter / SF Pro
+       - Body: System UI / Inter / SF Pro
+
+       ============================================ */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --teal-900: #134e4a;
+      --teal-700: #0f766e;
+      --teal-600: #0d9488;
+      --teal-500: #14b8a6;
+      --teal-400: #2dd4bf;
+      --teal-50: #f0fdfa;
+
+      --amber-500: #f59e0b;
+      --amber-400: #fbbf24;
+      --amber-50: #fffbeb;
+
+      --gray-900: #111827;
+      --gray-700: #374151;
+      --gray-600: #4b5563;
+      --gray-500: #6b7280;
+      --gray-300: #d1d5db;
+      --gray-100: #f3f4f6;
+      --gray-50: #f9fafb;
+
+      --white: #ffffff;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-900);
+      line-height: 1.5;
+    }
+
+    .presentation {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .slide {
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+      margin-bottom: 40px;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ============================================
+       Slide Types
+       ============================================ */
+
+    /* Title Slide */
+    .slide.title {
+      background: linear-gradient(135deg, var(--teal-700) 0%, var(--teal-900) 100%);
+      color: var(--white);
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 60px;
+    }
+
+    .slide.title .logo {
+      width: 120px;
+      height: 120px;
+      background: var(--white);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+
+    .slide.title .logo svg {
+      width: 80px;
+      height: 80px;
+    }
+
+    .slide.title h1 {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .slide.title h1 .africa {
+      color: var(--amber-400);
+    }
+
+    .slide.title .tagline {
+      font-size: 24px;
+      opacity: 0.9;
+      max-width: 700px;
+    }
+
+    .slide.title .presenter {
+      margin-top: 48px;
+      font-size: 18px;
+      opacity: 0.8;
+    }
+
+    /* Content Slide */
+    .slide.content {
+      padding: 48px 60px;
+    }
+
+    .slide.content .header {
+      border-bottom: 3px solid var(--teal-500);
+      padding-bottom: 20px;
+      margin-bottom: 32px;
+    }
+
+    .slide.content h2 {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--teal-700);
+    }
+
+    .slide.content .body {
+      flex: 1;
+      font-size: 20px;
+      color: var(--gray-700);
+    }
+
+    .slide.content ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .slide.content ul li {
+      padding: 12px 0;
+      padding-left: 32px;
+      position: relative;
+    }
+
+    .slide.content ul li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      background: var(--teal-500);
+      border-radius: 50%;
+    }
+
+    .slide.content .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 20px;
+      border-top: 1px solid var(--gray-200);
+      font-size: 14px;
+      color: var(--gray-500);
+    }
+
+    /* Two Column Slide */
+    .slide.two-column .body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+    }
+
+    .slide.two-column .column h3 {
+      font-size: 24px;
+      color: var(--teal-700);
+      margin-bottom: 16px;
+    }
+
+    /* Stats Slide */
+    .slide.stats {
+      background: linear-gradient(135deg, var(--teal-50) 0%, var(--white) 100%);
+    }
+
+    .slide.stats .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+      flex: 1;
+      align-items: center;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 2px solid var(--teal-100);
+    }
+
+    .stat-card .value {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--teal-700);
+    }
+
+    .stat-card .value.amber {
+      color: var(--amber-500);
+    }
+
+    .stat-card .label {
+      font-size: 16px;
+      color: var(--gray-600);
+      margin-top: 8px;
+    }
+
+    /* Image Slide */
+    .slide.image-right .body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+    }
+
+    .slide.image-right .image-placeholder {
+      background: var(--gray-100);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gray-400);
+      font-size: 18px;
+    }
+
+    /* Quote Slide */
+    .slide.quote {
+      background: var(--teal-700);
+      color: var(--white);
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 80px;
+    }
+
+    .slide.quote blockquote {
+      font-size: 32px;
+      font-style: italic;
+      max-width: 800px;
+      line-height: 1.6;
+    }
+
+    .slide.quote blockquote::before {
+      content: '"';
+      font-size: 80px;
+      color: var(--amber-400);
+      display: block;
+      line-height: 0.5;
+      margin-bottom: 20px;
+    }
+
+    .slide.quote .attribution {
+      margin-top: 32px;
+      font-size: 20px;
+      color: var(--teal-200);
+    }
+
+    /* Contact Slide */
+    .slide.contact {
+      background: linear-gradient(135deg, var(--gray-900) 0%, var(--teal-900) 100%);
+      color: var(--white);
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 60px;
+    }
+
+    .slide.contact h2 {
+      font-size: 36px;
+      margin-bottom: 32px;
+      color: var(--white);
+    }
+
+    .slide.contact .contact-info {
+      display: flex;
+      gap: 48px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .slide.contact .contact-item {
+      text-align: center;
+    }
+
+    .slide.contact .contact-item .icon {
+      width: 48px;
+      height: 48px;
+      background: var(--teal-500);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+    }
+
+    .slide.contact .contact-item .label {
+      color: var(--gray-400);
+      font-size: 14px;
+    }
+
+    .slide.contact .contact-item .value {
+      font-size: 18px;
+      margin-top: 4px;
+    }
+
+    .slide.contact .cta {
+      margin-top: 48px;
+      padding: 16px 48px;
+      background: var(--amber-500);
+      color: var(--gray-900);
+      font-size: 20px;
+      font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    /* ============================================
+       Print Styles
+       ============================================ */
+
+    @media print {
+      .presentation {
+        padding: 0;
+      }
+
+      .slide {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 0;
+        box-shadow: none;
+        border: 1px solid var(--gray-300);
+      }
+    }
+
+    /* ============================================
+       Template Instructions
+       ============================================ */
+
+    .instructions {
+      background: var(--amber-50);
+      border: 2px solid var(--amber-500);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 40px;
+    }
+
+    .instructions h2 {
+      color: var(--amber-700);
+      margin-bottom: 16px;
+    }
+
+    .instructions ul {
+      margin-left: 20px;
+    }
+
+    .instructions li {
+      margin-bottom: 8px;
+    }
+
+    .instructions code {
+      background: var(--white);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="presentation">
+
+    <!-- Instructions (Remove for final presentation) -->
+    <div class="instructions">
+      <h2>RenewCanvas Africa Slide Deck Template</h2>
+      <p>This HTML template provides the visual design for presentations. To use:</p>
+      <ul>
+        <li>Edit the content directly in this HTML file</li>
+        <li>Open in browser and use print-to-PDF for a shareable version</li>
+        <li>Use as a design reference when creating presentations in PowerPoint/Google Slides</li>
+        <li>Brand colors: Teal (<code>#0f766e</code>, <code>#14b8a6</code>) and Amber (<code>#f59e0b</code>)</li>
+        <li>Fonts: Use system fonts or Inter for a modern look</li>
+      </ul>
+    </div>
+
+    <!-- Slide 1: Title -->
+    <div class="slide title">
+      <div class="logo">
+        <svg viewBox="0 0 100 100" fill="none">
+          <circle cx="50" cy="50" r="45" stroke="#0f766e" stroke-width="8" fill="none"/>
+          <path d="M50 25 L50 50 L70 60" stroke="#0f766e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <circle cx="65" cy="35" r="10" fill="#f59e0b"/>
+        </svg>
+      </div>
+      <h1>RenewCanvas <span class="africa">Africa</span></h1>
+      <p class="tagline">Transforming Plastic Waste into Sustainable Creative Value Across Africa</p>
+      <p class="presenter">Presented by: Nicholas Eke | Founder</p>
+    </div>
+
+    <!-- Slide 2: The Problem -->
+    <div class="slide content">
+      <div class="header">
+        <h2>The Problem We're Solving</h2>
+      </div>
+      <div class="body">
+        <ul>
+          <li>Over 400 million tonnes of plastic waste produced globally each year</li>
+          <li>Only 9% of plastic is recycled; the rest ends up in landfills or oceans</li>
+          <li>African cities face severe plastic pollution and inadequate waste management</li>
+          <li>Artists struggle to find markets, materials, and sustainable income</li>
+          <li>Consumers want sustainable products but lack trusted sources</li>
+        </ul>
+      </div>
+      <div class="footer">
+        <span>RenewCanvas Africa</span>
+        <span>2</span>
+      </div>
+    </div>
+
+    <!-- Slide 3: Our Solution (Two Column) -->
+    <div class="slide content two-column">
+      <div class="header">
+        <h2>Our Solution</h2>
+      </div>
+      <div class="body">
+        <div class="column">
+          <h3>Circular Art Platform</h3>
+          <ul>
+            <li>Collect plastic waste from verified sources</li>
+            <li>Clean, sort, and distribute to vetted artists</li>
+            <li>Artists create unique upcycled artworks</li>
+            <li>Sell through our curated marketplace</li>
+          </ul>
+        </div>
+        <div class="column">
+          <h3>Impact Tracking</h3>
+          <ul>
+            <li>Every artwork has a verified impact story</li>
+            <li>Track kg of waste diverted from landfills</li>
+            <li>Measure artist income generated</li>
+            <li>CO2 emissions avoided calculated</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer">
+        <span>RenewCanvas Africa</span>
+        <span>3</span>
+      </div>
+    </div>
+
+    <!-- Slide 4: Impact Stats -->
+    <div class="slide content stats">
+      <div class="header">
+        <h2>Our Impact</h2>
+      </div>
+      <div class="body">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="value">500+</div>
+            <div class="label">kg Waste Diverted</div>
+          </div>
+          <div class="stat-card">
+            <div class="value amber">25+</div>
+            <div class="label">Artists Supported</div>
+          </div>
+          <div class="stat-card">
+            <div class="value">100+</div>
+            <div class="label">Artworks Created</div>
+          </div>
+          <div class="stat-card">
+            <div class="value amber">750</div>
+            <div class="label">kg CO2 Saved</div>
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <span>RenewCanvas Africa</span>
+        <span>4</span>
+      </div>
+    </div>
+
+    <!-- Slide 5: How It Works -->
+    <div class="slide content">
+      <div class="header">
+        <h2>How It Works</h2>
+      </div>
+      <div class="body">
+        <ul>
+          <li><strong>Collect:</strong> Partner with waste collectors, schools, and businesses</li>
+          <li><strong>Process:</strong> Sort, clean, and prepare materials for artists</li>
+          <li><strong>Create:</strong> Vetted artists transform waste into stunning artworks</li>
+          <li><strong>Sell:</strong> Buyers purchase through our curated marketplace</li>
+          <li><strong>Track:</strong> Every piece has a verified environmental impact story</li>
+        </ul>
+      </div>
+      <div class="footer">
+        <span>RenewCanvas Africa</span>
+        <span>5</span>
+      </div>
+    </div>
+
+    <!-- Slide 6: Quote -->
+    <div class="slide quote">
+      <blockquote>
+        Every piece of art on RenewCanvas tells a story of transformation - from discarded waste to treasured creation.
+      </blockquote>
+      <p class="attribution">- The RenewCanvas Mission</p>
+    </div>
+
+    <!-- Slide 7: Market Opportunity -->
+    <div class="slide content two-column">
+      <div class="header">
+        <h2>Market Opportunity</h2>
+      </div>
+      <div class="body">
+        <div class="column">
+          <h3>Target Customers (B2B)</h3>
+          <ul>
+            <li>Hotels & Hospitality</li>
+            <li>Interior Designers</li>
+            <li>Corporate Offices</li>
+            <li>Schools & Universities</li>
+            <li>NGOs & CSR Programs</li>
+          </ul>
+        </div>
+        <div class="column">
+          <h3>Target Customers (B2C)</h3>
+          <ul>
+            <li>Eco-conscious consumers</li>
+            <li>Art collectors</li>
+            <li>Gift buyers</li>
+            <li>Home decorators</li>
+            <li>Sustainability advocates</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer">
+        <span>RenewCanvas Africa</span>
+        <span>7</span>
+      </div>
+    </div>
+
+    <!-- Slide 8: Business Model -->
+    <div class="slide content">
+      <div class="header">
+        <h2>Business Model</h2>
+      </div>
+      <div class="body">
+        <ul>
+          <li><strong>Marketplace Commission:</strong> 20% on each artwork sale</li>
+          <li><strong>Custom Commissions:</strong> Service fees on B2B installations</li>
+          <li><strong>Workshops:</strong> Artist training and upcycling workshops</li>
+          <li><strong>Sponsorships:</strong> Corporate partnerships and CSR programs</li>
+          <li><strong>Impact Certificates:</strong> Verified environmental impact documentation</li>
+        </ul>
+      </div>
+      <div class="footer">
+        <span>RenewCanvas Africa</span>
+        <span>8</span>
+      </div>
+    </div>
+
+    <!-- Slide 9: Contact -->
+    <div class="slide contact">
+      <h2>Let's Transform Waste into Art Together</h2>
+      <div class="contact-info">
+        <div class="contact-item">
+          <div class="icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </div>
+          <div class="label">Email</div>
+          <div class="value">hello.renewcanvas.africa@gmail.com</div>
+        </div>
+        <div class="contact-item">
+          <div class="icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+          </div>
+          <div class="label">Phone</div>
+          <div class="value">+250 798 654 776</div>
+        </div>
+        <div class="contact-item">
+          <div class="icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </div>
+          <div class="label">Website</div>
+          <div class="value">renewcanvas.africa</div>
+        </div>
+      </div>
+      <a href="https://renewcanvas.africa" class="cta">Visit Our Platform</a>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <!-- Concept 6B: Recycling symbol with Africa and paint brush stroke -->
+  <defs>
+    <linearGradient id="tealGrad6b" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amberGrad6b" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Circular background -->
+  <circle cx="32" cy="32" r="30" fill="url(#tealGrad6b)"/>
+
+  <!-- Circular recycling arrows (flowing style) -->
+  <g fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round">
+    <path d="M32 10 A22 22 0 0 1 52 26"/>
+    <path d="M52 38 A22 22 0 0 1 32 54"/>
+    <path d="M12 32 A22 22 0 0 1 32 10"/>
+  </g>
+
+  <!-- Arrow heads -->
+  <polygon points="50,22 56,28 48,30" fill="#ffffff"/>
+  <polygon points="34,52 28,58 26,50" fill="#ffffff"/>
+  <polygon points="14,28 8,34 16,36" fill="#ffffff"/>
+
+  <!-- Africa silhouette in center -->
+  <path d="M28 20 Q32 18 34 22 L36 24 Q38 28 36 32 L38 36 Q40 42 36 46 L34 48 Q30 50 26 48 L24 44 Q20 40 22 36 L20 32 Q18 26 22 22 L26 20 Z"
+        fill="url(#amberGrad6b)"/>
+
+  <!-- Paint splatter accents -->
+  <circle cx="38" cy="28" r="2" fill="#8b5cf6"/>
+  <circle cx="26" cy="40" r="1.5" fill="#f59e0b"/>
+</svg>

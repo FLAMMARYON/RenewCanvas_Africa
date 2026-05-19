@@ -23,11 +23,24 @@ export default function BuyerOrdersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
+  const [userName, setUserName] = useState("User");
 
   useEffect(() => {
     listOrders()
       .then(setOrders)
       .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load orders."));
+
+    // Fetch user name
+    fetch("/api/profile")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.profile?.firstName) {
+          setUserName(data.profile.firstName);
+        } else if (data?.user?.name) {
+          setUserName(data.user.name.split(" ")[0]);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const filteredOrders = orders.filter((order) => {
@@ -47,7 +60,7 @@ export default function BuyerOrdersPage() {
   );
 
   return (
-    <DashboardLayout role="buyer" userName="Buyer">
+    <DashboardLayout role="buyer" userName={userName}>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Orders</h1>

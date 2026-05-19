@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <!-- Concept 5C: Palette with infinity/circular economy loop -->
+  <defs>
+    <linearGradient id="tealGrad5c" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amberGrad5c" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Circular background -->
+  <circle cx="32" cy="32" r="30" fill="url(#tealGrad5c)"/>
+
+  <!-- Palette shape -->
+  <path d="M18 26 Q14 34 18 42 Q22 50 32 48 Q42 46 46 38 Q50 30 46 22 Q42 14 32 16 Q22 18 18 26 Z"
+        fill="#ffffff" opacity="0.95"/>
+
+  <!-- Infinity loop / circular economy symbol as thumb hole area -->
+  <path d="M20 36 Q20 32 24 32 Q28 32 28 36 Q28 40 24 40 Q20 40 20 36 Z M28 36 Q28 32 32 32 Q36 32 36 36 Q36 40 32 40 Q28 40 28 36 Z"
+        fill="none" stroke="url(#tealGrad5c)" stroke-width="2.5"/>
+
+  <!-- Paint dots -->
+  <circle cx="34" cy="22" r="4" fill="url(#amberGrad5c)"/>
+  <circle cx="42" cy="30" r="3.5" fill="#8b5cf6"/>
+  <circle cx="38" cy="42" r="3" fill="#0f766e"/>
+
+  <!-- African pattern accent (small triangle pattern) -->
+  <path d="M46 18 L49 14 L52 18 Z" fill="url(#amberGrad5c)"/>
+  <path d="M48 14 L51 10 L54 14 Z" fill="#14b8a6" opacity="0.7"/>
+</svg>

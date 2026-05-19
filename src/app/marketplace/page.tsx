@@ -4,6 +4,7 @@ import { listArtworks, listRecommendations, type FrontendArtwork } from "@/lib/f
 import { addToWishlist } from "@/lib/frontend/wishlist-api";
 import { ArrowRight, Filter, Gavel, Grid3X3, Heart, LayoutList, Leaf, Package, Recycle, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
+import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
 
 const categories = ["All", "Paintings", "Sculptures", "Jewelry", "Home Decor", "Fashion", "Mixed Media"];
@@ -62,11 +63,14 @@ export default function MarketplacePage() {
       <header className="border-b border-gray-100 bg-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-600">
-              <Recycle className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-lg font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
+            <img
+              src="/brand/renewcanvas-icon-full-color.png"
+              alt="RenewCanvas Africa logo"
+              className="w-9 h-9"
+            />
+            <span className="text-lg font-bold">
+              <span className="text-black">Renew</span><span style={{ color: "#0D5C4D" }}>Canvas</span>{" "}
+              <span style={{ color: "#F7941D" }}>Africa</span>
             </span>
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-medium text-gray-600 md:flex">
@@ -389,83 +393,7 @@ export default function MarketplacePage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-900 py-12 text-gray-400">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 md:grid-cols-5">
-            {/* Brand */}
-            <div className="md:col-span-1">
-              <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-600">
-                  <Recycle className="h-5 w-5 text-white" />
-                </div>
-                <div className="text-base font-bold leading-tight">
-                  <span className="text-white">Renew</span>
-                  <span className="text-teal-400">Canvas</span>
-                  <br />
-                  <span className="text-amber-500">Africa</span>
-                </div>
-              </div>
-              <p className="mt-4 text-sm text-gray-500">
-                Transforming waste into art, one masterpiece at a time.
-              </p>
-              <p className="mt-2 text-sm text-gray-600">Kigali, Rwanda</p>
-            </div>
-
-            {/* Platform */}
-            <div>
-              <h4 className="font-semibold text-white">Platform</h4>
-              <ul className="mt-4 space-y-2 text-sm">
-                <li><Link href="/how-it-works" className="hover:text-white">How It Works</Link></li>
-                <li><Link href="/marketplace" className="hover:text-white">Marketplace</Link></li>
-                <li><Link href="/artists" className="hover:text-white">Artists</Link></li>
-                <li><Link href="/impact" className="hover:text-white">Impact</Link></li>
-              </ul>
-            </div>
-
-            {/* Company */}
-            <div>
-              <h4 className="font-semibold text-white">Company</h4>
-              <ul className="mt-4 space-y-2 text-sm">
-                <li><Link href="/about" className="hover:text-white">About Us</Link></li>
-                <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
-                <li><Link href="#" className="hover:text-white">Careers</Link></li>
-                <li><Link href="#" className="hover:text-white">Press</Link></li>
-              </ul>
-            </div>
-
-            {/* Support */}
-            <div>
-              <h4 className="font-semibold text-white">Support</h4>
-              <ul className="mt-4 space-y-2 text-sm">
-                <li><Link href="/faq" className="hover:text-white">FAQ</Link></li>
-                <li><Link href="#" className="hover:text-white">Help Center</Link></li>
-                <li><Link href="#" className="hover:text-white">Shipping</Link></li>
-                <li><Link href="/refund-policy" className="hover:text-white">Returns</Link></li>
-              </ul>
-            </div>
-
-            {/* Legal */}
-            <div>
-              <h4 className="font-semibold text-white">Legal</h4>
-              <ul className="mt-4 space-y-2 text-sm">
-                <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
-                <li><Link href="/refund-policy" className="hover:text-white">Refund Policy</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-800 pt-8 text-sm text-gray-500 md:flex-row">
-            <p>
-              &copy; 2026 RenewCanvas <span className="text-amber-500">Africa</span>. All rights reserved.
-            </p>
-            <p className="flex items-center gap-2">
-              <Leaf className="h-4 w-4 text-teal-500" />
-              Built for a sustainable future
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

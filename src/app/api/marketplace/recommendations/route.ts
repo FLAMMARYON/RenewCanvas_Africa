@@ -46,7 +46,9 @@ export async function GET(request: NextRequest) {
         const categoryList = Array.from(categories);
 
         // Get wishlist artwork IDs to exclude from recommendations
-        const wishlistArtworkIds = wishlistCategories.map((item) => item.artwork?.id).filter(Boolean) as string[];
+        const wishlistArtworkIds = wishlistCategories
+          .map((item: { artwork: { id: string; category: string } | null }) => item.artwork?.id)
+          .filter((id): id is string => Boolean(id));
 
         const artworks = await db.artwork.findMany({
           where: {

@@ -11,11 +11,24 @@ export default function WishlistPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [statusMessage, setStatusMessage] = useState("");
+  const [userName, setUserName] = useState("User");
 
   useEffect(() => {
     readWishlist()
       .then(setItems)
       .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load wishlist."));
+
+    // Fetch user name
+    fetch("/api/profile")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.profile?.firstName) {
+          setUserName(data.profile.firstName);
+        } else if (data?.user?.name) {
+          setUserName(data.user.name.split(" ")[0]);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const filteredItems = items.filter((item) => {
@@ -31,7 +44,7 @@ export default function WishlistPage() {
   };
 
   return (
-    <DashboardLayout role="buyer" userName="John Doe">
+    <DashboardLayout role="buyer" userName={userName}>
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

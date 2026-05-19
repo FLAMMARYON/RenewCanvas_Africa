@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <defs>
+    <linearGradient id="teal10a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amber10a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="32" cy="32" r="32" fill="url(#teal10a)"/>
+
+  <!-- Classic triangular recycling symbol (Möbius triangle) -->
+  <g fill="#ffffff" transform="translate(32,34)">
+    <!-- Arrow 1 - Top, pointing right -->
+    <polygon points="0,-22 6,-12 2,-12 2,-6 -2,-6 -2,-12 -6,-12"/>
+    <polygon points="2,-6 14,2 10,6 2,-2"/>
+
+    <!-- Arrow 2 - Bottom right, pointing bottom-left -->
+    <polygon points="18,8 12,18 14,14 8,18 6,14 12,10 8,10"/>
+    <polygon points="6,14 -2,22 -6,18 4,14"/>
+
+    <!-- Arrow 3 - Bottom left, pointing top -->
+    <polygon points="-18,8 -12,18 -14,14 -8,18 -6,14 -12,10 -8,10"/>
+    <polygon points="-6,14 -2,-2 2,-6 -4,10"/>
+  </g>
+
+  <!-- Proper curved artist palette shape -->
+  <path d="M22 30
+           Q18 28 20 24
+           Q24 18 34 20
+           Q44 22 46 30
+           Q48 38 44 42
+           Q38 46 30 44
+           Q22 42 20 36
+           Q18 32 22 30 Z"
+        fill="#ffffff"/>
+
+  <!-- Thumb hole -->
+  <ellipse cx="26" cy="32" rx="3" ry="4" fill="url(#teal10a)"/>
+
+  <!-- Paint dots -->
+  <circle cx="36" cy="26" r="2.5" fill="url(#amber10a)"/>
+  <circle cx="42" cy="34" r="2" fill="#8b5cf6"/>
+  <circle cx="36" cy="40" r="2" fill="#0f766e"/>
+</svg>

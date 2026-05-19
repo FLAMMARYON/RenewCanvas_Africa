@@ -33,6 +33,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { useState } from "react";
+import Footer from "@/components/Footer";
 
 export default function HowItWorksPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -97,11 +98,10 @@ function Navigation({
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <a href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center">
-              <Recycle className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">
-              Renew<span className="text-teal-600">Canvas</span> <span className="text-amber-500">Africa</span>
+            <img src="/brand/renewcanvas-icon-full-color.png" alt="RenewCanvas Africa logo" className="w-10 h-10" />
+            <span className="text-xl font-bold">
+              <span className="text-black">Renew</span><span style={{ color: "#0D5C4D" }}>Canvas</span>{" "}
+              <span style={{ color: "#F7941D" }}>Africa</span>
             </span>
           </a>
 
@@ -927,139 +927,3 @@ function CTASection() {
   );
 }
 
-/* ============================================
-   FOOTER COMPONENT
-   ============================================ */
-function Footer() {
-  const currentYear = new Date().getFullYear();
-
-  const footerLinks = {
-    platform: [
-      { name: "How It Works", href: "/how-it-works" },
-      { name: "Marketplace", href: "/marketplace" },
-      { name: "Artists", href: "/artists" },
-      { name: "Impact", href: "/impact" },
-    ],
-    company: [
-      { name: "About Us", href: "/#about" },
-      { name: "Contact", href: "/contact" },
-      { name: "Careers", href: "/careers" },
-      { name: "Press", href: "/press" },
-    ],
-    support: [
-      { name: "FAQ", href: "/faq" },
-      { name: "Help Center", href: "/help" },
-      { name: "Shipping", href: "/shipping" },
-      { name: "Returns", href: "/returns" },
-    ],
-    legal: [
-      { name: "Privacy Policy", href: "/privacy" },
-      { name: "Terms of Service", href: "/terms" },
-      { name: "Refund Policy", href: "/refund-policy" },
-    ],
-  };
-
-  return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-          {/* Brand Column */}
-          <div className="col-span-2 md:col-span-1">
-            <a href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center">
-                <Recycle className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">
-                Renew<span className="text-teal-400">Canvas</span> <span className="text-amber-500">Africa</span>
-              </span>
-            </a>
-            <p className="text-sm text-gray-400 mb-4">
-              Transforming waste into art, one masterpiece at a time.
-            </p>
-            <p className="text-sm text-gray-500">Kigali, Rwanda</p>
-          </div>
-
-          {/* Platform Links */}
-          <div>
-            <h4 className="font-semibold text-white mb-4">Platform</h4>
-            <ul className="space-y-2">
-              {footerLinks.platform.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-teal-400 transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company Links */}
-          <div>
-            <h4 className="font-semibold text-white mb-4">Company</h4>
-            <ul className="space-y-2">
-              {footerLinks.company.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-teal-400 transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Support Links */}
-          <div>
-            <h4 className="font-semibold text-white mb-4">Support</h4>
-            <ul className="space-y-2">
-              {footerLinks.support.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-teal-400 transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Legal Links */}
-          <div>
-            <h4 className="font-semibold text-white mb-4">Legal</h4>
-            <ul className="space-y-2">
-              {footerLinks.legal.map((link) => (
-                <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-teal-400 transition-colors"
-                  >
-                    {link.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
-          <p className="text-sm text-gray-500">
-            &copy; {currentYear} RenewCanvas <span className="text-amber-500">Africa</span>. All rights reserved.
-          </p>
-          <span className="hidden sm:inline text-gray-600">|</span>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Leaf className="w-4 h-4 text-teal-500" />
-            <span>Built for a sustainable future</span>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}

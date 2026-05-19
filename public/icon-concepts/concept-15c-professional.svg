@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="RenewCanvas Africa">
+  <defs>
+    <linearGradient id="bg15c" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="amber15c" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="32" cy="32" r="32" fill="url(#bg15c)"/>
+
+  <!-- Recycling symbol - thick smooth arcs -->
+  <g fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round">
+    <!-- Arc 1: bottom-left to top -->
+    <path d="M12,44 Q8,24 28,12"/>
+    <!-- Arc 2: top to bottom-right -->
+    <path d="M36,10 Q56,20 52,44"/>
+    <!-- Arc 3: bottom-right to bottom-left -->
+    <path d="M50,50 Q32,60 14,50"/>
+  </g>
+
+  <!-- Arrowheads - pointing in direction of flow -->
+  <g fill="#ffffff">
+    <!-- Top arrowhead pointing right -->
+    <polygon points="32,4 44,14 32,18"/>
+    <!-- Bottom-right arrowhead pointing down-left -->
+    <polygon points="56,48 48,58 46,46"/>
+    <!-- Bottom-left arrowhead pointing up -->
+    <polygon points="8,48 16,38 20,50"/>
+  </g>
+
+  <!-- Palette centered -->
+  <ellipse cx="32" cy="36" rx="11" ry="9" fill="#ffffff"/>
+
+  <!-- Thumb hole -->
+  <ellipse cx="25" cy="36" rx="3" ry="3.5" fill="url(#bg15c)"/>
+
+  <!-- Paint dots -->
+  <circle cx="36" cy="31" r="2.5" fill="url(#amber15c)"/>
+  <circle cx="40" cy="37" r="2" fill="#8b5cf6"/>
+  <circle cx="35" cy="42" r="2" fill="#0f766e"/>
+</svg>

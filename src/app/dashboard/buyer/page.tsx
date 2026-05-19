@@ -14,6 +14,7 @@ import {
   Recycle,
 } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 // Mock data - will be replaced with API calls
 const stats = [
@@ -136,12 +137,34 @@ const statusConfig = {
 };
 
 export default function BuyerDashboard() {
+  const [userName, setUserName] = useState("User");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch user profile data
+    fetch("/api/profile")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.profile?.firstName) {
+          setUserName(data.profile.firstName);
+        } else if (data?.user?.name) {
+          // Use first name from full name
+          const firstName = data.user.name.split(" ")[0];
+          setUserName(firstName);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
-    <DashboardLayout role="buyer" userName="John Doe">
+    <DashboardLayout role="buyer" userName={loading ? "..." : userName}>
       <div className="space-y-8">
         {/* Welcome Header */}
         <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-2xl p-6 text-white">
-          <h1 className="text-2xl font-bold mb-2">Welcome back, John!</h1>
+          <h1 className="text-2xl font-bold mb-2">
+            Welcome back{loading ? "" : `, ${userName}`}!
+          </h1>
           <p className="text-teal-100">
             Track your orders, manage your wishlist, and discover your
             environmental impact.
