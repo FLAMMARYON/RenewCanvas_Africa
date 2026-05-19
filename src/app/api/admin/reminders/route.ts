@@ -70,19 +70,26 @@ export async function POST(request: NextRequest) {
     results.unreadMessages = unreadMessages.length;
 
     // 2. Check for pending orders (paid but not delivered)
+    // Orders with status "paid" that have been in that state for too long
     const pendingCutoff = new Date();
     pendingCutoff.setDate(pendingCutoff.getDate() - PENDING_ORDER_DAYS);
 
     const pendingOrders = await db.order.findMany({
       where: {
         status: "paid",
-        paidAt: { lt: pendingCutoff },
+        updatedAt: { lt: pendingCutoff },
       },
       include: {
-        artwork: { select: { title: true } },
+        items: {
+          select: {
+            title: true,
+            artistName: true,
+          },
+          take: 1,
+        },
         buyer: { select: { name: true } },
       },
-      orderBy: { paidAt: "asc" },
+      orderBy: { updatedAt: "asc" },
     });
 
     results.pendingOrders = pendingOrders.length;
@@ -137,7 +144,7 @@ export async function GET() {
 
 function formatReminderEmail(
   unreadMessages: Array<{ id: string; name: string; email: string; subject: string | null; createdAt: Date }>,
-  pendingOrders: Array<{ id: string; paidAt: Date | null; artwork: { title: string }; buyer: { name: string } }>
+  pendingOrders: Array<{ id: string; updatedAt: Date; items: Array<{ title: string; artistName: string }>; buyer: { name: string } }>
 ): string {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://renewcanvas.africa";
   const now = new Date();
@@ -188,12 +195,12 @@ View all messages: ${siteUrl}/dashboard/admin/messages
 `;
 
     pendingOrders.slice(0, 10).forEach((order, index) => {
-      const days = order.paidAt
-        ? Math.round((now.getTime() - new Date(order.paidAt).getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
+      const days = Math.round((now.getTime() - new Date(order.updatedAt).getTime()) / (1000 * 60 * 60 * 24));
+      const firstItem = order.items[0];
       body += `
 ${index + 1}. Order: ${order.id}
-   Artwork: ${order.artwork.title}
+   Artwork: ${firstItem?.title || "Unknown"}
+   Artist: ${firstItem?.artistName || "Unknown"}
    Buyer: ${order.buyer.name}
    Days since payment: ${days}
 `;
