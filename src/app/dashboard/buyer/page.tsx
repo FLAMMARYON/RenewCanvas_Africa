@@ -1,6 +1,8 @@
 "use client";
 
 import DashboardLayout from "@/components/DashboardLayout";
+import { type FrontendOrder, listOrders } from "@/lib/frontend/orders-api";
+import { readWishlist, type WishlistItem } from "@/lib/frontend/wishlist-api";
 import {
   Heart,
   ShoppingBag,
@@ -14,100 +16,7 @@ import {
   Recycle,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
-
-// Mock data - will be replaced with API calls
-const stats = [
-  {
-    label: "Saved Artworks",
-    value: "12",
-    icon: Heart,
-    color: "text-rose-600",
-    bgColor: "bg-rose-50",
-    href: "/dashboard/buyer/wishlist",
-  },
-  {
-    label: "Total Orders",
-    value: "5",
-    icon: ShoppingBag,
-    color: "text-teal-600",
-    bgColor: "bg-teal-50",
-    href: "/dashboard/buyer/orders",
-  },
-  {
-    label: "Pending Orders",
-    value: "2",
-    icon: Clock,
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
-    href: "/dashboard/buyer/orders?status=pending",
-  },
-  {
-    label: "Impact (kg diverted)",
-    value: "15.2",
-    icon: Recycle,
-    color: "text-green-600",
-    bgColor: "bg-green-50",
-    href: "/dashboard/buyer/impact",
-  },
-];
-
-const recentOrders = [
-  {
-    id: "ORD-001",
-    artwork: "Sunset Over Kigali",
-    artist: "Marie Uwimana",
-    price: 45000,
-    status: "delivered",
-    date: "2026-04-25",
-    image: null,
-  },
-  {
-    id: "ORD-002",
-    artwork: "Plastic Dreams",
-    artist: "Jean Baptiste",
-    price: 32000,
-    status: "in_transit",
-    date: "2026-04-28",
-    image: null,
-  },
-  {
-    id: "ORD-003",
-    artwork: "Recycled Harmony",
-    artist: "Grace Mukamana",
-    price: 58000,
-    status: "pending",
-    date: "2026-04-30",
-    image: null,
-  },
-];
-
-const savedArtworks = [
-  {
-    id: "1",
-    title: "Ocean Waves",
-    artist: "Patrick Habimana",
-    price: 42000,
-    materials: ["PET bottles", "fabric scraps"],
-    image: null,
-  },
-  {
-    id: "2",
-    title: "Mountain Sunrise",
-    artist: "Alice Ingabire",
-    price: 35000,
-    materials: ["bottle caps", "cardboard"],
-    image: null,
-  },
-  {
-    id: "3",
-    title: "City Lights",
-    artist: "Emmanuel Ndayisaba",
-    price: 55000,
-    materials: ["aluminium cans", "glass"],
-    image: null,
-  },
-];
+import { useState, useEffect, useMemo } from "react";
 
 const statusConfig = {
   pending: {
@@ -115,6 +24,30 @@ const statusConfig = {
     color: "text-amber-600",
     bgColor: "bg-amber-50",
     icon: Clock,
+  },
+  pending_payment: {
+    label: "Pending Payment",
+    color: "text-amber-600",
+    bgColor: "bg-amber-50",
+    icon: Clock,
+  },
+  paid: {
+    label: "Paid",
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    icon: CheckCircle,
+  },
+  processing: {
+    label: "Processing",
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    icon: CheckCircle,
+  },
+  shipped: {
+    label: "Shipped",
+    color: "text-purple-600",
+    bgColor: "bg-purple-50",
+    icon: Truck,
   },
   confirmed: {
     label: "Confirmed",
@@ -134,15 +67,35 @@ const statusConfig = {
     bgColor: "bg-green-50",
     icon: CheckCircle,
   },
+  cancelled: {
+    label: "Cancelled",
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+    icon: Clock,
+  },
+  refunded: {
+    label: "Refunded",
+    color: "text-gray-600",
+    bgColor: "bg-gray-100",
+    icon: Clock,
+  },
+  failed: {
+    label: "Failed",
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+    icon: Clock,
+  },
 };
 
 export default function BuyerDashboard() {
   const [userName, setUserName] = useState("User");
   const [loading, setLoading] = useState(true);
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+  const [orders, setOrders] = useState<FrontendOrder[]>([]);
+  const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
-    // Fetch user profile data
-    fetch("/api/profile")
+    const profileRequest = fetch("/api/profile")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.profile?.firstName) {
@@ -153,9 +106,80 @@ export default function BuyerDashboard() {
           setUserName(firstName);
         }
       })
-      .catch(() => {})
+      .catch(() => {});
+
+    const wishlistRequest = readWishlist().then(setWishlistItems);
+    const ordersRequest = listOrders().then(setOrders);
+
+    Promise.allSettled([profileRequest, wishlistRequest, ordersRequest])
+      .then((results) => {
+        const failedDataRequest = results.slice(1).find((result) => result.status === "rejected");
+        if (failedDataRequest?.status === "rejected") {
+          setStatusMessage(
+            failedDataRequest.reason instanceof Error
+              ? failedDataRequest.reason.message
+              : "Could not load account activity."
+          );
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  const accountMetrics = useMemo(() => {
+    const purchasedItems = orders.flatMap((order) => order.items);
+    const artistIds = new Set(purchasedItems.map((item) => item.artistId).filter(Boolean));
+    const pendingOrders = orders.filter((order) => ["pending_payment", "paid", "processing", "shipped"].includes(order.status));
+    const wasteDiverted = purchasedItems.reduce((sum, item) => sum + item.kgDiverted * item.quantity, 0);
+    const artistIncome = purchasedItems.reduce((sum, item) => sum + item.unitAmount * item.quantity, 0);
+
+    return {
+      savedArtworks: wishlistItems.length,
+      totalOrders: orders.length,
+      pendingOrders: pendingOrders.length,
+      wasteDiverted,
+      artistsSupported: artistIds.size,
+      artworksPurchased: purchasedItems.reduce((sum, item) => sum + item.quantity, 0),
+      artistIncome,
+    };
+  }, [orders, wishlistItems.length]);
+
+  const stats = [
+    {
+      label: "Saved Artworks",
+      value: accountMetrics.savedArtworks.toString(),
+      icon: Heart,
+      color: "text-rose-600",
+      bgColor: "bg-rose-50",
+      href: "/dashboard/buyer/wishlist",
+    },
+    {
+      label: "Total Orders",
+      value: accountMetrics.totalOrders.toString(),
+      icon: ShoppingBag,
+      color: "text-teal-600",
+      bgColor: "bg-teal-50",
+      href: "/dashboard/buyer/orders",
+    },
+    {
+      label: "Active Orders",
+      value: accountMetrics.pendingOrders.toString(),
+      icon: Clock,
+      color: "text-amber-600",
+      bgColor: "bg-amber-50",
+      href: "/dashboard/buyer/orders",
+    },
+    {
+      label: "Impact (kg diverted)",
+      value: accountMetrics.wasteDiverted.toFixed(1),
+      icon: Recycle,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      href: "/dashboard/buyer/orders",
+    },
+  ];
+
+  const recentOrders = orders.slice(0, 3);
+  const savedArtworks = wishlistItems.slice(0, 3);
 
   return (
     <DashboardLayout role="buyer" userName={loading ? "..." : userName}>
@@ -170,6 +194,12 @@ export default function BuyerDashboard() {
             environmental impact.
           </p>
         </div>
+
+        {statusMessage && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {statusMessage}
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -205,8 +235,8 @@ export default function BuyerDashboard() {
             </div>
             <div className="divide-y divide-gray-100">
               {recentOrders.map((order) => {
-                const status =
-                  statusConfig[order.status as keyof typeof statusConfig];
+                const item = order.items[0];
+                const status = statusConfig[order.status as keyof typeof statusConfig] ?? statusConfig.pending_payment;
                 return (
                   <div
                     key={order.id}
@@ -218,10 +248,10 @@ export default function BuyerDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">
-                          {order.artwork}
+                          {item?.title ?? "Artwork"}
                         </p>
                         <p className="text-sm text-gray-500">
-                          by {order.artist}
+                          by {item?.artistName ?? "RenewCanvas Africa"}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <span
@@ -231,16 +261,16 @@ export default function BuyerDashboard() {
                             {status.label}
                           </span>
                           <span className="text-xs text-gray-400">
-                            {order.date}
+                            {new Date(order.createdAt).toLocaleDateString()}
                           </span>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-gray-900">
-                          {order.price.toLocaleString()} RWF
+                          {order.totalAmount.toLocaleString()} RWF
                         </p>
                         <Link
-                          href={`/dashboard/buyer/orders/${order.id}`}
+                          href="/dashboard/buyer/orders"
                           className="text-xs text-teal-600 hover:text-teal-700"
                         >
                           View Details
@@ -250,6 +280,13 @@ export default function BuyerDashboard() {
                   </div>
                 );
               })}
+              {recentOrders.length === 0 && (
+                <div className="p-8 text-center">
+                  <Package className="mx-auto mb-3 h-10 w-10 text-gray-300" />
+                  <p className="font-medium text-gray-900">No orders yet</p>
+                  <p className="mt-1 text-sm text-gray-500">Orders you place will appear here.</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -266,7 +303,9 @@ export default function BuyerDashboard() {
               </Link>
             </div>
             <div className="divide-y divide-gray-100">
-              {savedArtworks.map((artwork) => (
+              {savedArtworks.map((item) => {
+                const artwork = item.artwork;
+                return (
                 <div
                   key={artwork.id}
                   className="p-4 hover:bg-gray-50 transition-colors"
@@ -280,25 +319,25 @@ export default function BuyerDashboard() {
                         {artwork.title}
                       </p>
                       <p className="text-sm text-gray-500">
-                        by {artwork.artist}
+                        by {artwork.artist?.name ?? "RenewCanvas Africa"}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {artwork.materials.slice(0, 2).map((material) => (
                           <span
-                            key={material}
+                            key={material.id}
                             className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs"
                           >
-                            {material}
+                            {material.material}
                           </span>
                         ))}
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
-                        {artwork.price.toLocaleString()} RWF
+                        {artwork.priceAmount.toLocaleString()} RWF
                       </p>
                       <Link
-                        href={`/artwork/${artwork.id}`}
+                        href={`/artwork/${artwork.slug}`}
                         className="inline-flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700"
                       >
                         <Eye className="w-3 h-3" />
@@ -307,7 +346,15 @@ export default function BuyerDashboard() {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
+              {savedArtworks.length === 0 && (
+                <div className="p-8 text-center">
+                  <Heart className="mx-auto mb-3 h-10 w-10 text-gray-300" />
+                  <p className="font-medium text-gray-900">No saved artworks yet</p>
+                  <p className="mt-1 text-sm text-gray-500">Saved artworks from the marketplace will appear here.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -329,19 +376,19 @@ export default function BuyerDashboard() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
             <div className="bg-white/70 rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-green-600">15.2 kg</p>
+              <p className="text-2xl font-bold text-green-600">{accountMetrics.wasteDiverted.toFixed(1)} kg</p>
               <p className="text-xs text-gray-600">Waste Diverted</p>
             </div>
             <div className="bg-white/70 rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-teal-600">5</p>
+              <p className="text-2xl font-bold text-teal-600">{accountMetrics.artistsSupported}</p>
               <p className="text-xs text-gray-600">Artists Supported</p>
             </div>
             <div className="bg-white/70 rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-amber-600">5</p>
+              <p className="text-2xl font-bold text-amber-600">{accountMetrics.artworksPurchased}</p>
               <p className="text-xs text-gray-600">Artworks Purchased</p>
             </div>
             <div className="bg-white/70 rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-purple-600">180K</p>
+              <p className="text-2xl font-bold text-purple-600">{accountMetrics.artistIncome.toLocaleString()}</p>
               <p className="text-xs text-gray-600">RWF to Artists</p>
             </div>
           </div>

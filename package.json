@@ -27,6 +27,8 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
     "@tailwindcss/postcss": "^4.2.4",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
@@ -50,8 +52,8 @@
     "axe-core": "^4.11.4",
     "c8": "^11.0.0",
     "eslint": "^10.3.0",
+    "prisma": "^7.8.0",
     "tsx": "^4.20.6",
-    "typescript-eslint": "^8.59.1",
-    "prisma": "^7.8.0"
+    "typescript-eslint": "^8.59.1"
   }
 }

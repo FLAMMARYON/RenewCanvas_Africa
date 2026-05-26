@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Gallery Session</title>
+</head>
+<body>
+    <h1>Clearing RenewCanvas Gallery Session...</h1>
+    <script>
+        sessionStorage.removeItem('rc_gallery_visited');
+        alert('Session cleared! Click OK to go to marketplace.');
+        window.location.href = '/marketplace';
+    </script>
+</body>
+</html>

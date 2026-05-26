@@ -1,0 +1,8 @@
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3002
+- PID:          14600
+- Dir:          C:\Users\Nicholas Eke\Downloads\RenewCanv1.0\RenewCanvas_Africa
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 14600 /F to stop it.

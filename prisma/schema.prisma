@@ -357,6 +357,10 @@ model Artwork {
   reviewedAt  DateTime?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  tags        String[]      @default([])
+  theme       String?
+  impactScore Int?
+  artistLocation String?
 
   artist    User              @relation("ArtistArtworks", fields: [artistId], references: [id], onDelete: Restrict)
   images    ArtworkImage[]

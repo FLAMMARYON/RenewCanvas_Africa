@@ -4,12 +4,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Compass, Home, Info, List, Map as MapIcon, Maximize2, RotateCcw, X } from "lucide-react";
 import * as THREE from "three";
+import { GalleryLoadingScreen } from "@/components/gallery/GalleryLoadingScreen";
+import { WebGLFallback } from "@/components/gallery/WebGLFallback";
 import { curateMuseum, type CurationArtworkInput, type CuratedMuseumRoom } from "@/lib/ml/curator";
-import type { ArtworkCategory, RecyclableMaterial } from "@/lib/ml/schemas";
-import { readVirtualRoomProgress, saveVirtualRoomProgress } from "@/lib/frontend/local-store";
+import type { RecyclableMaterial } from "@/lib/ml/schemas";
 import { virtualRoomArtworks, type VirtualRoomArtwork } from "@/lib/frontend/virtual-room-data";
 
 type RoomKey = "entrance" | "main" | "left" | "right" | "court" | "corridor";
+type SceneState = "exterior" | "interior";
 
 type Artwork = VirtualRoomArtwork & {
   curationRoomTitle?: string;
@@ -57,13 +59,17 @@ const BRAND_TEAL = "#0f766e";
 const BRAND_ORANGE = "#f59e0b";
 const BRAND_DARK = "#101417";
 
+// Interior rooms live BEHIND the building façade (z = -12).
+// Each room is ROOM_D=16 deep, so a station at z=-20 has its south wall at
+// z=-12 (aligned with the façade boundary). Outdoor world stays at z > -12;
+// indoor rooms live at z < -12. Glass doors at z=-12 are the only boundary.
 const roomStations: Station[] = [
-  { key: "entrance", label: "Entrance Lobby", x: 0, z: 8, heading: 0 },
-  { key: "main", label: "Main Gallery", x: 0, z: -10, heading: 0 },
-  { key: "left", label: "Left Gallery", x: -17, z: -10, heading: -90 },
-  { key: "right", label: "Right Gallery", x: 17, z: -10, heading: 90 },
-  { key: "court", label: "Sculpture Court", x: 0, z: -28, heading: 0 },
-  { key: "corridor", label: "Forward Corridor", x: 0, z: -46, heading: 0 },
+  { key: "entrance", label: "Entrance Lobby", x: 0, z: -20, heading: 0 },
+  { key: "main", label: "Main Gallery", x: 0, z: -38, heading: 0 },
+  { key: "left", label: "Left Gallery", x: -17, z: -38, heading: -90 },
+  { key: "right", label: "Right Gallery", x: 17, z: -38, heading: 90 },
+  { key: "court", label: "Sculpture Court", x: 0, z: -56, heading: 0 },
+  { key: "corridor", label: "Forward Corridor", x: 0, z: -74, heading: 0 },
 ];
 
 const roomColors: Record<RoomKey, { wall: string; trim: string; rail: string; floor: string }> = {
@@ -147,45 +153,6 @@ function wingName(wing: number) {
 function stationFor(room: RoomKey, wing: number) {
   const station = roomStations.find((item) => item.key === room) ?? roomStations[0];
   return { ...station, z: station.z - wing * WING_SPACING };
-}
-
-function isRoomKey(value: string | null): value is RoomKey {
-  return roomStations.some((station) => station.key === value);
-}
-
-function readInitialRouteState(): { room: RoomKey; wing: number } | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const params = new URLSearchParams(window.location.search);
-  const routeRoom = params.get("room");
-  const routeWing = Number(params.get("wing") ?? "0");
-
-  if (isRoomKey(routeRoom)) {
-    return {
-      room: routeRoom,
-      wing: Number.isFinite(routeWing) && routeWing >= 0 ? Math.floor(routeWing) : 0,
-    };
-  }
-
-  const saved = readVirtualRoomProgress();
-  if (saved && isRoomKey(saved.room)) {
-    return { room: saved.room, wing: Math.max(0, Math.floor(saved.wing)) };
-  }
-
-  return null;
-}
-
-function writeRouteState(room: RoomKey, wing: number) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  const url = new URL(window.location.href);
-  url.searchParams.set("room", room);
-  url.searchParams.set("wing", String(wing));
-  window.history.replaceState(null, "", url);
 }
 
 function normalizeCurationMaterials(materials: string[]): RecyclableMaterial[] {
@@ -395,19 +362,25 @@ export default function VirtualRoomPage() {
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const targetRef = useRef(new THREE.Vector3(0, CAMERA_Y, 8));
   const yawRef = useRef(0);
+  const pitchRef = useRef(0); // Vertical look angle
+  const keysRef = useRef({ forward: false, backward: false, left: false, right: false });
   const roomRef = useRef<RoomKey>("entrance");
   const wingRef = useRef(0);
   const lastWheelNavRef = useRef(0);
   const wheelDeltaRef = useRef(0);
-  const dragRef = useRef<{ x: number; yaw: number } | null>(null);
+  const dragRef = useRef<{ x: number; y: number; yaw: number; pitch: number } | null>(null);
   const clickablesRef = useRef<THREE.Object3D[]>([]);
-  const routeStateHydratedRef = useRef(false);
+  const sceneStateRef = useRef<SceneState>("exterior");
+  const exteriorGroupRef = useRef<THREE.Group | null>(null);
+  const exteriorHotspotRef = useRef<THREE.Mesh | null>(null);
+  const exteriorLabelRef = useRef<THREE.Mesh | null>(null);
   const [wing, setWing] = useState(0);
   const [room, setRoom] = useState<RoomKey>("entrance");
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [mapOpen, setMapOpen] = useState(true);
   const [infoOpen, setInfoOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
+  const [hasWebGL, setHasWebGL] = useState<boolean | null>(null);
 
   const currentStation = useMemo(() => stationFor(room, wing), [room, wing]);
   const currentDoors = doors[room];
@@ -419,14 +392,30 @@ export default function VirtualRoomPage() {
   }, [room, wing]);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    setHasWebGL(Boolean(gl));
+
+    return () => {
+      if (gl && gl instanceof WebGLRenderingContext) {
+        gl.getExtension("WEBGL_lose_context")?.loseContext();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (hasWebGL !== true || !mountRef.current) return;
 
     const mount = mountRef.current;
     const scene = new THREE.Scene();
     const environmentTexture = createEnvironmentTexture();
-    scene.background = new THREE.Color(BRAND_DARK);
+    // Start with sky background (outdoor). buildExterior sets the final color
+    // (day blue or night dark) based on the hour. Interior switches to dark
+    // BRAND_DARK + fog inside enterBuilding(), so the outdoor scene is never
+    // polluted by interior settings.
+    scene.background = new THREE.Color("#87CEEB");
     scene.environment = environmentTexture;
-    scene.fog = new THREE.FogExp2(BRAND_DARK, 0.018);
+    scene.fog = null;
 
     const camera = new THREE.PerspectiveCamera(72, mount.clientWidth / mount.clientHeight, 0.05, 260);
     camera.position.set(0, CAMERA_Y, 8);
@@ -447,14 +436,10 @@ export default function VirtualRoomPage() {
     const world = new THREE.Group();
     scene.add(world);
 
-    const ambient = new THREE.HemisphereLight("#f7efe2", "#27322f", 1.28);
-    scene.add(ambient);
-
-    const sun = new THREE.DirectionalLight("#ffe1ac", 2.3);
-    sun.position.set(-10, 18, 8);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    scene.add(sun);
+    // Soft interior fill light (works alongside outdoor sun/hemisphere from buildExterior).
+    // Kept low so it doesn't blow out the outdoor scene.
+    const interiorFill = new THREE.HemisphereLight("#f7efe2", "#27322f", 0.45);
+    scene.add(interiorFill);
 
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin("anonymous");
@@ -501,7 +486,7 @@ export default function VirtualRoomPage() {
       world.add(group);
 
       addBox(group, [ROOM_W + 0.4, 0.18, ROOM_D + 0.4], [0, -0.09, 0], palette.floor, { roughness: 0.36, map: floorTexture });
-      addBox(group, [ROOM_W + 0.2, 0.22, ROOM_D + 0.2], [0, WALL_H + 0.12, 0], "#2f2923", { roughness: 0.6 });
+      addBox(group, [ROOM_W + 0.2, 0.22, ROOM_D + 0.2], [0, WALL_H + 0.12, 0], "#E8E4DC", { roughness: 0.65, emissive: "#4A4539", emissiveIntensity: 0.08 });
 
       const hasNorth = roomKey === "entrance" || roomKey === "main" || roomKey === "court" || roomKey === "corridor";
       const hasSouth = roomKey === "main" || roomKey === "court" || roomKey === "corridor";
@@ -545,14 +530,71 @@ export default function VirtualRoomPage() {
       skylight.material = new THREE.MeshPhysicalMaterial({
         color: "#eafaff",
         emissive: "#c5f7ff",
-        emissiveIntensity: 0.45,
+        emissiveIntensity: 0.6,
         roughness: 0.18,
-        transmission: 0.12,
+        transmission: 0.15,
       });
 
-      const light = new THREE.PointLight("#fff1cf", roomKey === "court" ? 18 : 10, 18, 1.8);
-      light.position.set(0, 4.8, -1);
-      group.add(light);
+      const ceilingLight = new THREE.PointLight("#fff1cf", roomKey === "court" ? 9 : 6, 16, 1.8);
+      ceilingLight.position.set(0, WALL_H - 0.4, -1);
+      ceilingLight.castShadow = false;
+      group.add(ceilingLight);
+
+      // Procedural chandelier for entrance (replaces 58 MB GLB)
+      if (roomKey === "entrance" && wingIndex === 0) {
+        const chandelier = new THREE.Group();
+        chandelier.position.set(0, 4.4, -1);
+
+        const brassMaterial = new THREE.MeshStandardMaterial({
+          color: "#c79a3a",
+          metalness: 0.85,
+          roughness: 0.25,
+          emissive: "#3a2810",
+          emissiveIntensity: 0.18,
+        });
+        const crystalMaterial = new THREE.MeshPhysicalMaterial({
+          color: "#fff7d8",
+          metalness: 0,
+          roughness: 0.08,
+          transmission: 0.6,
+          thickness: 0.15,
+          emissive: "#ffe7a0",
+          emissiveIntensity: 0.35,
+        });
+
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.8, 8), brassMaterial);
+        stem.position.y = 0.6;
+        chandelier.add(stem);
+
+        const hub = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 12), brassMaterial);
+        chandelier.add(hub);
+
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.04, 8, 24), brassMaterial);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = -0.12;
+        chandelier.add(ring);
+
+        const bulbCount = 8;
+        for (let i = 0; i < bulbCount; i += 1) {
+          const angle = (i / bulbCount) * Math.PI * 2;
+          const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.45, 6), brassMaterial);
+          arm.position.set(Math.cos(angle) * 0.28, -0.18, Math.sin(angle) * 0.28);
+          arm.rotation.z = Math.cos(angle) * 0.5;
+          arm.rotation.x = Math.sin(angle) * 0.5;
+          chandelier.add(arm);
+
+          const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), crystalMaterial);
+          bulb.position.set(Math.cos(angle) * 0.55, -0.32, Math.sin(angle) * 0.55);
+          chandelier.add(bulb);
+        }
+
+        group.add(chandelier);
+
+        const chandelierLight = new THREE.PointLight("#fff5d0", 2.2, 14, 1.5);
+        chandelierLight.position.set(0, 4.0, -1);
+        chandelierLight.castShadow = false;
+        group.add(chandelierLight);
+      }
 
       if (roomKey === "court") {
         addBox(group, [2.1, 0.55, 2.1], [0, 0.25, 0], "#d2c9b8");
@@ -563,6 +605,65 @@ export default function VirtualRoomPage() {
         addBox(group, [4.4, 0.55, 1.05], [0, 0.26, 2.8], "#263a35");
         addBox(group, [0.3, 0.8, 0.3], [-1.7, -0.22, 2.8], "#1d2926");
         addBox(group, [0.3, 0.8, 0.3], [1.7, -0.22, 2.8], "#1d2926");
+
+        // Pipe lamp in main gallery (first wing only)
+        if (roomKey === "main" && wingIndex === 0) {
+          const pipeLampMaterial = loadPBRMaterial(
+            "/textures/industrial_pipe_lamp",
+            "#2A2A2A",
+            { roughness: 0.4, metalness: 0.7 }
+          );
+          const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.2, 12), pipeLampMaterial);
+          pipe.position.set(0, WALL_H - 0.6, -1);
+          group.add(pipe);
+          const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.45, 16), pipeLampMaterial);
+          lampShade.position.set(0, WALL_H - 1.25, -1);
+          group.add(lampShade);
+        }
+
+        // Fluorescent housing in side galleries (first wing only)
+        if ((roomKey === "left" || roomKey === "right") && wingIndex === 0) {
+          const fluorescentMaterial = loadPBRMaterial(
+            "/textures/mounted_fluorescent_lights",
+            "#E0E0E0",
+            { roughness: 0.3, metalness: 0.2 }
+          );
+          const housing = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.15, 0.35), fluorescentMaterial);
+          housing.position.set(0, WALL_H - 0.25, -1);
+          group.add(housing);
+          const tubeMaterial = new THREE.MeshStandardMaterial({
+            color: "#FFF9E0",
+            emissive: "#FFF9E0",
+            emissiveIntensity: 0.5,
+            roughness: 0.1,
+          });
+          [-0.6, 0.6].forEach((offset) => {
+            const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.1, 12), tubeMaterial);
+            tube.rotation.z = Math.PI / 2;
+            tube.position.set(0, WALL_H - 0.35, -1 + offset * 0.15);
+            group.add(tube);
+          });
+        }
+      }
+
+      // Pendant bulbs in corridor (first wing only)
+      if (roomKey === "corridor" && wingIndex === 0) {
+        const lightbulbMaterial = loadPBRMaterial(
+          "/textures/lightbulb_01",
+          "#FFFACD",
+          { roughness: 0.2, metalness: 0.1 }
+        );
+        [-2, 0, 2].forEach((xPos) => {
+          const cord = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.02, 1.5, 8),
+            new THREE.MeshStandardMaterial({ color: "#1A1A1A", roughness: 0.6 })
+          );
+          cord.position.set(xPos, WALL_H - 0.75, 0);
+          group.add(cord);
+          const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), lightbulbMaterial);
+          bulb.position.set(xPos, WALL_H - 1.5, 0);
+          group.add(bulb);
+        });
       }
     }
 
@@ -643,9 +744,434 @@ export default function VirtualRoomPage() {
       clickablesRef.current.push(group);
     }
 
+    function disposeObject(object: THREE.Object3D) {
+      object.traverse((child) => {
+        if (child instanceof THREE.Mesh || child instanceof THREE.Points) {
+          child.geometry.dispose();
+          const materials = Array.isArray(child.material) ? child.material : [child.material];
+          materials.forEach((material) => {
+            Object.values(material).forEach((value) => {
+              if (value instanceof THREE.Texture) value.dispose();
+            });
+            material.dispose();
+          });
+        }
+      });
+    }
+
+    function createExteriorTextTexture(draw: (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1024;
+      canvas.height = 160;
+      const ctx = canvas.getContext("2d");
+      if (ctx) draw(ctx, canvas);
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    }
+
+    // Cache textures + materials by basePath so repeated wings reuse them
+    const pbrTextureCache = new Map<string, THREE.Texture>();
+    const sharedTextureLoader = new THREE.TextureLoader();
+
+    function loadPBRMaterial(
+      basePath: string,
+      baseColor: string,
+      materialProps: Partial<THREE.MeshStandardMaterialParameters> = {}
+    ) {
+      const material = new THREE.MeshStandardMaterial({
+        color: baseColor,
+        ...materialProps,
+      });
+
+      const cached = pbrTextureCache.get(basePath);
+      if (cached) {
+        material.map = cached;
+        material.needsUpdate = true;
+        return material;
+      }
+
+      sharedTextureLoader.load(
+        `${basePath}_diff_4k.jpg`,
+        (texture) => {
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+          texture.anisotropy = 4;
+          pbrTextureCache.set(basePath, texture);
+          material.map = texture;
+          material.needsUpdate = true;
+        },
+        undefined,
+        () => {
+          // Silently fall back to baseColor
+        }
+      );
+
+      // EXR normal/roughness skipped: not supported by default TextureLoader in browsers
+      return material;
+    }
+
+    function buildExterior(sceneRef: THREE.Scene): THREE.Group {
+      const mode = new Date().getHours() < 18 ? "day" : "night";
+
+      // Three explicit named groups, per scene-structure rule:
+      //   OutdoorWorld    -> sky, terrain, trees, path, lamps, bollards, benches
+      //   MuseumBuildingShell -> facade walls, columns, glass doors, lintel, sign
+      //   InteriorGallery -> already lives in `world` (built later)
+      const exterior = new THREE.Group();
+      exterior.name = "ExteriorRoot";
+
+      const outdoorWorld = new THREE.Group();
+      outdoorWorld.name = "OutdoorWorld";
+      const buildingShell = new THREE.Group();
+      buildingShell.name = "MuseumBuildingShell";
+      exterior.add(outdoorWorld);
+      exterior.add(buildingShell);
+
+      // Enhanced materials with PBR textures
+      const groundMaterial = loadPBRMaterial(
+        "/textures/namaqualand_boulder_02",
+        "#3D3028",
+        { roughness: 0.95 }
+      );
+
+      const pathMaterial = new THREE.MeshStandardMaterial({ color: "#5C4A3A", roughness: 0.92 });
+      const borderMaterial = new THREE.MeshStandardMaterial({ color: "#8B7355", roughness: 0.88 });
+      const sandstoneMaterial = new THREE.MeshStandardMaterial({ color: "#C4A882", roughness: 0.82, metalness: 0 });
+      const ledgeMaterial = new THREE.MeshStandardMaterial({ color: "#B09070", roughness: 0.78 });
+
+      // --- OutdoorWorld: terrain and approach ---
+      // Ground plane is only on the OUTDOOR side of the facade (z > -12),
+      // so interior floors don't compete with it.
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 34), groundMaterial);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.set(0, -0.01, 5);
+      ground.receiveShadow = true;
+      outdoorWorld.add(ground);
+
+      // Path runs from camera approach (z=24) up to the facade (z=-12).
+      const path = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 36), pathMaterial);
+      path.rotation.x = -Math.PI / 2;
+      path.position.set(0, 0, 6);
+      path.receiveShadow = true;
+      outdoorWorld.add(path);
+
+      [-2.37, 2.37].forEach((x) => {
+        const border = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 36), borderMaterial);
+        border.rotation.x = -Math.PI / 2;
+        border.position.set(x, 0.01, 6);
+        outdoorWorld.add(border);
+      });
+
+      // --- MuseumBuildingShell: split facade with real door opening ---
+      // Door opening: x in [-3, 3], y in [0, 5]. Lobby south wall door
+      // sits at the same z=-12 with a 3.5-unit gap; the wider 6-unit
+      // shell opening keeps the door clearly visible from outside.
+      const FACADE_Z = -12;
+      const SHELL_TOP = 11;
+
+      // Left wing wall (x: -11 to -3)
+      const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(8, SHELL_TOP, 0.8), sandstoneMaterial);
+      wallLeft.position.set(-7, SHELL_TOP / 2, FACADE_Z);
+      wallLeft.castShadow = true;
+      wallLeft.receiveShadow = true;
+      buildingShell.add(wallLeft);
+
+      // Right wing wall (x: 3 to 11)
+      const wallRight = new THREE.Mesh(new THREE.BoxGeometry(8, SHELL_TOP, 0.8), sandstoneMaterial);
+      wallRight.position.set(7, SHELL_TOP / 2, FACADE_Z);
+      wallRight.castShadow = true;
+      wallRight.receiveShadow = true;
+      buildingShell.add(wallRight);
+
+      // Lintel above door opening
+      const lintel = new THREE.Mesh(new THREE.BoxGeometry(6.4, SHELL_TOP - 5, 0.9), sandstoneMaterial);
+      lintel.position.set(0, 5 + (SHELL_TOP - 5) / 2, FACADE_Z);
+      lintel.castShadow = true;
+      buildingShell.add(lintel);
+
+      // Cornice / roof ledge across the top
+      const cornice = new THREE.Mesh(new THREE.BoxGeometry(23, 0.6, 1.4), ledgeMaterial);
+      cornice.position.set(0, SHELL_TOP + 0.3, FACADE_Z + 0.2);
+      buildingShell.add(cornice);
+
+      // Side extensions giving the building width/depth
+      [-15, 15].forEach((x) => {
+        const extension = new THREE.Mesh(new THREE.BoxGeometry(8, 10, 12), sandstoneMaterial);
+        extension.position.set(x, 5, FACADE_Z - 4);
+        extension.castShadow = true;
+        extension.receiveShadow = true;
+        buildingShell.add(extension);
+      });
+
+      // Vine strip across the top of the facade
+      const vineStrip = new THREE.Mesh(
+        new THREE.PlaneGeometry(22, 0.8),
+        new THREE.MeshStandardMaterial({ color: "#1A3D1A", transparent: true, opacity: 0.75, side: THREE.DoubleSide, roughness: 0.9 })
+      );
+      vineStrip.position.set(0, SHELL_TOP + 0.65, FACADE_Z + 0.6);
+      vineStrip.rotation.x = degToRad(-8);
+      buildingShell.add(vineStrip);
+
+      // Decorative entrance columns (just in front of facade)
+      [-3.8, 3.8].forEach((x) => {
+        const column = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, SHELL_TOP, 10), sandstoneMaterial);
+        column.position.set(x, SHELL_TOP / 2, FACADE_Z + 0.7);
+        column.castShadow = true;
+        buildingShell.add(column);
+      });
+
+      // Glass entrance doors for continuous building view-through
+      const glassMaterial = new THREE.MeshPhysicalMaterial({
+        color: "#E8F4F8",
+        transparent: true,
+        opacity: 0.25,
+        roughness: 0.05,
+        metalness: 0,
+        transmission: 0.95,
+        thickness: 0.1,
+      });
+
+      const doorFrameMaterial = new THREE.MeshStandardMaterial({
+        color: "#1A1A1A",
+        roughness: 0.3,
+        metalness: 0.6,
+      });
+
+      // Door frames (vertical posts) — part of the building shell
+      [-3, -0.1, 0.1, 3].forEach((x) => {
+        const frame = new THREE.Mesh(
+          new THREE.BoxGeometry(0.15, 5, 0.2),
+          doorFrameMaterial
+        );
+        frame.position.set(x, 2.5, FACADE_Z + 0.05);
+        frame.castShadow = true;
+        buildingShell.add(frame);
+      });
+
+      // Horizontal top frame at door opening
+      const topFrame = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.2, 0.2), doorFrameMaterial);
+      topFrame.position.set(0, 5, FACADE_Z + 0.05);
+      topFrame.castShadow = true;
+      buildingShell.add(topFrame);
+
+      // Glass panels in the door opening — boundary plane
+      const leftGlass = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 4.8), glassMaterial);
+      leftGlass.position.set(-1.5, 2.5, FACADE_Z + 0.02);
+      buildingShell.add(leftGlass);
+      const rightGlass = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 4.8), glassMaterial);
+      rightGlass.position.set(1.5, 2.5, FACADE_Z + 0.02);
+      buildingShell.add(rightGlass);
+
+      // --- OutdoorWorld: benches, bollards, lamps, trees ---
+      const benchMaterial = loadPBRMaterial(
+        "/textures/namaqualand_boulder_02",
+        "#B8A898",
+        { roughness: 0.85, metalness: 0 }
+      );
+      [-4.5, 4.5].forEach((x) => {
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.24, 0.75), benchMaterial);
+        seat.position.set(x, 0.56, -2);
+        seat.castShadow = true;
+        seat.receiveShadow = true;
+        outdoorWorld.add(seat);
+        [-0.7, 0.7].forEach((legOffset) => {
+          const leg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.56, 0.75), benchMaterial);
+          leg.position.set(x + legOffset, 0.28, -2);
+          outdoorWorld.add(leg);
+        });
+      });
+
+      const bollardCapMaterial = new THREE.MeshStandardMaterial({
+        color: "#18140A",
+        roughness: 0.35,
+        metalness: 0.8,
+        emissive: "#FF9944",
+        emissiveIntensity: mode === "night" ? 0.8 : 0,
+      });
+      const bollardPostMaterial = new THREE.MeshStandardMaterial({ color: "#18140A", roughness: 0.4, metalness: 0.8 });
+      // All bollards have z > -10, well clear of the facade at z=-12
+      const bollardPositions = [12, 9.5, 7, 4.5, 2, -0.5].flatMap((z) => [-2.8, 2.8].map((x) => [x, z] as const));
+      bollardPositions.forEach(([x, z]) => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.95, 12), bollardPostMaterial);
+        post.position.set(x, 0.475, z);
+        outdoorWorld.add(post);
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.09, 12), bollardCapMaterial);
+        cap.position.set(x, 0.97, z);
+        outdoorWorld.add(cap);
+      });
+
+      // Two tall street lamps flanking the approach path (per reference).
+      const lampMetal = new THREE.MeshStandardMaterial({ color: "#1f1f1f", roughness: 0.35, metalness: 0.85 });
+      const lampGlowMat = new THREE.MeshStandardMaterial({
+        color: "#fff2cf",
+        emissive: "#ffd58a",
+        emissiveIntensity: mode === "night" ? 1.2 : 0.35,
+        roughness: 0.2,
+      });
+      [-5, 5].forEach((sx) => {
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 6, 10), lampMetal);
+        pole.position.set(sx, 3, 5);
+        pole.castShadow = true;
+        outdoorWorld.add(pole);
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.7), lampMetal);
+        arm.position.set(sx, 6.2, 4.7);
+        outdoorWorld.add(arm);
+        const head = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.3, 12), lampMetal);
+        head.position.set(sx, 6.35, 4.45);
+        outdoorWorld.add(head);
+        const glow = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.05, 12), lampGlowMat);
+        glow.position.set(sx, 6.2, 4.45);
+        outdoorWorld.add(glow);
+        if (mode === "night") {
+          const streetLight = new THREE.PointLight("#fff2cf", 1.6, 12, 2);
+          streetLight.position.set(sx, 6.2, 4.45);
+          streetLight.castShadow = false;
+          outdoorWorld.add(streetLight);
+        }
+      });
+
+      // Gold sign panel above the entrance (mounted on the shell).
+      const signPanel = new THREE.Mesh(
+        new THREE.BoxGeometry(5, 0.7, 0.15),
+        new THREE.MeshStandardMaterial({ color: "#1A1A1A", roughness: 0.4, metalness: 0.2 })
+      );
+      signPanel.position.set(0, 7.5, FACADE_Z + 0.5);
+      buildingShell.add(signPanel);
+      const signText = new THREE.Mesh(
+        new THREE.BoxGeometry(4.2, 0.35, 0.18),
+        new THREE.MeshStandardMaterial({
+          color: "#caa14a",
+          metalness: 0.85,
+          roughness: 0.3,
+          emissive: "#7a5a18",
+          emissiveIntensity: mode === "night" ? 0.55 : 0.2,
+        })
+      );
+      signText.position.set(0, 7.5, FACADE_Z + 0.6);
+      buildingShell.add(signText);
+
+      // Trees (outdoor). All tree positions stay at z >= -5, safely outside.
+      const trunkMaterial = new THREE.MeshStandardMaterial({ color: "#3D2B1A", roughness: 0.85 });
+      const canopyMaterial = loadPBRMaterial(
+        "/textures/othonna_cerarioides",
+        "#1A3D1A",
+        { roughness: 0.9, side: THREE.DoubleSide }
+      );
+      const treePositions = [[-5.5, -5], [5.5, -5], [-7, -1], [7, -1], [-4, 2], [4, 2]];
+      treePositions.forEach(([x, z], index) => {
+        const trunkRadius = 0.12 + (index % 3) * 0.02;
+        const trunk = new THREE.Mesh(
+          new THREE.CylinderGeometry(trunkRadius * 0.8, trunkRadius, 1.8, 10),
+          trunkMaterial
+        );
+        trunk.position.set(x, 0.9, z);
+        trunk.castShadow = true;
+        outdoorWorld.add(trunk);
+        const canopySize = 1.2 + (index % 4) * 0.15;
+        const mainCanopy = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(canopySize, 1),
+          canopyMaterial
+        );
+        mainCanopy.position.set(x, 2.8, z);
+        mainCanopy.castShadow = true;
+        outdoorWorld.add(mainCanopy);
+      });
+
+      const hotspotMaterial = new THREE.MeshStandardMaterial({
+        color: BRAND_ORANGE,
+        emissive: BRAND_ORANGE,
+        emissiveIntensity: 0.4,
+        transparent: true,
+        opacity: 0.6,
+        side: THREE.DoubleSide,
+      });
+      // Hotspot stays outside the facade (z > -12)
+      const hotspot = new THREE.Mesh(new THREE.CircleGeometry(1, 32), hotspotMaterial);
+      hotspot.rotation.x = -Math.PI / 2;
+      hotspot.position.set(0, 0.02, -10);
+      hotspot.userData = { type: "exteriorEnter" };
+      outdoorWorld.add(hotspot);
+      exteriorHotspotRef.current = hotspot;
+      clickablesRef.current.push(hotspot);
+
+      const enterTexture = createExteriorTextTexture((ctx) => {
+        ctx.clearRect(0, 0, 1024, 160);
+        ctx.fillStyle = BRAND_ORANGE;
+        ctx.font = "bold 72px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("ENTER MUSEUM", 512, 80);
+      });
+      const enterLabel = new THREE.Mesh(
+        new THREE.PlaneGeometry(2, 0.4),
+        new THREE.MeshBasicMaterial({ map: enterTexture, transparent: true, side: THREE.DoubleSide })
+      );
+      enterLabel.position.set(0, 1.2, -10);
+      outdoorWorld.add(enterLabel);
+      exteriorLabelRef.current = enterLabel;
+
+      if (mode === "day") {
+        const hemi = new THREE.HemisphereLight("#87CEEB", "#8B6914", 0.7);
+        outdoorWorld.add(hemi);
+        const sunLight = new THREE.DirectionalLight("#FFF4E0", 1.2);
+        sunLight.position.set(6, 14, 8);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.set(1024, 1024);
+        sunLight.shadow.camera.near = 0.5;
+        sunLight.shadow.camera.far = 60;
+        sunLight.shadow.camera.left = -18;
+        sunLight.shadow.camera.right = 18;
+        sunLight.shadow.camera.top = 18;
+        sunLight.shadow.camera.bottom = -18;
+        outdoorWorld.add(sunLight);
+        sceneRef.background = new THREE.Color("#87CEEB");
+      } else {
+        outdoorWorld.add(new THREE.AmbientLight("#0A0A2A", 0.15));
+        sceneRef.background = new THREE.Color("#0A0A1A");
+        const starPositions = new Float32Array(200 * 3);
+        for (let i = 0; i < 200; i += 1) {
+          starPositions[i * 3] = (Math.random() - 0.5) * 200;
+          starPositions[i * 3 + 1] = 20 + Math.random() * 50;
+          starPositions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+        }
+        const starGeo = new THREE.BufferGeometry();
+        starGeo.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
+        outdoorWorld.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: "#FFFFFF", size: 0.18, sizeAttenuation: true })));
+        // Sparse bollard glow lights (every other position) to save GPU
+        bollardPositions.filter((_, i) => i % 2 === 0).forEach(([x, z]) => {
+          const bollardLight = new THREE.PointLight("#FF9944", 0.75, 7, 2);
+          bollardLight.position.set(x, 0.95, z);
+          bollardLight.castShadow = false;
+          outdoorWorld.add(bollardLight);
+        });
+        const archSpot = new THREE.SpotLight("#FFD070", 1.6, 18, 0.32, 0.45);
+        archSpot.position.set(0, 14, -8);
+        archSpot.target.position.set(0, 8, -11.5);
+        exterior.add(archSpot);
+        exterior.add(archSpot.target);
+      }
+
+      sceneRef.add(exterior);
+      return exterior;
+    }
+
+    function disposeExterior(exteriorGroup: THREE.Group | null, sceneRef: THREE.Scene) {
+      if (!exteriorGroup) return;
+      sceneRef.remove(exteriorGroup);
+      disposeObject(exteriorGroup);
+      exteriorGroupRef.current = null;
+      exteriorHotspotRef.current = null;
+      exteriorLabelRef.current = null;
+      clickablesRef.current = [];
+    }
+
     function buildMuseum() {
       clickablesRef.current = [];
-      const wingRange = [-1, 0, 1, 2, 3];
+      // Two wings instead of five: 60% fewer rooms, lights, draw calls.
+      // The "infinite museum" wing loop still works for navigation.
+      const wingRange = [0, 1];
 
       wingRange.forEach((wingIndex) => {
         roomStations.forEach((station) => addRoom(station.key, wingIndex));
@@ -662,7 +1188,57 @@ export default function VirtualRoomPage() {
       });
     }
 
-    buildMuseum();
+    let museumBuilt = false;
+    const buildInteriorOnce = () => {
+      if (museumBuilt) return;
+      // Geometry only. Do NOT touch scene.background or scene.fog —
+      // buildExterior owns the sky, and continuous architecture means
+      // we never swap render state on enter.
+      buildMuseum();
+      museumBuilt = true;
+    };
+
+    const enterBuilding = () => {
+      if (sceneStateRef.current === "interior") return;
+      // Continuous architecture: same building, same scene. Just teleport
+      // the camera through the entrance to the lobby station.
+      sceneStateRef.current = "interior";
+      const entranceStation = stationFor("entrance", 0);
+      camera.position.set(entranceStation.x, CAMERA_Y, entranceStation.z + 4);
+      targetRef.current.set(entranceStation.x, CAMERA_Y, entranceStation.z);
+      yawRef.current = 0;
+      pitchRef.current = 0;
+      roomRef.current = "entrance";
+      wingRef.current = 0;
+      setRoom("entrance");
+      setWing(0);
+    };
+
+    // Always start outside with the camera intro animation.
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let introT = 0;
+    const INTRO_MS = 3200;
+    const introFrom = new THREE.Vector3(0, CAMERA_Y, 22);
+    const introTo = new THREE.Vector3(0, CAMERA_Y, 6);
+    const smoothstep = (t: number) => t * t * (3 - 2 * t);
+
+    sceneStateRef.current = "exterior";
+    clickablesRef.current = [];
+    // Outdoor scene first (sets sky bg + outdoor lights).
+    exteriorGroupRef.current = buildExterior(scene);
+    // Indoor geometry built eagerly so users can walk through the entrance
+    // without a reload (continuous architecture).
+    buildInteriorOnce();
+
+    camera.position.copy(introFrom);
+    targetRef.current.copy(introFrom);
+    yawRef.current = 0;
+    // Reduced motion: skip animation but stay outside
+    if (prefersReducedMotion) {
+      camera.position.copy(introTo);
+      targetRef.current.copy(introTo);
+      introT = 1;
+    }
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
@@ -709,6 +1285,10 @@ export default function VirtualRoomPage() {
         goTo(data.target, data.wing);
       }
 
+      if (data?.type === "exteriorEnter") {
+        enterBuilding();
+      }
+
       if (data?.type === "artwork") {
         setSelectedArtwork(data.artwork);
       }
@@ -716,6 +1296,10 @@ export default function VirtualRoomPage() {
 
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
+      if (sceneStateRef.current === "exterior") {
+        return;
+      }
+
       const now = performance.now();
       wheelDeltaRef.current += event.deltaY;
 
@@ -732,12 +1316,23 @@ export default function VirtualRoomPage() {
     };
 
     const onPointerDown = (event: PointerEvent) => {
-      dragRef.current = { x: event.clientX, yaw: yawRef.current };
+      dragRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+        yaw: yawRef.current,
+        pitch: pitchRef.current
+      };
     };
 
     const onPointerMove = (event: PointerEvent) => {
       if (!dragRef.current) return;
+      // Update yaw (horizontal rotation)
       yawRef.current = dragRef.current.yaw - (event.clientX - dragRef.current.x) * 0.0022;
+
+      // Update pitch (vertical rotation) with clamping to prevent gimbal lock
+      const newPitch = dragRef.current.pitch + (event.clientY - dragRef.current.y) * 0.0022;
+      const MAX_PITCH = Math.PI / 2.2; // ~82 degrees up/down
+      pitchRef.current = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, newPitch));
     };
 
     const onPointerUp = () => {
@@ -756,25 +1351,31 @@ export default function VirtualRoomPage() {
         event.preventDefault();
       }
 
-      if (event.key === "ArrowLeft" || event.key === "a" || event.key === "q") {
+      // Smooth WASD movement (set key states)
+      if (event.key === "w" || event.key === "ArrowUp") keysRef.current.forward = true;
+      if (event.key === "s" || event.key === "ArrowDown") keysRef.current.backward = true;
+      if (event.key === "a") keysRef.current.left = true;
+      if (event.key === "d") keysRef.current.right = true;
+
+      // Arrow keys and Q/E for camera rotation
+      if (event.key === "ArrowLeft" || event.key === "q") {
         yawRef.current += degToRad(18);
       }
 
-      if (event.key === "ArrowRight" || event.key === "d" || event.key === "e") {
+      if (event.key === "ArrowRight" || event.key === "e") {
         yawRef.current -= degToRad(18);
       }
-
-      if (event.key === "ArrowUp" || event.key === "w") {
-        const target = chooseDoorFromHeading(roomRef.current, wingRef.current, false);
-        if (target) goTo(target, wingRef.current);
-      }
-
-      if (event.key === "ArrowDown" || event.key === "s") {
-        const target = chooseDoorFromHeading(roomRef.current, wingRef.current, true);
-        if (target) goTo(target, wingRef.current);
-      }
     };
+
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "w" || event.key === "ArrowUp") keysRef.current.forward = false;
+      if (event.key === "s" || event.key === "ArrowDown") keysRef.current.backward = false;
+      if (event.key === "a") keysRef.current.left = false;
+      if (event.key === "d") keysRef.current.right = false;
+    };
+
     window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
 
     const resize = () => {
       camera.aspect = mount.clientWidth / mount.clientHeight;
@@ -783,15 +1384,63 @@ export default function VirtualRoomPage() {
     };
     window.addEventListener("resize", resize);
 
-    const startStation = stationFor("entrance", 0);
-    targetRef.current.set(startStation.x, CAMERA_Y, startStation.z);
-    yawRef.current = 0;
+    // Removed interior state check - we always start in exterior mode
+    // Both scenes are built on load, camera starts outside
 
     const clock = new THREE.Clock();
     renderer.setAnimationLoop(() => {
+      const delta = clock.getDelta();
       const elapsed = clock.getElapsedTime();
-      camera.position.lerp(targetRef.current, 0.08);
-      camera.rotation.set(0, yawRef.current, 0);
+      if (sceneStateRef.current === "exterior" && introT < 1 && !prefersReducedMotion) {
+        introT = Math.min(introT + delta / (INTRO_MS / 1000), 1);
+        camera.position.lerpVectors(introFrom, introTo, smoothstep(introT));
+        targetRef.current.copy(camera.position);
+        // Intro: face toward entrance (yaw = 0, pitch = 0)
+        yawRef.current = 0;
+        pitchRef.current = 0;
+      } else {
+        // Smooth WASD movement
+        const keys = keysRef.current;
+        const speed = 5; // units per second
+        const moveDistance = speed * delta;
+
+        let dx = 0;
+        let dz = 0;
+
+        if (keys.forward) dz -= moveDistance;
+        if (keys.backward) dz += moveDistance;
+        if (keys.left) dx -= moveDistance;
+        if (keys.right) dx += moveDistance;
+
+        if (dx !== 0 || dz !== 0) {
+          const yaw = yawRef.current;
+          const moveX = dx * Math.cos(yaw) - dz * Math.sin(yaw);
+          const moveZ = dx * Math.sin(yaw) + dz * Math.cos(yaw);
+
+          targetRef.current.x += moveX;
+          targetRef.current.z += moveZ;
+
+          // Collision bounds (optional - keeps camera within reasonable area)
+          targetRef.current.x = Math.max(-25, Math.min(25, targetRef.current.x));
+          targetRef.current.z = Math.max(-80, Math.min(22, targetRef.current.z));
+        }
+
+        camera.position.lerp(targetRef.current, 0.08);
+      }
+      // Unified first-person camera rotation (yaw + pitch) for both exterior and interior
+      camera.rotation.order = "YXZ"; // Critical for FPS controls
+      camera.rotation.y = yawRef.current;
+      camera.rotation.x = pitchRef.current;
+
+      if (sceneStateRef.current === "exterior") {
+        exteriorLabelRef.current?.lookAt(camera.position.x, CAMERA_Y, camera.position.z);
+        const hotspot = exteriorHotspotRef.current;
+        if (hotspot?.material instanceof THREE.MeshStandardMaterial) {
+          hotspot.material.emissiveIntensity = 0.3 + 0.2 * Math.sin(elapsed * 2);
+        }
+        // Continuous architecture: removed automatic entrance trigger at z < -10
+        // User can walk through naturally without forced scene transition
+      }
 
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshBasicMaterial && object.geometry instanceof THREE.CircleGeometry) {
@@ -811,11 +1460,12 @@ export default function VirtualRoomPage() {
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       renderer.domElement.removeEventListener("pointerleave", onPointerUp);
       window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("resize", resize);
       mount.removeChild(renderer.domElement);
       renderer.dispose();
     };
-  }, []);
+  }, [hasWebGL]);
 
   const goToRoom = (nextRoom: RoomKey, nextWing = wing) => {
     const station = stationFor(nextRoom, nextWing);
@@ -827,30 +1477,22 @@ export default function VirtualRoomPage() {
     setRoom(nextRoom);
   };
 
-  useEffect(() => {
-    const initialState = readInitialRouteState();
-    if (initialState) {
-      goToRoom(initialState.room, initialState.wing);
-    }
-    routeStateHydratedRef.current = true;
-  }, []);
-
-  useEffect(() => {
-    if (!routeStateHydratedRef.current) {
-      return;
-    }
-
-    writeRouteState(room, wing);
-    saveVirtualRoomProgress({
-      room,
-      wing,
-      selectedArtworkId: selectedArtwork?.id,
-    });
-  }, [room, selectedArtwork?.id, wing]);
+  // No camera/room persistence: every visit starts fresh outdoors.
 
   const reset = () => {
-    goToRoom("entrance", 0);
+    // Reset returns to the OUTDOOR starting point, not indoors.
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
   };
+
+  if (hasWebGL === null) {
+    return <GalleryLoadingScreen message="Initializing virtual museum..." />;
+  }
+
+  if (!hasWebGL) {
+    return <WebGLFallback />;
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#101417] text-white">
@@ -939,7 +1581,7 @@ export default function VirtualRoomPage() {
           className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/62 shadow-2xl backdrop-blur-md hover:bg-black/75"
           title={listOpen ? "Hide accessible artwork list" : "Show accessible artwork list"}
           aria-label={listOpen ? "Hide accessible artwork list" : "Show accessible artwork list"}
-          aria-pressed={listOpen}
+          aria-pressed={listOpen ? "true" : "false"}
         >
           <List className="h-5 w-5" />
         </button>
@@ -992,47 +1634,47 @@ export default function VirtualRoomPage() {
       </section>
 
       {selectedArtwork && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" onClick={() => setSelectedArtwork(null)}>
-          <div className="relative grid max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-xl bg-[#15191c] shadow-2xl md:grid-cols-[0.95fr_1.05fr]" onClick={(event) => event.stopPropagation()}>
-            <button type="button" onClick={() => setSelectedArtwork(null)} className="absolute right-4 top-4 z-10 rounded-full bg-black/50 p-2 hover:bg-black/70" title="Close">
-              <X className="h-5 w-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm" onClick={() => setSelectedArtwork(null)}>
+          <div className="relative grid max-h-[85vh] w-full max-w-2xl overflow-hidden rounded-xl bg-[#15191c] shadow-2xl md:grid-cols-2" onClick={(event) => event.stopPropagation()}>
+            <button type="button" onClick={() => setSelectedArtwork(null)} className="absolute right-2 top-2 z-10 rounded-full bg-black/50 p-1.5 hover:bg-black/70" title="Close">
+              <X className="h-4 w-4" />
             </button>
-            <div className="min-h-72 bg-black">
-              <img src={selectedArtwork.image} alt={selectedArtwork.title} className="h-full max-h-[92vh] w-full object-cover" />
+            <div className="h-48 bg-black overflow-hidden flex items-center justify-center md:h-auto md:max-h-[85vh]">
+              <img src={selectedArtwork.image} alt={selectedArtwork.title} className="w-full h-full object-contain" />
             </div>
-            <div className="flex flex-col p-6 sm:p-8">
+            <div className="flex flex-col max-h-[85vh] overflow-y-auto p-4 sm:p-5">
               <div className="flex-1">
-                <p className="mb-2 text-sm font-medium text-teal-300">On view in Infinite Museum</p>
-                <h2 className="text-3xl font-bold">{selectedArtwork.title}</h2>
-                <p className="mt-2 text-lg text-white/65">by {selectedArtwork.artist}</p>
-                <div className="mt-8 space-y-4">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <p className="mb-1 text-xs font-medium text-teal-300">On view in Infinite Museum</p>
+                <h2 className="text-xl font-bold leading-tight">{selectedArtwork.title}</h2>
+                <p className="mt-1 text-sm text-white/65">by {selectedArtwork.artist}</p>
+                <div className="mt-4 space-y-3 text-sm">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2">
                     <span className="text-white/55">Price</span>
-                    <span className="text-2xl font-bold text-amber-300">{selectedArtwork.price.toLocaleString()} RWF</span>
+                    <span className="font-bold text-amber-300">{selectedArtwork.price.toLocaleString()} RWF</span>
                   </div>
-                  <div className="border-b border-white/10 pb-4">
+                  <div className="border-b border-white/10 pb-2">
                     <span className="text-white/55">Materials</span>
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {selectedArtwork.materials.map((material) => (
-                        <span key={material} className="rounded-full bg-teal-400/15 px-3 py-1 text-sm text-teal-200">{material}</span>
+                        <span key={material} className="rounded-full bg-teal-400/15 px-2 py-0.5 text-xs text-teal-200">{material}</span>
                       ))}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2">
                     <span className="text-white/55">Impact</span>
-                    <span className="font-semibold text-green-300">{selectedArtwork.kgDiverted} kg waste diverted</span>
+                    <span className="font-semibold text-green-300">{selectedArtwork.kgDiverted} kg diverted</span>
                   </div>
                   {selectedArtwork.curationExplanation && (
-                    <div className="border-b border-white/10 pb-4">
+                    <div className="border-b border-white/10 pb-2">
                       <span className="text-white/55">Curated Room</span>
-                      <p className="mt-2 font-semibold text-teal-200">{selectedArtwork.curationRoomTitle}</p>
-                      <p className="mt-1 text-sm text-white/70">{selectedArtwork.curationExplanation}</p>
+                      <p className="mt-1 font-semibold text-teal-200">{selectedArtwork.curationRoomTitle}</p>
+                      <p className="mt-0.5 text-xs text-white/70">{selectedArtwork.curationExplanation}</p>
                     </div>
                   )}
                 </div>
               </div>
-              <Link href={`/artwork/${selectedArtwork.id}`} className="mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-3 font-semibold hover:bg-teal-700">
-                <Maximize2 className="h-5 w-5" />
+              <Link href={`/artwork/${selectedArtwork.id}`} className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-sm font-semibold hover:bg-teal-700">
+                <Maximize2 className="h-4 w-4" />
                 Open Artwork Page
               </Link>
             </div>

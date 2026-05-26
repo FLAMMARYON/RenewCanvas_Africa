@@ -1,0 +1,19 @@
+
+> renewcanvas-africa@0.1.0 dev
+> next dev
+
+⚠ Port 3000 is in use by an unknown process, using available port 3004 instead.
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3004
+- Network:       http://192.168.1.137:3004
+- Environments: .env
+✓ Ready in 3.1s
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3003
+- PID:          3784
+- Dir:          C:\Users\Nicholas Eke\Downloads\RenewCanv1.0\RenewCanvas_Africa
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 3784 /F to stop it.
+[?25h

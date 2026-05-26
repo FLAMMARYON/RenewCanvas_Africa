@@ -1,0 +1,13 @@
+
+> renewcanvas-africa@0.1.0 dev
+> next dev --port 3002
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3002
+- Network:       http://172.23.10.245:3002
+- Environments: .env
+✓ Ready in 1451ms
+
+ GET /virtual-room 500 in 1278ms (next.js: 809ms, application-code: 470ms)
+ GET /virtual-room?room=entrance&wing=0 500 in 81ms (next.js: 45ms, application-code: 36ms)
+ GET /virtual-room?room=entrance&wing=0 500 in 54ms (next.js: 32ms, application-code: 22ms)

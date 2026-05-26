@@ -1,0 +1,10 @@
+
+> renewcanvas-africa@0.1.0 dev
+> next dev --port 3003
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3003
+- Network:       http://172.23.10.245:3003
+- Environments: .env
+✓ Ready in 1623ms
+[?25h
