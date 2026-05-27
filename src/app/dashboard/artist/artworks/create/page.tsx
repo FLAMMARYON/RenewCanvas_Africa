@@ -150,13 +150,16 @@ export default function CreateArtworkPage() {
           )
         );
       } catch (error) {
+        console.error("Artwork image upload failed:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Upload failed";
         setImages((prev) =>
           prev.map((img, idx) =>
             idx === imageIndex
               ? {
                   ...img,
                   uploading: false,
-                  error: error instanceof Error ? error.message : "Upload failed",
+                  error: errorMessage,
                 }
               : img
           )
@@ -545,41 +548,49 @@ export default function CreateArtworkPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                   {images.map((image, index) => (
-                    <div
-                      key={index}
-                      className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group"
-                    >
-                      <img
-                        src={image.preview}
-                        alt={`Artwork ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      {image.uploading && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                          <Loader2 className="w-6 h-6 text-white animate-spin" />
-                        </div>
-                      )}
-                      {image.error && (
-                        <div className="absolute inset-0 bg-red-500/50 flex items-center justify-center">
-                          <AlertCircle className="w-6 h-6 text-white" />
-                        </div>
-                      )}
-                      {image.uploaded && (
-                        <div className="absolute top-2 left-2">
-                          <Check className="w-5 h-5 text-green-500 bg-white rounded-full p-0.5" />
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    <div key={index} className="space-y-2">
+                      <div
+                        className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group"
+                        title={image.error}
                       >
-                        <X className="w-4 h-4" />
-                      </button>
-                      {index === 0 && (
-                        <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-teal-600 text-white text-xs rounded">
-                          Main
-                        </span>
+                        <img
+                          src={image.preview}
+                          alt={`Artwork ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {image.uploading && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <Loader2 className="w-6 h-6 text-white animate-spin" />
+                          </div>
+                        )}
+                        {image.error && (
+                          <div className="absolute inset-0 bg-red-500/50 flex items-center justify-center">
+                            <AlertCircle className="w-6 h-6 text-white" />
+                          </div>
+                        )}
+                        {image.uploaded && (
+                          <div className="absolute top-2 left-2">
+                            <Check className="w-5 h-5 text-green-500 bg-white rounded-full p-0.5" />
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label={`Remove artwork image ${index + 1}`}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                        {index === 0 && (
+                          <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-teal-600 text-white text-xs rounded">
+                            Main
+                          </span>
+                        )}
+                      </div>
+                      {image.error && (
+                        <p className="text-xs leading-snug text-red-600">
+                          {image.error}
+                        </p>
                       )}
                     </div>
                   ))}
