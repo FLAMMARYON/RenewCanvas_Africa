@@ -20,10 +20,27 @@ export type UploadOptions = {
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 const ALLOWED_CONTENT_TYPES = [
   "image/jpeg",
+  "image/jpg",
   "image/png",
   "image/webp",
   "image/gif",
 ];
+
+/**
+ * Infer MIME type from filename extension as a fallback
+ * when the browser does not send a content type.
+ */
+function inferContentType(filename: string): string {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  const map: Record<string, string> = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    gif: "image/gif",
+  };
+  return map[ext] ?? "";
+}
 
 /**
  * Upload a file to Vercel Blob storage.
@@ -43,10 +60,15 @@ export async function uploadFile(
     );
   }
 
-  if (!ALLOWED_CONTENT_TYPES.includes(options.contentType)) {
+  // Normalise content type — browsers may send empty string, "image/jpg",
+  // or mixed-case values (common on Android and some iOS browsers).
+  const normalizedType = options.contentType.toLowerCase().trim();
+  const resolvedType = normalizedType || inferContentType(options.filename);
+
+  if (!ALLOWED_CONTENT_TYPES.includes(resolvedType)) {
     throw new AuthError(
       "invalid_media_type",
-      `File type ${options.contentType} is not allowed. Use JPEG, PNG, WebP, or GIF.`,
+      `File type "${resolvedType || "unknown"}" is not allowed. Use JPEG, PNG, WebP, or GIF.`,
       400
     );
   }
@@ -71,7 +93,7 @@ export async function uploadFile(
 
   const blob = await put(pathname, fileData, {
     access: "public",
-    contentType: options.contentType,
+    contentType: resolvedType,
     token: blobToken,
   });
 
@@ -79,7 +101,7 @@ export async function uploadFile(
     provider: "vercel_blob",
     storageKey: blob.pathname,
     publicUrl: blob.url,
-    contentType: options.contentType,
+    contentType: resolvedType,
     size: fileSize,
   };
 }
