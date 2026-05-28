@@ -472,6 +472,7 @@ export default function VirtualRoomPage() {
 
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin("anonymous");
+    loader.crossOrigin = "anonymous";
     const floorTexture = createFloorTexture();
     const artworkTextureTargets: Array<{
       plane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshPhysicalMaterial>;
@@ -484,9 +485,20 @@ export default function VirtualRoomPage() {
       artworkTextureTargets.forEach((target) => {
         if (target.loaded || !target.imageUrl || target.placement.roomKey !== activeRoom || target.placement.wingIndex !== activeWing) return;
         target.loaded = true;
+        console.log("[virtual-room] loading artwork texture", {
+          title: target.placement.artwork.title,
+          url: target.imageUrl,
+          isAbsoluteUrl: /^https?:\/\//.test(target.imageUrl),
+        });
         loader.load(
           target.imageUrl,
           (texture) => {
+            console.log("[virtual-room] loaded artwork texture", {
+              title: target.placement.artwork.title,
+              url: target.imageUrl,
+              width: texture.image?.width,
+              height: texture.image?.height,
+            });
             texture.colorSpace = THREE.SRGBColorSpace;
             texture.wrapS = THREE.ClampToEdgeWrapping;
             texture.wrapT = THREE.ClampToEdgeWrapping;
@@ -496,7 +508,12 @@ export default function VirtualRoomPage() {
             target.plane.material.needsUpdate = true;
           },
           undefined,
-          () => {
+          (error) => {
+            console.error("[virtual-room] artwork texture failed", {
+              title: target.placement.artwork.title,
+              url: target.imageUrl,
+              error,
+            });
             target.loaded = false;
             target.plane.material.map = null;
             target.plane.material.color.set(BRAND_TEAL);
@@ -776,25 +793,29 @@ export default function VirtualRoomPage() {
           clearcoatRoughness: 0.48,
         })
       );
-      plane.position.z = -0.14;
+      plane.position.z = 0.07;
       group.add(plane);
 
       artworkTextureTargets.push({ plane, placement, imageUrl: artwork.image, loaded: false });
 
       const plaqueTexture = new THREE.CanvasTexture(createTextCanvas(artwork.title, artwork.artist));
+      plaqueTexture.colorSpace = THREE.SRGBColorSpace;
       const plaque = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.65, 0.62),
-        new THREE.MeshBasicMaterial({ map: plaqueTexture, transparent: true })
+        new THREE.PlaneGeometry(1.65, 0.46),
+        new THREE.MeshBasicMaterial({ map: plaqueTexture, transparent: true, side: THREE.DoubleSide, depthWrite: false })
       );
-      plaque.position.set(0, -1.86, -0.16);
+      plaque.position.set(0, -1.32, 0.09);
+      plaque.renderOrder = 10;
       group.add(plaque);
 
       const categoryTexture = new THREE.CanvasTexture(createTextCanvas(curationRoomTitle, curationGrouping, "#dff6f3"));
+      categoryTexture.colorSpace = THREE.SRGBColorSpace;
       const categoryPlaque = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.45, 0.48),
-        new THREE.MeshBasicMaterial({ map: categoryTexture, transparent: true })
+        new THREE.PlaneGeometry(1.45, 0.34),
+        new THREE.MeshBasicMaterial({ map: categoryTexture, transparent: true, side: THREE.DoubleSide, depthWrite: false })
       );
-      categoryPlaque.position.set(0, -2.34, -0.16);
+      categoryPlaque.position.set(0, -1.72, 0.09);
+      categoryPlaque.renderOrder = 10;
       group.add(categoryPlaque);
 
       group.userData = { type: "artwork", artwork: { ...artwork, curationExplanation, curationRoomTitle } };

@@ -230,7 +230,17 @@ function ArtworkFrame({
 }) {
   const { scene } = useGLTF("/models/artwork-frame.glb");
   const frameClone = useMemo(() => scene.clone(true), [scene]);
-  const texture = useTexture(artworkImageUrl || "/brand/renewcanvas-icon-full-color.png");
+  const textureUrl = artworkImageUrl || "/brand/renewcanvas-icon-full-color.png";
+  const texture = useTexture(textureUrl);
+
+  useEffect(() => {
+    console.log("[virtual-gallery] artwork texture URL", {
+      title: artworkTitle,
+      url: textureUrl,
+      hasArtworkImage: Boolean(artworkImageUrl),
+      isAbsoluteUrl: /^https?:\/\//.test(textureUrl),
+    });
+  }, [artworkImageUrl, artworkTitle, textureUrl]);
 
   // Apply texture to the center backing plane (if found)
   useEffect(() => {
@@ -253,8 +263,16 @@ function ArtworkFrame({
   return (
     <group position={position} rotation={rotation}>
       <primitive object={frameClone} />
+      <mesh position={[0, 0, 0.09]} renderOrder={10}>
+        <planeGeometry args={[ARTWORK_IMAGE_W, ARTWORK_IMAGE_H]} />
+        <meshStandardMaterial
+          color={artworkImageUrl ? "#ffffff" : BRAND_TEAL}
+          map={artworkImageUrl ? texture : null}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
       {/* Label below frame */}
-      <Html position={[0, -1, 0]} center distanceFactor={5}>
+      <Html position={[0, -1.32, 0.12]} center distanceFactor={5}>
         <div
           style={{
             background: "rgba(0, 0, 0, 0.6)",
@@ -345,11 +363,11 @@ function TealArtworkPlaceholder({ position, rotation, title }: { position: [numb
         <boxGeometry args={[FRAME_W, FRAME_H, 0.16]} />
         <meshStandardMaterial color="#3d2c1d" />
       </mesh>
-      <mesh position={[0, 0, -0.1]}>
+      <mesh position={[0, 0, 0.09]} renderOrder={10}>
         <planeGeometry args={[ARTWORK_IMAGE_W, ARTWORK_IMAGE_H]} />
-        <meshStandardMaterial color={BRAND_TEAL} />
+        <meshStandardMaterial color={BRAND_TEAL} side={THREE.DoubleSide} />
       </mesh>
-      <Html position={[0, -1.8, 0]} center distanceFactor={5}>
+      <Html position={[0, -1.32, 0.12]} center distanceFactor={5}>
         <div style={{ color: "white", fontSize: "0.75rem", pointerEvents: "none" }}>{title}</div>
       </Html>
     </group>
