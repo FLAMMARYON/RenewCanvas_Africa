@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -26,6 +26,8 @@ import { createOrder } from "@/lib/frontend/orders-api";
 import { createPaymentSession } from "@/lib/frontend/payments-api";
 
 type PaymentMethod = "momo" | "bank" | "card";
+type CheckoutField = "fullName" | "email" | "phone" | "address" | "city" | "paymentMethod" | "termsAccepted";
+type CheckoutErrors = Partial<Record<CheckoutField, string>>;
 
 export default function CheckoutPage() {
   return (
@@ -43,13 +45,72 @@ function CheckoutLoading() {
   );
 }
 
+function validateField(
+  field: CheckoutField,
+  formData: {
+    fullName: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    notes: string;
+  },
+  paymentMethod: PaymentMethod | "",
+  termsAccepted: boolean
+) {
+  if (field === "fullName") {
+    const value = formData.fullName.trim();
+    if (!value) return "Full name is required.";
+    if (value.length < 2) return "Full name must be at least 2 characters.";
+    return "";
+  }
+
+  if (field === "email") {
+    const value = formData.email.trim();
+    if (!value) return "Email address is required.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Enter a valid email address.";
+    return "";
+  }
+
+  if (field === "phone") {
+    const value = formData.phone.replace(/[\s-]/g, "");
+    if (!value) return "Phone number is required.";
+    if (!/^(\+2507\d{8}|07\d{8})$/.test(value)) {
+      return "Enter a valid Rwanda phone number, e.g. +2507XXXXXXXX or 07XXXXXXXX.";
+    }
+    return "";
+  }
+
+  if (field === "address") {
+    if (!formData.address.trim()) return "Delivery address is required.";
+    return "";
+  }
+
+  if (field === "city") {
+    if (!formData.city.trim()) return "City is required.";
+    return "";
+  }
+
+  if (field === "paymentMethod") {
+    if (!paymentMethod) return "Select a payment method.";
+    return "";
+  }
+
+  if (field === "termsAccepted") {
+    if (!termsAccepted) return "You must accept the terms and refund policy.";
+    return "";
+  }
+
+  return "";
+}
+
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [artwork, setArtwork] = useState<FrontendArtwork | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
   const [step, setStep] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("momo");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -58,7 +119,11 @@ function CheckoutContent() {
     city: "",
     notes: "",
   });
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [errors, setErrors] = useState<CheckoutErrors>({});
+  const [touched, setTouched] = useState<Partial<Record<CheckoutField, boolean>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fieldRefs = useRef<Partial<Record<CheckoutField, HTMLElement | null>>>({});
 
   useEffect(() => {
     const artworkId = searchParams.get("artworkId");
@@ -74,12 +139,82 @@ function CheckoutContent() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const field = e.target.name as keyof typeof formData;
+    const nextFormData = { ...formData, [field]: e.target.value };
+    setFormData(nextFormData);
+    if (touched[field as CheckoutField]) {
+      setErrors((current) => ({
+        ...current,
+        [field]: validateField(field as CheckoutField, nextFormData, paymentMethod, termsAccepted),
+      }));
+    }
   };
+
+  const handleBlur = (field: CheckoutField) => {
+    setTouched((current) => ({ ...current, [field]: true }));
+    setErrors((current) => ({
+      ...current,
+      [field]: validateField(field, formData, paymentMethod, termsAccepted),
+    }));
+  };
+
+  const handlePaymentSelect = (method: PaymentMethod) => {
+    setPaymentMethod(method);
+    setTouched((current) => ({ ...current, paymentMethod: true }));
+    setErrors((current) => ({ ...current, paymentMethod: "" }));
+  };
+
+  const handleTermsChange = (checked: boolean) => {
+    setTermsAccepted(checked);
+    if (touched.termsAccepted) {
+      setErrors((current) => ({
+        ...current,
+        termsAccepted: validateField("termsAccepted", formData, paymentMethod, checked),
+      }));
+    }
+  };
+
+  const validateCheckout = (fields: CheckoutField[]) => {
+    const nextErrors = fields.reduce<CheckoutErrors>((acc, field) => {
+      const message = validateField(field, formData, paymentMethod, termsAccepted);
+      if (message) acc[field] = message;
+      return acc;
+    }, {});
+    return nextErrors;
+  };
+
+  const focusFirstInvalid = (fieldOrder: CheckoutField[], nextErrors: CheckoutErrors) => {
+    const firstInvalid = fieldOrder.find((field) => nextErrors[field]);
+    if (!firstInvalid) return;
+    const element = fieldRefs.current[firstInvalid];
+    element?.scrollIntoView({ behavior: "smooth", block: "center" });
+    element?.focus({ preventScroll: true });
+  };
+
+  const validateAndFocus = (fields: CheckoutField[]) => {
+    const nextErrors = validateCheckout(fields);
+    setTouched((current) => ({
+      ...current,
+      ...fields.reduce<Partial<Record<CheckoutField, boolean>>>((acc, field) => {
+        acc[field] = true;
+        return acc;
+      }, {}),
+    }));
+    setErrors((current) => ({ ...current, ...nextErrors }));
+    focusFirstInvalid(fields, nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const stepOneFields: CheckoutField[] = ["fullName", "email", "phone", "address", "city"];
+  const allRequiredFields: CheckoutField[] = [...stepOneFields, "paymentMethod", "termsAccepted"];
+  const stepOneValid = useMemo(() => Object.keys(validateCheckout(stepOneFields)).length === 0, [formData, paymentMethod, termsAccepted]);
+  const paymentValid = useMemo(() => Object.keys(validateCheckout(["paymentMethod"])).length === 0, [formData, paymentMethod, termsAccepted]);
+  const checkoutValid = useMemo(() => Object.keys(validateCheckout(allRequiredFields)).length === 0, [formData, paymentMethod, termsAccepted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!artwork) return;
+    if (!validateAndFocus(allRequiredFields)) return;
     setIsSubmitting(true);
     setStatusMessage("");
 
@@ -154,6 +289,14 @@ function CheckoutContent() {
   const selectedPaymentMethod = paymentMethods.find(
     (m) => m.id === paymentMethod
   );
+
+  const fieldClass = (field: CheckoutField, baseClass: string) =>
+    `${baseClass} ${touched[field] && errors[field] ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`;
+
+  const errorText = (field: CheckoutField) =>
+    touched[field] && errors[field] ? (
+      <p className="mt-1 text-sm text-red-600">{errors[field]}</p>
+    ) : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -230,7 +373,7 @@ function CheckoutContent() {
         <div className="grid lg:grid-cols-5 gap-8">
           {/* Form Section */}
           <div className="lg:col-span-3">
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               {/* Step 1: Contact & Delivery Details */}
               {step === 1 && (
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -249,13 +392,17 @@ function CheckoutContent() {
                           type="text"
                           id="fullName"
                           name="fullName"
+                          ref={(element) => {
+                            fieldRefs.current.fullName = element;
+                          }}
                           value={formData.fullName}
                           onChange={handleChange}
+                          onBlur={() => handleBlur("fullName")}
                           placeholder="Enter your full name"
-                          className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                          required
+                          className={fieldClass("fullName", "w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none")}
                         />
                       </div>
+                      {errorText("fullName")}
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-4">
@@ -266,16 +413,20 @@ function CheckoutContent() {
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                           <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="you@example.com"
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                            required
-                          />
-                        </div>
+                          type="email"
+                          id="email"
+                          name="email"
+                          ref={(element) => {
+                            fieldRefs.current.email = element;
+                          }}
+                          value={formData.email}
+                          onChange={handleChange}
+                          onBlur={() => handleBlur("email")}
+                          placeholder="you@example.com"
+                          className={fieldClass("email", "w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none")}
+                        />
+                      </div>
+                        {errorText("email")}
                       </div>
                       <div>
                         <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
@@ -284,16 +435,20 @@ function CheckoutContent() {
                         <div className="relative">
                           <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                           <input
-                            type="tel"
-                            id="phone"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            placeholder="+250 xxx xxx xxx"
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                            required
-                          />
-                        </div>
+                          type="tel"
+                          id="phone"
+                          name="phone"
+                          ref={(element) => {
+                            fieldRefs.current.phone = element;
+                          }}
+                          value={formData.phone}
+                          onChange={handleChange}
+                          onBlur={() => handleBlur("phone")}
+                          placeholder="+250 xxx xxx xxx"
+                          className={fieldClass("phone", "w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none")}
+                        />
+                      </div>
+                        {errorText("phone")}
                       </div>
                     </div>
 
@@ -307,13 +462,17 @@ function CheckoutContent() {
                           type="text"
                           id="address"
                           name="address"
+                          ref={(element) => {
+                            fieldRefs.current.address = element;
+                          }}
                           value={formData.address}
                           onChange={handleChange}
+                          onBlur={() => handleBlur("address")}
                           placeholder="Street address, building, etc."
-                          className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                          required
+                          className={fieldClass("address", "w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none")}
                         />
                       </div>
+                      {errorText("address")}
                     </div>
 
                     <div>
@@ -324,12 +483,16 @@ function CheckoutContent() {
                         type="text"
                         id="city"
                         name="city"
+                        ref={(element) => {
+                          fieldRefs.current.city = element;
+                        }}
                         value={formData.city}
                         onChange={handleChange}
+                        onBlur={() => handleBlur("city")}
                         placeholder="e.g., Kigali"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                        required
+                        className={fieldClass("city", "w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none")}
                       />
+                      {errorText("city")}
                     </div>
 
                     <div>
@@ -351,8 +514,11 @@ function CheckoutContent() {
 
                   <button
                     type="button"
-                    onClick={() => setStep(2)}
-                    className="mt-6 w-full flex items-center justify-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
+                    onClick={() => {
+                      if (validateAndFocus(stepOneFields)) setStep(2);
+                    }}
+                    disabled={!stepOneValid}
+                    className="mt-6 w-full flex items-center justify-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Continue to Payment
                     <ChevronRight className="w-5 h-5" />
@@ -372,10 +538,16 @@ function CheckoutContent() {
                       <button
                         key={method.id}
                         type="button"
-                        onClick={() => setPaymentMethod(method.id)}
+                        ref={method.id === "momo" ? (element) => {
+                          fieldRefs.current.paymentMethod = element;
+                        } : undefined}
+                        onBlur={() => handleBlur("paymentMethod")}
+                        onClick={() => handlePaymentSelect(method.id)}
                         className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${
                           paymentMethod === method.id
                             ? "border-teal-500 bg-teal-50"
+                            : touched.paymentMethod && errors.paymentMethod
+                            ? "border-red-500 hover:border-red-500"
                             : "border-gray-200 hover:border-gray-300"
                         }`}
                       >
@@ -416,6 +588,7 @@ function CheckoutContent() {
                       </button>
                     ))}
                   </div>
+                  {errorText("paymentMethod")}
 
                   {/* Payment Instructions */}
                   <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
@@ -448,8 +621,11 @@ function CheckoutContent() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setStep(3)}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
+                      onClick={() => {
+                        if (validateAndFocus(["paymentMethod"])) setStep(3);
+                      }}
+                      disabled={!paymentValid}
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Review Order
                       <ChevronRight className="w-5 h-5" />
@@ -537,7 +713,12 @@ function CheckoutContent() {
                     <label className="flex items-start gap-3 cursor-pointer">
                       <input
                         type="checkbox"
-                        required
+                        ref={(element) => {
+                          fieldRefs.current.termsAccepted = element;
+                        }}
+                        checked={termsAccepted}
+                        onChange={(event) => handleTermsChange(event.target.checked)}
+                        onBlur={() => handleBlur("termsAccepted")}
                         className="w-5 h-5 mt-0.5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
                       />
                       <span className="text-sm text-gray-600">
@@ -561,6 +742,7 @@ function CheckoutContent() {
                         after the return request window.
                       </span>
                     </label>
+                    {errorText("termsAccepted")}
                   </div>
 
                   <div className="flex gap-3">
@@ -573,7 +755,7 @@ function CheckoutContent() {
                     </button>
                     <button
                       type="submit"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !checkoutValid}
                       className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? (
