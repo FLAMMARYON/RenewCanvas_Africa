@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireRole } from "@/lib/backend/auth";
 import { authErrorResponse, readJsonBody, readSessionCookie } from "@/lib/backend/auth-route";
 import { getDatabaseClient } from "@/lib/backend/db";
-import { createPaymentSession, listPaymentSessions, type PaymentDatabase, type PaymentProvider } from "@/lib/backend/payments";
+import { createPaymentSession, listPaymentSessions, normalizePayment, type PaymentDatabase, type PaymentProvider } from "@/lib/backend/payments";
 import { requestMoMoPay } from "@/lib/backend/payment-providers";
 import { requireBackendConfig } from "@/lib/backend/config";
 
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
         // Create payment transaction record
         const idempotencyKey = body.idempotencyKey ?? `${buyer.id}:${order.id}:mtn_momo:${Date.now()}`;
-        await (db as unknown as PaymentDatabase).paymentTransaction.create({
+        const payment = await (db as unknown as PaymentDatabase).paymentTransaction.create({
           data: {
             orderId: order.id,
             buyerId: buyer.id,
@@ -131,6 +131,7 @@ export async function POST(request: NextRequest) {
             ok: true,
             message: "MoMo prompt sent to phone",
             reference: result.referenceId,
+            payment: normalizePayment(payment),
           },
           { status: 201 }
         );

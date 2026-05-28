@@ -1,10 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
+import sharp from "sharp";
 import { AuthError, requireRole } from "@/lib/backend/auth";
 import { authErrorResponse, readSessionCookie } from "@/lib/backend/auth-route";
 import { getDatabaseClient } from "@/lib/backend/db";
 import { isStorageConfigured, uploadFile, validateFileSize } from "@/lib/backend/storage";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function logUploadStep(step: string, details?: Record<string, unknown>) {
   console.info("Artwork media upload step:", { step, ...details });
@@ -24,6 +26,36 @@ function uploadErrorResponse(error: unknown): NextResponse {
     },
     { status: 500 }
   );
+}
+
+function webpFilename(filename: string): string {
+  const trimmed = filename.trim() || "artwork-image";
+  const withoutExtension = trimmed.replace(/\.[^.]*$/, "");
+  return `${withoutExtension || "artwork-image"}.webp`;
+}
+
+async function resizeArtworkImage(file: File): Promise<{
+  buffer: Buffer;
+  filename: string;
+  contentType: "image/webp";
+}> {
+  const input = Buffer.from(await file.arrayBuffer());
+  const buffer = await sharp(input)
+    .rotate()
+    .resize({
+      width: 1200,
+      height: 1200,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .webp({ quality: 85 })
+    .toBuffer();
+
+  return {
+    buffer,
+    filename: webpFilename(file.name),
+    contentType: "image/webp",
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -85,14 +117,25 @@ export async function POST(request: NextRequest) {
     validateFileSize(file.size);
     logUploadStep("validate_file_size:success");
 
-    // Upload to Vercel Blob
-    logUploadStep("upload_file:start", {
+    logUploadStep("resize_image:start", {
       filename: file.name,
       fileType: file.type || "(empty)",
     });
-    const result = await uploadFile(file, {
-      filename: file.name,
-      contentType: file.type,
+    const resized = await resizeArtworkImage(file);
+    logUploadStep("resize_image:success", {
+      filename: resized.filename,
+      contentType: resized.contentType,
+      size: resized.buffer.byteLength,
+    });
+
+    // Upload to Vercel Blob
+    logUploadStep("upload_file:start", {
+      filename: resized.filename,
+      fileType: resized.contentType,
+    });
+    const result = await uploadFile(resized.buffer, {
+      filename: resized.filename,
+      contentType: resized.contentType,
       folder: "artworks",
     });
     logUploadStep("upload_file:success", {

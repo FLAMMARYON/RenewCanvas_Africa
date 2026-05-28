@@ -132,62 +132,71 @@ export async function createOrder(
   if (!artworkId) throw new AuthError("invalid_artwork", "Choose an artwork to order.", 400);
 
   const artwork = await db.artwork.findFirst({
-    where: { id: artworkId, status: "listed" },
+    where: { id: artworkId, status: { in: ["listed", "approved"] } },
     include: { artist: { select: { id: true, name: true, email: true } } },
   });
   if (!artwork) throw new AuthError("artwork_unavailable", "This artwork is not available for checkout.", 409);
 
+  const deliveryAddress = normalizeDeliveryAddress(input.deliveryAddress);
+  const paymentMethod = normalizePaymentMethod(input.paymentMethod);
+
   const reserved = await db.artwork.updateMany({
-    where: { id: artwork.id, status: "listed" },
+    where: { id: artwork.id, status: { in: ["listed", "approved"] } },
     data: { status: "reserved" },
   });
   if (reserved.count !== 1) {
     throw new AuthError("artwork_unavailable", "This artwork was just reserved by another buyer.", 409);
   }
 
-  const deliveryAddress = normalizeDeliveryAddress(input.deliveryAddress);
-  const paymentMethod = normalizePaymentMethod(input.paymentMethod);
-  const order = await db.order.create({
-    data: {
-      buyerId: buyer.id,
-      status: "pending_payment",
-      currency: artwork.currency,
-      paymentMethod,
-      subtotalCents: artwork.priceCents,
-      deliveryCents: 0,
-      totalCents: artwork.priceCents,
-      deliveryAddress,
-      notes: cleanText(input.notes, 500) ?? undefined,
-      items: {
-        create: [
-          {
-            artworkId: artwork.id,
-            artistId: artwork.artistId,
-            artistName: artwork.artist?.name ?? "RenewCanvas Africa",
-            title: artwork.title,
-            artworkSlug: artwork.slug,
-            ownerType: artwork.ownerType,
-            kgDiverted: decimalNumber(artwork.kgDiverted),
-            unitCents: artwork.priceCents,
-            quantity: 1,
-          },
-        ],
+  try {
+    const order = await db.order.create({
+      data: {
+        buyerId: buyer.id,
+        status: "pending_payment",
+        currency: artwork.currency,
+        paymentMethod,
+        subtotalCents: artwork.priceCents,
+        deliveryCents: 0,
+        totalCents: artwork.priceCents,
+        deliveryAddress,
+        notes: cleanText(input.notes, 500) ?? undefined,
+        items: {
+          create: [
+            {
+              artworkId: artwork.id,
+              artistId: artwork.artistId,
+              artistName: artwork.artist?.name ?? "RenewCanvas Africa",
+              title: artwork.title,
+              artworkSlug: artwork.slug,
+              ownerType: artwork.ownerType,
+              kgDiverted: decimalNumber(artwork.kgDiverted),
+              unitCents: artwork.priceCents,
+              quantity: 1,
+            },
+          ],
+        },
       },
-    },
-    include: orderInclude,
-  });
+      include: orderInclude,
+    });
 
-  await db.auditLog.create({
-    data: {
-      actorId: buyer.id,
-      action: "order.create",
-      entity: "Order",
-      entityId: order.id,
-      metadata: { artworkId: artwork.id, paymentMethod },
-    },
-  });
+    await db.auditLog.create({
+      data: {
+        actorId: buyer.id,
+        action: "order.create",
+        entity: "Order",
+        entityId: order.id,
+        metadata: { artworkId: artwork.id, paymentMethod },
+      },
+    });
 
-  return order;
+    return order;
+  } catch (error) {
+    await db.artwork.updateMany({
+      where: { id: artwork.id, status: "reserved", orderItems: { none: {} } },
+      data: { status: "listed" },
+    });
+    throw error;
+  }
 }
 
 export async function listOrders(db: OrderDatabase, user: AuthPublicUser) {

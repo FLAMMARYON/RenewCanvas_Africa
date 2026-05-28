@@ -212,7 +212,7 @@ export async function listArtworks(
   const where: Record<string, unknown> = {};
 
   if (scope === "marketplace") {
-    where.status = "listed";
+    where.status = { in: ["listed", "approved", "reserved"] };
   } else if (scope === "artist") {
     assertRole(viewer, "artist");
     where.artistId = viewer.id;

@@ -2,12 +2,13 @@
 
 import { listArtworks, listRecommendations, type FrontendArtwork } from "@/lib/frontend/artworks-api";
 import { addToWishlist } from "@/lib/frontend/wishlist-api";
+import { artworkCategories } from "@/lib/ml/schemas";
 import { ArrowRight, Filter, Gavel, Grid3X3, Heart, LayoutList, Leaf, Package, Recycle, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
 
-const categories = ["All", "Paintings", "Sculptures", "Jewelry", "Home Decor", "Fashion", "Mixed Media"];
+const categories = ["All", ...artworkCategories];
 
 export default function MarketplacePage() {
   const [artworks, setArtworks] = useState<FrontendArtwork[]>([]);
@@ -40,6 +41,7 @@ export default function MarketplacePage() {
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setIsLoading(true);
+      setStatusMessage("");
       listArtworks({ scope: "marketplace", search: query, category: category === "All" ? undefined : category, sort, page, pageSize: 12 })
         .then((result) => {
           setArtworks(result.artworks);
