@@ -41,7 +41,14 @@ interface DashboardLayoutProps {
   userName?: string;
 }
 
-const navigationItems = {
+type NavigationItem = {
+  name: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  group?: string;
+};
+
+const navigationItems: Record<UserRole, NavigationItem[]> = {
   buyer: [
     { name: "Dashboard", href: "/dashboard/buyer", icon: LayoutDashboard },
     { name: "My Orders", href: "/dashboard/buyer/orders", icon: ShoppingBag },
@@ -65,38 +72,49 @@ const navigationItems = {
     { name: "Settings", href: "/dashboard/artist/settings", icon: Settings },
   ],
   admin: [
-    { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
-    { name: "Messages", href: "/dashboard/admin/messages", icon: MessageSquare },
-    { name: "Users", href: "/dashboard/admin/users", icon: Users },
+    { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard, group: "Overview" },
+    { name: "Messages", href: "/dashboard/admin/messages", icon: MessageSquare, group: "Overview" },
+    { name: "Users", href: "/dashboard/admin/users", icon: Users, group: "People" },
     {
       name: "Artist Verification",
       href: "/dashboard/admin/artists",
       icon: CheckSquare,
+      group: "People",
     },
     {
       name: "Artwork Moderation",
       href: "/dashboard/admin/artworks",
       icon: Palette,
+      group: "Marketplace",
+    },
+    {
+      name: "Create Artwork",
+      href: "/dashboard/admin/artworks/create",
+      icon: Plus,
+      group: "Marketplace",
     },
     {
       name: "Auctions",
       href: "/dashboard/admin/auctions",
       icon: Gavel,
+      group: "Marketplace",
     },
     {
       name: "Material Records",
       href: "/dashboard/admin/materials",
       icon: Recycle,
+      group: "Operations",
     },
     {
       name: "Impact Dashboard",
       href: "/dashboard/admin/impact",
       icon: BarChart3,
+      group: "Operations",
     },
-    { name: "Orders", href: "/dashboard/admin/orders", icon: Package },
-    { name: "Commissions", href: "/dashboard/admin/commissions", icon: FileText },
-    { name: "Profile", href: "/dashboard/admin/profile", icon: User },
-    { name: "Settings", href: "/dashboard/admin/settings", icon: Settings },
+    { name: "Orders", href: "/dashboard/admin/orders", icon: Package, group: "Operations" },
+    { name: "Commissions", href: "/dashboard/admin/commissions", icon: FileText, group: "Operations" },
+    { name: "Profile", href: "/dashboard/admin/profile", icon: User, group: "Account" },
+    { name: "Settings", href: "/dashboard/admin/settings", icon: Settings, group: "Account" },
   ],
 };
 
@@ -184,7 +202,7 @@ export default function DashboardLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 flex h-full w-64 flex-col bg-white border-r border-gray-200 transform transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -220,32 +238,40 @@ export default function DashboardLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="p-4 space-y-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
+        <nav className="flex-1 overflow-y-auto p-3 pb-4">
+          {navItems.map((item, index) => {
+            const isActive = pathname === item.href || (item.href !== `/dashboard/${role}` && pathname.startsWith(`${item.href}/`));
+            const previousGroup = navItems[index - 1]?.group;
+            const showGroup = role === "admin" && item.group && item.group !== previousGroup;
             return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-teal-50 text-teal-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
-              >
-                <item.icon
-                  className={`w-5 h-5 ${
-                    isActive ? "text-[#007A68]" : "text-gray-400"
+              <div key={item.name} className={showGroup ? "mt-4 first:mt-0" : ""}>
+                {showGroup && (
+                  <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                    {item.group}
+                  </p>
+                )}
+                <Link
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-teal-50 text-teal-700"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
-                />
-                {item.name}
-              </Link>
+                >
+                  <item.icon
+                    className={`h-5 w-5 ${
+                      isActive ? "text-[#007A68]" : "text-gray-400"
+                    }`}
+                  />
+                  <span className="truncate">{item.name}</span>
+                </Link>
+              </div>
             );
           })}
         </nav>
 
         {/* Bottom Links */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100">
+        <div className="border-t border-gray-100 p-3">
           <Link
             href="/"
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"

@@ -15,12 +15,10 @@ import {
   AlertCircle,
   Upload,
   Plus,
-  X,
   Award,
   Palette,
   Recycle,
   FileText,
-  Link as LinkIcon,
   CreditCard,
   Shield,
 } from "lucide-react";
@@ -634,32 +632,20 @@ export default function ArtistProfilePage() {
 
                 {/* Portfolio Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {/* Mock portfolio items */}
-                  {[1, 2, 3, 4, 5].map((item) => (
-                    <div
-                      key={item}
-                      className="relative group aspect-square bg-gradient-to-br from-teal-100 to-amber-100 rounded-lg overflow-hidden"
-                    >
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Palette className="w-12 h-12 text-teal-300" />
-                      </div>
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <button className="p-2 bg-white rounded-full text-gray-700 hover:bg-gray-100">
-                          <LinkIcon className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 bg-red-500 rounded-full text-white hover:bg-red-600">
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                  {/* TODO: Replace this empty state with portfolio images when an existing portfolio API route is available. */}
+                  <div className="col-span-full rounded-lg border border-dashed border-gray-200 p-8 text-center">
+                    <Palette className="mx-auto mb-3 h-12 w-12 text-gray-300" />
+                    <p className="text-sm text-gray-500">
+                      Portfolio image data is not available from the existing API routes.
+                    </p>
+                  </div>
 
                   {/* Add New */}
                   <button className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-teal-500 hover:text-teal-500 transition-colors">
                     <Plus className="w-8 h-8 mb-2" />
                     <span className="text-sm">Add Image</span>
                   </button>
-                </div>
+                    </div>
 
                 <div className="p-4 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-700">

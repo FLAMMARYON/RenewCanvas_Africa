@@ -2,7 +2,7 @@
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { listArtworks, reviewArtwork, type FrontendArtwork } from "@/lib/frontend/artworks-api";
-import { CheckCircle, Clock, Eye, Palette, Recycle, Search, ThumbsDown, ThumbsUp, User, XCircle } from "lucide-react";
+import { CheckCircle, Clock, Eye, Palette, Plus, Recycle, Search, ThumbsDown, ThumbsUp, User, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -62,9 +62,15 @@ export default function AdminArtworksPage() {
   return (
     <DashboardLayout role="admin" userName="Admin User">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Artwork Moderation</h1>
-          <p className="text-gray-500">Review artist submissions and manage RenewCanvas-owned inventory.</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Artwork Moderation</h1>
+            <p className="text-gray-500">Review artist submissions and manage RenewCanvas-owned inventory.</p>
+          </div>
+          <Link href="/dashboard/admin/artworks/create" className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-teal-700">
+            <Plus className="h-4 w-4" />
+            Create RenewCanvas Artwork
+          </Link>
         </div>
 
         {statusMessage && (

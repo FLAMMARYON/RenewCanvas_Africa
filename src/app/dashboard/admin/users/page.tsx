@@ -22,7 +22,9 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-// Mock users data
+// TODO: Replace this mock list with /api/admin/users once that API route exists.
+// There is currently no existing users endpoint under src/app/api, so this page
+// cannot be backed by live database data without adding a new route.
 const users = [
   {
     id: "1",

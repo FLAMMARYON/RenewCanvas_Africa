@@ -1,6 +1,7 @@
 "use client";
 
 import DashboardLayout from "@/components/DashboardLayout";
+import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api";
 import {
   Recycle,
   Search,
@@ -18,148 +19,78 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-// Mock material types data
-const materialTypes = [
-  {
-    id: "1",
-    name: "PET Bottles",
-    description: "Polyethylene terephthalate plastic bottles",
-    totalKgTracked: 485.5,
-    artworksCount: 124,
-    avgKgPerArtwork: 3.9,
-    color: "#0EA5E9",
-  },
-  {
-    id: "2",
-    name: "Fabric Scraps",
-    description: "Textile waste from garment industry",
-    totalKgTracked: 312.8,
-    artworksCount: 89,
-    avgKgPerArtwork: 3.5,
-    color: "#EC4899",
-  },
-  {
-    id: "3",
-    name: "Metal Cans",
-    description: "Aluminum and tin cans",
-    totalKgTracked: 198.2,
-    artworksCount: 56,
-    avgKgPerArtwork: 3.5,
-    color: "#6B7280",
-  },
-  {
-    id: "4",
-    name: "Bottle Caps",
-    description: "Plastic and metal bottle caps",
-    totalKgTracked: 145.6,
-    artworksCount: 78,
-    avgKgPerArtwork: 1.9,
-    color: "#F59E0B",
-  },
-  {
-    id: "5",
-    name: "Cardboard",
-    description: "Corrugated cardboard and paper packaging",
-    totalKgTracked: 234.1,
-    artworksCount: 67,
-    avgKgPerArtwork: 3.5,
-    color: "#8B5CF6",
-  },
-  {
-    id: "6",
-    name: "Glass",
-    description: "Recycled glass bottles and jars",
-    totalKgTracked: 167.9,
-    artworksCount: 42,
-    avgKgPerArtwork: 4.0,
-    color: "#10B981",
-  },
-  {
-    id: "7",
-    name: "Electronic Waste",
-    description: "Components from electronic devices",
-    totalKgTracked: 89.3,
-    artworksCount: 23,
-    avgKgPerArtwork: 3.9,
-    color: "#EF4444",
-  },
-  {
-    id: "8",
-    name: "Plastic Bags",
-    description: "Single-use plastic bags and packaging",
-    totalKgTracked: 112.4,
-    artworksCount: 45,
-    avgKgPerArtwork: 2.5,
-    color: "#3B82F6",
-  },
-];
-
-// Mock recent material records
-const recentRecords = [
-  {
-    id: "r1",
-    artworkId: "a1",
-    artworkTitle: "Ocean Waves",
-    artist: "Marie Uwimana",
-    materialType: "PET Bottles",
-    weight: 2.5,
-    verifiedAt: "2026-04-30",
-    status: "verified",
-  },
-  {
-    id: "r2",
-    artworkId: "a2",
-    artworkTitle: "Urban Dreams",
-    artist: "Jean Baptiste",
-    materialType: "Metal Cans",
-    weight: 3.5,
-    verifiedAt: "2026-04-29",
-    status: "verified",
-  },
-  {
-    id: "r3",
-    artworkId: "a3",
-    artworkTitle: "Sunset Reflections",
-    artist: "Marie Uwimana",
-    materialType: "Glass",
-    weight: 2.0,
-    verifiedAt: null,
-    status: "pending",
-  },
-  {
-    id: "r4",
-    artworkId: "a4",
-    artworkTitle: "Garden Dreams",
-    artist: "Claudine Mukiza",
-    materialType: "Cardboard",
-    weight: 1.8,
-    verifiedAt: "2026-04-28",
-    status: "verified",
-  },
-  {
-    id: "r5",
-    artworkId: "a5",
-    artworkTitle: "Cultural Heritage",
-    artist: "Patrick Habimana",
-    materialType: "Electronic Waste",
-    weight: 4.2,
-    verifiedAt: null,
-    status: "pending",
-  },
-];
+const materialColors = ["#0EA5E9", "#EC4899", "#6B7280", "#F59E0B", "#8B5CF6", "#10B981", "#EF4444", "#3B82F6", "#14B8A6", "#84CC16"];
 
 export default function AdminMaterialsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"types" | "records">("types");
+  const [artworks, setArtworks] = useState<FrontendArtwork[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const totalKgDiverted = materialTypes.reduce(
-    (sum, m) => sum + m.totalKgTracked,
-    0
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError("");
+    listArtworks({ scope: "admin" })
+      .then((result) => {
+        if (active) setArtworks(result.artworks);
+      })
+      .catch((loadError) => {
+        if (active) setError(loadError instanceof Error ? loadError.message : "Could not load material records.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const recentRecords = useMemo(
+    () =>
+      artworks.flatMap((artwork) =>
+        artwork.materials.map((material) => ({
+          id: material.id,
+          artworkId: artwork.id,
+          artworkTitle: artwork.title,
+          artist: artwork.artist?.name ?? "RenewCanvas Africa",
+          materialType: material.material,
+          weight: material.weightKg,
+          verifiedAt: material.isVerified ? artwork.reviewedAt ?? artwork.createdAt : null,
+          status: material.isVerified ? "verified" : "pending",
+        }))
+      ),
+    [artworks]
   );
+
+  const materialTypes = useMemo(() => {
+    const summary = new Map<string, { artworkIds: Set<string>; totalKgTracked: number }>();
+    recentRecords.forEach((record) => {
+      const current = summary.get(record.materialType) ?? { artworkIds: new Set<string>(), totalKgTracked: 0 };
+      current.artworkIds.add(record.artworkId);
+      current.totalKgTracked += record.weight;
+      summary.set(record.materialType, current);
+    });
+    return Array.from(summary.entries())
+      .map(([name, value], index) => ({
+        id: name,
+        name,
+        description: "Recorded from artwork material entries",
+        totalKgTracked: value.totalKgTracked,
+        artworksCount: value.artworkIds.size,
+        avgKgPerArtwork: value.artworkIds.size > 0 ? value.totalKgTracked / value.artworkIds.size : 0,
+        color: materialColors[index % materialColors.length],
+      }))
+      .sort((a, b) => b.totalKgTracked - a.totalKgTracked);
+  }, [recentRecords]);
+
+  const totalKgDiverted = materialTypes.reduce((sum, m) => sum + m.totalKgTracked, 0);
   const totalArtworks = new Set(recentRecords.map((r) => r.artworkId)).size;
+  const averageKg = totalArtworks > 0 ? totalKgDiverted / totalArtworks : 0;
 
   const filteredTypes = materialTypes.filter((type) =>
     type.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -200,6 +131,12 @@ export default function AdminMaterialsPage() {
           </div>
         </div>
 
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-gradient-to-br from-green-50 to-teal-50 rounded-xl p-5 border border-green-100">
@@ -209,7 +146,7 @@ export default function AdminMaterialsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-green-700">
-                  {totalKgDiverted.toFixed(1)}
+                  {loading ? "-" : totalKgDiverted.toFixed(1)}
                 </p>
                 <p className="text-sm text-green-600">Total kg Diverted</p>
               </div>
@@ -222,7 +159,7 @@ export default function AdminMaterialsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {materialTypes.length}
+                  {loading ? "-" : materialTypes.length}
                 </p>
                 <p className="text-sm text-gray-500">Material Types</p>
               </div>
@@ -235,7 +172,7 @@ export default function AdminMaterialsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {materialTypes.reduce((sum, m) => sum + m.artworksCount, 0)}
+                  {loading ? "-" : materialTypes.reduce((sum, m) => sum + m.artworksCount, 0)}
                 </p>
                 <p className="text-sm text-gray-500">Total Records</p>
               </div>
@@ -247,7 +184,9 @@ export default function AdminMaterialsPage() {
                 <TrendingUp className="w-6 h-6 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">3.2</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {loading ? "-" : averageKg.toFixed(1)}
+                </p>
                 <p className="text-sm text-gray-500">Avg kg per Artwork</p>
               </div>
             </div>
@@ -264,12 +203,11 @@ export default function AdminMaterialsPage() {
               <div
                 key={material.id}
                 style={{
-                  width: `${(material.totalKgTracked / totalKgDiverted) * 100}%`,
+                  width: `${totalKgDiverted > 0 ? (material.totalKgTracked / totalKgDiverted) * 100 : 0}%`,
                   backgroundColor: material.color,
                 }}
                 title={`${material.name}: ${material.totalKgTracked} kg (${(
-                  (material.totalKgTracked / totalKgDiverted) *
-                  100
+                  totalKgDiverted > 0 ? (material.totalKgTracked / totalKgDiverted) * 100 : 0
                 ).toFixed(1)}%)`}
                 className="h-full transition-all hover:opacity-80"
               />
@@ -391,8 +329,7 @@ export default function AdminMaterialsPage() {
                       <td className="px-6 py-4 text-right">
                         <span className="text-gray-700">
                           {(
-                            (material.totalKgTracked / totalKgDiverted) *
-                            100
+                            totalKgDiverted > 0 ? (material.totalKgTracked / totalKgDiverted) * 100 : 0
                           ).toFixed(1)}
                           %
                         </span>
@@ -415,6 +352,13 @@ export default function AdminMaterialsPage() {
                       </td>
                     </tr>
                   ))}
+                  {!loading && filteredTypes.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-10 text-center text-sm text-gray-500">
+                        No material types found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -486,6 +430,13 @@ export default function AdminMaterialsPage() {
                       </td>
                     </tr>
                   ))}
+                  {!loading && filteredRecords.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-10 text-center text-sm text-gray-500">
+                        No material records found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
