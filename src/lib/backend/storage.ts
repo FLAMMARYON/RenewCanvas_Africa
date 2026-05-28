@@ -104,7 +104,7 @@ export async function uploadFile(
   const pathname = `${folder}/${timestamp}-${safeFilename}`;
 
   const blob = await put(pathname, fileData, {
-    access: "public",
+    access: "private",
     contentType: resolvedType,
     token: blobToken,
   });
