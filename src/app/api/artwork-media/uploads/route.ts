@@ -6,13 +6,41 @@ import { isStorageConfigured, uploadFile, validateFileSize } from "@/lib/backend
 
 export const dynamic = "force-dynamic";
 
+function logUploadStep(step: string, details?: Record<string, unknown>) {
+  console.info("Artwork media upload step:", { step, ...details });
+}
+
+function uploadErrorResponse(error: unknown): NextResponse {
+  if (error instanceof AuthError) {
+    return authErrorResponse(error);
+  }
+
+  console.error("Artwork media upload unexpected error:", error);
+  return NextResponse.json(
+    {
+      ok: false,
+      code: "upload_failed",
+      message: "Image upload failed before the file could be saved. Check server logs for the exact storage or database error.",
+    },
+    { status: 500 }
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
+    logUploadStep("create_database_client:start");
     const db = getDatabaseClient();
+    logUploadStep("create_database_client:success");
+
     const sessionCookie = readSessionCookie(request);
+    logUploadStep("read_session_cookie", {
+      hasSessionCookie: Boolean(sessionCookie),
+    });
 
     try {
+      logUploadStep("require_role:start");
       await requireRole(db, sessionCookie, ["artist", "admin"]);
+      logUploadStep("require_role:success");
     } catch (error) {
       console.error("Artwork media upload auth failed:", {
         hasSessionCookie: Boolean(sessionCookie),
@@ -23,8 +51,15 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
+    logUploadStep("read_form_data:start");
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+    logUploadStep("read_form_data:success", {
+      hasFile: Boolean(file),
+      filename: file?.name,
+      fileType: file?.type || "(empty)",
+      fileSize: file?.size,
+    });
 
     if (!file) {
       return NextResponse.json(
@@ -46,13 +81,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file size
+    logUploadStep("validate_file_size:start", { fileSize: file.size });
     validateFileSize(file.size);
+    logUploadStep("validate_file_size:success");
 
     // Upload to Vercel Blob
+    logUploadStep("upload_file:start", {
+      filename: file.name,
+      fileType: file.type || "(empty)",
+    });
     const result = await uploadFile(file, {
       filename: file.name,
       contentType: file.type,
       folder: "artworks",
+    });
+    logUploadStep("upload_file:success", {
+      provider: result.provider,
+      contentType: result.contentType,
+      size: result.size,
     });
 
     return NextResponse.json({
@@ -71,6 +117,6 @@ export async function POST(request: NextRequest) {
       status: error instanceof AuthError ? error.status : undefined,
       error,
     });
-    return authErrorResponse(error);
+    return uploadErrorResponse(error);
   }
 }

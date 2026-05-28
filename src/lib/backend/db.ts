@@ -9,9 +9,11 @@ const globalForPrisma = globalThis as typeof globalThis & {
 
 export function getDatabaseClient(): PrismaClient {
   if (globalForPrisma.renewCanvasPrisma) {
+    console.info("Database client reuse: using cached Prisma client.");
     return globalForPrisma.renewCanvasPrisma;
   }
 
+  console.info("Database client init: creating Prisma client.");
   const client = createDatabaseClient();
 
   if (process.env.NODE_ENV !== "production") {
@@ -22,13 +24,18 @@ export function getDatabaseClient(): PrismaClient {
 }
 
 export function createDatabaseClient(): PrismaClient {
+  console.info("Database config read: start.");
   const config = requireBackendConfig(process.env, { requireDatabase: true });
   const databaseUrl = config.databaseUrl;
+  console.info("Database config read: success.", {
+    hasDatabaseUrl: Boolean(databaseUrl),
+  });
 
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is required for database-backed backend operations.");
   }
 
+  console.info("Database client init: creating pg pool.");
   const pool = new Pool({ connectionString: databaseUrl });
   return new PrismaClient({
     adapter: new PrismaPg(pool),

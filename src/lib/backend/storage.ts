@@ -103,11 +103,21 @@ export async function uploadFile(
   const timestamp = Date.now();
   const pathname = `${folder}/${timestamp}-${safeFilename}`;
 
-  const blob = await put(pathname, fileData, {
-    access: "public",
-    contentType: resolvedType,
-    token: blobToken,
-  });
+  let blob;
+  try {
+    blob = await put(pathname, fileData, {
+      access: "public",
+      contentType: resolvedType,
+      token: blobToken,
+    });
+  } catch (error) {
+    console.error("Blob storage upload failed:", error);
+    throw new AuthError(
+      "storage_upload_failed",
+      "Image storage could not save this file. Check BLOB_READ_WRITE_TOKEN and storage provider configuration.",
+      502
+    );
+  }
 
   return {
     provider: "vercel_blob",

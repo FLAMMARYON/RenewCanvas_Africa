@@ -194,23 +194,41 @@ export async function readSessionUser(
   sessionToken: string | undefined,
   now = new Date()
 ): Promise<AuthPublicUser | null> {
+  console.info("Auth readSessionUser: start.", {
+    hasSessionToken: Boolean(sessionToken),
+  });
+
   if (!sessionToken) {
+    console.info("Auth readSessionUser: missing session token.");
     return null;
   }
 
+  console.info("Auth readSessionUser: querying session.");
   const session = await db.authSession.findUnique({
     where: { tokenHash: hashToken(sessionToken) },
     include: { user: true },
   });
 
   if (!session || session.revokedAt || session.expiresAt <= now) {
+    console.info("Auth readSessionUser: session unavailable.", {
+      foundSession: Boolean(session),
+      revoked: Boolean(session?.revokedAt),
+      expired: session ? session.expiresAt <= now : undefined,
+    });
     return null;
   }
 
   if (session.user.status === "suspended" || session.user.status === "deleted") {
+    console.info("Auth readSessionUser: user account unavailable.", {
+      status: session.user.status,
+    });
     return null;
   }
 
+  console.info("Auth readSessionUser: success.", {
+    role: session.user.role,
+    status: session.user.status,
+  });
   return toPublicUser(session.user);
 }
 
@@ -220,16 +238,23 @@ export async function requireRole(
   roles: AuthUserRole[],
   now = new Date()
 ): Promise<AuthPublicUser> {
+  console.info("Auth requireRole: start.", { roles });
   const user = await readSessionUser(db, sessionToken, now);
 
   if (!user) {
+    console.info("Auth requireRole: unauthenticated.");
     throw new AuthError("unauthenticated", "Sign in to continue.", 401);
   }
 
   if (!roles.includes(user.role)) {
+    console.info("Auth requireRole: forbidden.", {
+      userRole: user.role,
+      roles,
+    });
     throw new AuthError("forbidden", "You do not have access to this resource.", 403);
   }
 
+  console.info("Auth requireRole: success.", { userRole: user.role });
   return user;
 }
 
