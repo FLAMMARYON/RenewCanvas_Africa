@@ -9,6 +9,7 @@ import { WebGLFallback } from "@/components/gallery/WebGLFallback";
 import { curateMuseum, type CurationArtworkInput, type CuratedMuseumRoom } from "@/lib/ml/curator";
 import type { RecyclableMaterial } from "@/lib/ml/schemas";
 import { virtualRoomArtworks, type VirtualRoomArtwork } from "@/lib/frontend/virtual-room-data";
+import Navbar from "@/components/Navbar";
 
 type RoomKey = "entrance" | "main" | "left" | "right" | "court" | "corridor";
 type SceneState = "exterior" | "interior";
@@ -1496,6 +1497,7 @@ export default function VirtualRoomPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#101417] text-white">
+      <Navbar />
       <div ref={mountRef} className="absolute inset-0" />
 
       <header className="pointer-events-none fixed left-0 right-0 top-0 z-40 bg-gradient-to-b from-black/80 to-transparent">

@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { confirmPasswordReset } from "@/lib/frontend/auth-api";
+import Navbar from "@/components/Navbar";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -85,7 +86,8 @@ export default function ResetPasswordPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-amber-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-amber-50 flex items-center justify-center px-4 py-24">
+      <Navbar />
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">

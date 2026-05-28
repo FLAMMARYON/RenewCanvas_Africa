@@ -14,6 +14,7 @@ import {
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { dashboardPathForRole, loginWithPassword } from "@/lib/frontend/auth-api";
+import Navbar from "@/components/Navbar";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -47,6 +48,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-amber-50 relative overflow-hidden">
+      <Navbar />
+
       {/* Background Dots Pattern */}
       <div
         className="absolute inset-0 opacity-40"

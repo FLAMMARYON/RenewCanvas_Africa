@@ -7,7 +7,6 @@ import {
   Heart,
   ArrowRight,
   Leaf,
-  Menu,
   X,
   CheckCircle,
   Truck,
@@ -32,19 +31,15 @@ import {
   Gift,
   CreditCard,
 } from "lucide-react";
-import { useState } from "react";
 import Footer from "@/components/Footer";
+import Navbar from "@/components/Navbar";
 
 export default function HowItWorksPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <Navigation
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-      />
+      <Navbar />
 
       {/* Hero Section */}
       <HeroSection />
@@ -70,126 +65,6 @@ export default function HowItWorksPage() {
       {/* Footer */}
       <Footer />
     </div>
-  );
-}
-
-/* ============================================
-   NAVIGATION COMPONENT
-   ============================================ */
-function Navigation({
-  mobileMenuOpen,
-  setMobileMenuOpen,
-}: {
-  mobileMenuOpen: boolean;
-  setMobileMenuOpen: (open: boolean) => void;
-}) {
-  const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "How It Works", href: "/how-it-works" },
-    { name: "Marketplace", href: "/marketplace" },
-    { name: "Artists", href: "/artists" },
-    { name: "Impact", href: "/impact" },
-    { name: "Contact", href: "/contact" },
-  ];
-
-  return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <a href="/" className="flex items-center gap-2">
-            <img src="/brand/renewcanvas-icon-full-color.png" alt="RenewCanvas Africa logo" className="w-10 h-10" />
-            <span className="text-xl font-bold">
-              <span className="text-black">Renew</span><span style={{ color: "#0D5C4D" }}>Canvas</span>{" "}
-              <span style={{ color: "#F7941D" }}>Africa</span>
-            </span>
-          </a>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className={`text-sm font-medium transition-colors ${
-                  link.href === "/how-it-works"
-                    ? "text-teal-600"
-                    : "text-gray-600 hover:text-teal-600"
-                }`}
-              >
-                {link.name}
-              </a>
-            ))}
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="group hidden md:flex items-center gap-3">
-            <a
-              href="/login"
-              className="px-4 py-2 text-sm font-medium text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
-            >
-              Sign In
-            </a>
-            <a
-              href="/register"
-              className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] group-hover:scale-105"
-            >
-              Get Started
-            </a>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            type="button"
-            className="md:hidden p-2 text-gray-600 z-50 relative"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 py-4">
-          <div className="max-w-7xl mx-auto px-4 space-y-3">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className={`block py-2 font-medium ${
-                  link.href === "/how-it-works"
-                    ? "text-teal-600"
-                    : "text-gray-600 hover:text-teal-600"
-                }`}
-              >
-                {link.name}
-              </a>
-            ))}
-            <div className="group pt-4 flex flex-col gap-2">
-              <a
-                href="/login"
-                className="w-full py-2 text-center text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
-              >
-                Sign In
-              </a>
-              <a
-                href="/register"
-                className="w-full py-2 text-center text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] group-hover:scale-105"
-              >
-                Get Started
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-    </nav>
   );
 }
 

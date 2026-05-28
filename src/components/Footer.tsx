@@ -25,7 +25,6 @@ export default function Footer() {
       { name: "Impact", href: "/impact" },
     ],
     company: [
-      { name: "About Us", href: "/about" },
       { name: "Contact", href: "/contact" },
       // { name: "Careers", href: "/careers" },
       // { name: "Press", href: "/press" },

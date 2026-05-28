@@ -17,6 +17,7 @@ import {
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { dashboardPathForRole, registerAccount } from "@/lib/frontend/auth-api";
+import Navbar from "@/components/Navbar";
 
 type UserRole = "buyer" | "artist";
 
@@ -96,6 +97,8 @@ function RegisterForm() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-amber-50 relative overflow-hidden">
+      <Navbar />
+
       {/* Background Dots Pattern */}
       <div
         className="absolute inset-0 opacity-40"

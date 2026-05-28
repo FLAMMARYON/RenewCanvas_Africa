@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import Navbar from "@/components/Navbar";
 
 export default function ArtworkDetailPage() {
   const params = useParams<{ id: string }>();
@@ -36,23 +37,29 @@ export default function ArtworkDetailPage() {
 
   if (statusMessage) {
     return (
-      <main className="min-h-screen bg-gray-50 px-4 py-24">
-        <div className="mx-auto max-w-2xl rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">
-          {statusMessage}
-          <Link href="/marketplace" className="mt-4 block font-medium text-teal-700">Back to marketplace</Link>
-        </div>
-      </main>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <main className="px-4 py-24">
+          <div className="mx-auto max-w-2xl rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">
+            {statusMessage}
+            <Link href="/marketplace" className="mt-4 block font-medium text-teal-700">Back to marketplace</Link>
+          </div>
+        </main>
+      </div>
     );
   }
 
   if (!artwork) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="flex items-center gap-3 text-sm text-gray-600">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
-          Loading artwork...
-        </div>
-      </main>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <main className="flex min-h-screen items-center justify-center">
+          <div className="flex items-center gap-3 text-sm text-gray-600">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+            Loading artwork...
+          </div>
+        </main>
+      </div>
     );
   }
 
@@ -61,22 +68,8 @@ export default function ArtworkDetailPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="border-b border-gray-100 bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2">
-            <img
-              src="/brand/renewcanvas-icon-full-color.png"
-              alt="RenewCanvas Africa logo"
-              className="w-10 h-10"
-            />
-            <span className="text-xl font-bold">
-              <span style={{ color: "#0D5C4D" }}>RenewCanvas</span>{" "}
-              <span style={{ color: "#F7941D" }}>Africa</span>
-            </span>
-          </Link>
-          <Link href="/marketplace" className="text-sm font-medium text-teal-700">Marketplace</Link>
-        </div>
-      </header>
+      <Navbar />
+      <div className="h-16" />
 
       <main>
         <div className="bg-gray-50">

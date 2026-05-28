@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Recycle, Mail, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import { requestResetLink } from "@/lib/frontend/auth-api";
+import Navbar from "@/components/Navbar";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -29,7 +30,8 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-amber-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-amber-50 flex items-center justify-center px-4 py-24">
+      <Navbar />
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
