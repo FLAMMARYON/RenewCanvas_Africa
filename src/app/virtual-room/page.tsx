@@ -48,11 +48,23 @@ type ArtworkPlacement = {
   curationExplanation: string;
 };
 
+type WallPlacement = {
+  x: number;
+  z: number;
+  rotY: number;
+};
+
 const WING_SPACING = 76;
 const ROOM_W = 14;
 const ROOM_D = 16;
 const WALL_H = 5.2;
 const CAMERA_Y = 1.72;
+const FRAME_W = 2.35;
+const FRAME_H = 2.95;
+const FRAME_DEPTH = 0.18;
+const ARTWORK_IMAGE_W = 1.76;
+const ARTWORK_IMAGE_H = 2.26;
+const FRAME_CENTER_Y = 1.82;
 const BRAND_TEAL = "#0f766e";
 const BRAND_ORANGE = "#f59e0b";
 const BRAND_DARK = "#101417";
@@ -154,6 +166,64 @@ function roomForArtworkCategory(category: string): RoomKey {
   if (category === "Jewelry" || category === "Fashion") return "left";
   if (category === "Home Decor" || category === "Furniture") return "right";
   return "corridor";
+}
+
+function wallPlacementsForRoom(roomKey: RoomKey): WallPlacement[] {
+  const cornerClearance = 1;
+  const frameClearance = 0.65;
+  const halfFrame = FRAME_W / 2;
+  const inset = FRAME_DEPTH / 2 + 0.14;
+  const northZ = -ROOM_D / 2 + inset;
+  const southZ = ROOM_D / 2 - inset;
+  const westX = -ROOM_W / 2 + inset;
+  const eastX = ROOM_W / 2 - inset;
+
+  const horizontalSlots = [-4.55, -2.05, 2.05, 4.55].filter((x) => {
+    const awayFromCorner = Math.abs(x) + halfFrame <= ROOM_W / 2 - cornerClearance;
+    const clearsDoor = Math.abs(x) - halfFrame >= 1.75 + frameClearance;
+    return awayFromCorner && clearsDoor;
+  });
+  const verticalSlots = [-4.55, -2.05, 2.05, 4.55].filter((z) => Math.abs(z) + halfFrame <= ROOM_D / 2 - cornerClearance);
+
+  const placements: WallPlacement[] = [];
+  horizontalSlots.forEach((x) => placements.push({ x, z: northZ, rotY: 0 }));
+  if (roomKey !== "entrance") {
+    horizontalSlots.forEach((x) => placements.push({ x, z: southZ, rotY: Math.PI }));
+  }
+  if (roomKey !== "main" && roomKey !== "left") {
+    verticalSlots.forEach((z) => placements.push({ x: westX, z, rotY: Math.PI / 2 }));
+  }
+  if (roomKey !== "main" && roomKey !== "right") {
+    verticalSlots.forEach((z) => placements.push({ x: eastX, z, rotY: -Math.PI / 2 }));
+  }
+
+  return placements;
+}
+
+function fitTextureToArtworkPlane(texture: THREE.Texture) {
+  const image = texture.image as { width?: number; height?: number } | undefined;
+  const width = image?.width ?? 0;
+  const height = image?.height ?? 0;
+  const frameAspect = ARTWORK_IMAGE_W / ARTWORK_IMAGE_H;
+
+  texture.repeat.set(1, 1);
+  texture.offset.set(0, 0);
+  texture.center.set(0, 0);
+
+  if (width > 0 && height > 0) {
+    const imageAspect = width / height;
+    if (imageAspect > frameAspect) {
+      const repeatX = frameAspect / imageAspect;
+      texture.repeat.set(repeatX, 1);
+      texture.offset.set((1 - repeatX) / 2, 0);
+    } else if (imageAspect < frameAspect) {
+      const repeatY = imageAspect / frameAspect;
+      texture.repeat.set(1, repeatY);
+      texture.offset.set(0, (1 - repeatY) / 2);
+    }
+  }
+
+  texture.needsUpdate = true;
 }
 
 function degToRad(value: number) {
@@ -418,12 +488,19 @@ export default function VirtualRoomPage() {
           target.imageUrl,
           (texture) => {
             texture.colorSpace = THREE.SRGBColorSpace;
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            fitTextureToArtworkPlane(texture);
             target.plane.material.map = texture;
+            target.plane.material.color.set("#ffffff");
             target.plane.material.needsUpdate = true;
           },
           undefined,
           () => {
             target.loaded = false;
+            target.plane.material.map = null;
+            target.plane.material.color.set(BRAND_TEAL);
+            target.plane.material.needsUpdate = true;
           }
         );
       });
@@ -677,24 +754,23 @@ export default function VirtualRoomPage() {
     function addArtwork(placement: ArtworkPlacement) {
       const { artwork, slotIndex, roomKey, wingIndex, curationRoomTitle, curationGrouping, curationExplanation } = placement;
       const station = stationFor(roomKey, wingIndex);
-      const side = slotIndex % 4;
-      const x = side === 0 ? -3.8 : side === 1 ? 0 : side === 2 ? 3.8 : 0;
-      const z = side === 3 ? 5.88 : -5.88;
-      const rotY = side === 3 ? Math.PI : 0;
+      const wallSlots = wallPlacementsForRoom(roomKey);
+      const wallSlot = wallSlots[slotIndex % wallSlots.length] ?? { x: 0, z: -ROOM_D / 2 + FRAME_DEPTH / 2, rotY: 0 };
       const group = new THREE.Group();
-      group.position.set(station.x + x, 2.55, station.z + z);
-      group.rotation.y = rotY;
+      group.position.set(station.x + wallSlot.x, FRAME_CENTER_Y, station.z + wallSlot.z);
+      group.rotation.y = wallSlot.rotY;
       scene.add(group);
 
-      addBox(group, [2.35, 2.95, 0.16], [0, 0, 0], "#3d2c1d", { roughness: 0.6 });
+      addBox(group, [FRAME_W, FRAME_H, 0.16], [0, 0, 0], "#3d2c1d", { roughness: 0.6 });
       addBox(group, [2.02, 2.62, 0.18], [0, 0, -0.04], "#f2eadc", { roughness: 0.52 });
 
       const fallbackTexture = new THREE.CanvasTexture(createArtworkCanvas(artwork));
       fallbackTexture.colorSpace = THREE.SRGBColorSpace;
       const plane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.76, 2.26),
+        new THREE.PlaneGeometry(ARTWORK_IMAGE_W, ARTWORK_IMAGE_H),
         new THREE.MeshPhysicalMaterial({
           map: fallbackTexture,
+          color: "#ffffff",
           roughness: 0.56,
           clearcoat: 0.16,
           clearcoatRoughness: 0.48,
@@ -1758,12 +1834,10 @@ export default function VirtualRoomPage() {
                   <Maximize2 className="h-4 w-4" />
                   View Details
                 </Link>
-                {selectedArtwork.ownerType !== "renewcanvas" && (
-                  <Link href={`/checkout?artworkId=${encodeURIComponent(selectedArtwork.id)}`} className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-400">
-                    <ShoppingBag className="h-4 w-4" />
-                    Buy Now
-                  </Link>
-                )}
+                <Link href={`/checkout?artworkId=${encodeURIComponent(selectedArtwork.id)}`} className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-400">
+                  <ShoppingBag className="h-4 w-4" />
+                  Buy Now
+                </Link>
               </div>
             </div>
           </div>

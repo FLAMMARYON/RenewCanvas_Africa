@@ -172,11 +172,9 @@ export function WebGLFallback({ data, initialError }: { data?: GalleryData; init
                           <Link href={`/artwork/${artwork.id}`} className="rounded-lg bg-teal-600 px-3 py-2 text-center text-sm font-semibold hover:bg-teal-700">
                             View Details
                           </Link>
-                          {artwork.ownerType !== "renewcanvas" && (
-                            <Link href={`/checkout?artworkId=${encodeURIComponent(artwork.id)}`} className="rounded-lg bg-amber-500 px-3 py-2 text-center text-sm font-semibold text-black hover:bg-amber-400">
-                              Buy Now
-                            </Link>
-                          )}
+                          <Link href={`/checkout?artworkId=${encodeURIComponent(artwork.id)}`} className="rounded-lg bg-amber-500 px-3 py-2 text-center text-sm font-semibold text-black hover:bg-amber-400">
+                            Buy Now
+                          </Link>
                         </div>
                       </div>
                     </div>

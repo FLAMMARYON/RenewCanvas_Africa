@@ -1,12 +1,68 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Html, useGLTF } from "@react-three/drei";
-import { useRef, useEffect, useMemo, useState } from "react";
+import { OrbitControls, Html, useGLTF, useTexture } from "@react-three/drei";
+import { Component, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { GalleryLighting } from "./GalleryLighting";
 import { WeatherSystem } from "./WeatherSystem";
 import { useGalleryData } from "@/lib/frontend/useGalleryData";
+
+const FRAME_W = 2.35;
+const FRAME_H = 2.95;
+const FRAME_DEPTH = 0.18;
+const ARTWORK_IMAGE_W = 1.76;
+const ARTWORK_IMAGE_H = 2.26;
+const FRAME_CENTER_Y = 1.82;
+const BRAND_TEAL = "#0f766e";
+
+function fitTextureToArtworkPlane(texture: THREE.Texture) {
+  const image = texture.image as { width?: number; height?: number } | undefined;
+  const width = image?.width ?? 0;
+  const height = image?.height ?? 0;
+  const frameAspect = ARTWORK_IMAGE_W / ARTWORK_IMAGE_H;
+
+  texture.repeat.set(1, 1);
+  texture.offset.set(0, 0);
+  texture.center.set(0, 0);
+
+  if (width > 0 && height > 0) {
+    const imageAspect = width / height;
+    if (imageAspect > frameAspect) {
+      const repeatX = frameAspect / imageAspect;
+      texture.repeat.set(repeatX, 1);
+      texture.offset.set((1 - repeatX) / 2, 0);
+    } else if (imageAspect < frameAspect) {
+      const repeatY = imageAspect / frameAspect;
+      texture.repeat.set(1, repeatY);
+      texture.offset.set(0, (1 - repeatY) / 2);
+    }
+  }
+
+  texture.needsUpdate = true;
+}
+
+class ArtworkTextureBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode; resetKey: string },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidUpdate(previousProps: { resetKey: string }) {
+    if (previousProps.resetKey !== this.props.resetKey && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
 
 /**
  * Camera Intro Animation
@@ -163,67 +219,39 @@ function StreetGround() {
  */
 function ArtworkFrame({
   position,
+  rotation,
   artworkImageUrl,
   artworkTitle,
 }: {
   position: [number, number, number];
+  rotation?: [number, number, number];
   artworkImageUrl?: string;
   artworkTitle: string;
 }) {
   const { scene } = useGLTF("/models/artwork-frame.glb");
-  const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const frameClone = useMemo(() => scene.clone(true), [scene]);
-
-  useEffect(() => {
-    if (!artworkImageUrl) {
-      setTexture(null);
-      return;
-    }
-
-    let active = true;
-    let loadedTexture: THREE.Texture | null = null;
-    const loader = new THREE.TextureLoader();
-
-    loader.load(
-      artworkImageUrl,
-      (nextTexture) => {
-        if (!active) {
-          nextTexture.dispose();
-          return;
-        }
-
-        nextTexture.colorSpace = THREE.SRGBColorSpace;
-        loadedTexture = nextTexture;
-        setTexture(nextTexture);
-      },
-      undefined,
-      (error) => {
-        console.warn(`Failed to load texture for ${artworkTitle}:`, error);
-      }
-    );
-
-    return () => {
-      active = false;
-      loadedTexture?.dispose();
-    };
-  }, [artworkImageUrl, artworkTitle]);
+  const texture = useTexture(artworkImageUrl || "/brand/renewcanvas-icon-full-color.png");
 
   // Apply texture to the center backing plane (if found)
   useEffect(() => {
-    if (!texture) return;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    fitTextureToArtworkPlane(texture);
 
     frameClone.traverse((child) => {
       if (child instanceof THREE.Mesh && child.name === "backing") {
         child.material = new THREE.MeshStandardMaterial({
-          map: texture,
+          color: artworkImageUrl ? "#ffffff" : BRAND_TEAL,
+          map: artworkImageUrl ? texture : null,
           side: THREE.DoubleSide,
         });
       }
     });
-  }, [frameClone, texture]);
+  }, [artworkImageUrl, artworkTitle, frameClone, texture]);
 
   return (
-    <group position={position}>
+    <group position={position} rotation={rotation}>
       <primitive object={frameClone} />
       {/* Label below frame */}
       <Html position={[0, -1, 0]} center distanceFactor={5}>
@@ -251,7 +279,6 @@ function ArtworkFrame({
  * Displays artworks in a circular room arrangement
  */
 function GalleryRoom({
-  roomId,
   roomName,
   artworks,
   centerPosition,
@@ -262,7 +289,7 @@ function GalleryRoom({
   centerPosition: [number, number, number];
 }) {
   const artworkCount = artworks.length;
-  const radius = 8; // 8 meters from center
+  const wallSlots = useMemo(() => createWallSlots(), []);
 
   return (
     <group position={centerPosition}>
@@ -275,19 +302,56 @@ function GalleryRoom({
 
       {/* Artwork frames in a circle */}
       {artworks.map((artwork, index) => {
-        const angle = (index / artworkCount) * Math.PI * 2;
-        const x = Math.sin(angle) * radius;
-        const z = Math.cos(angle) * radius;
+        const slot = wallSlots[index % wallSlots.length];
+        const imageUrl = artwork.images[0]?.url;
+        const fallback = <TealArtworkPlaceholder position={slot.position} rotation={slot.rotation} title={artwork.title} />;
 
         return (
-          <ArtworkFrame
-            key={artwork.id}
-            position={[x, 2, z]}
-            artworkImageUrl={artwork.images[0]?.url}
-            artworkTitle={artwork.title}
-          />
+          <ArtworkTextureBoundary key={artwork.id} resetKey={imageUrl ?? artwork.id} fallback={fallback}>
+            <Suspense fallback={fallback}>
+              <ArtworkFrame
+                position={slot.position}
+                rotation={slot.rotation}
+                artworkImageUrl={imageUrl}
+                artworkTitle={artwork.title}
+              />
+            </Suspense>
+          </ArtworkTextureBoundary>
         );
       })}
+    </group>
+  );
+}
+
+function createWallSlots() {
+  const roomW = 14;
+  const roomD = 16;
+  const inset = FRAME_DEPTH / 2 + 0.14;
+  const y = FRAME_CENTER_Y;
+  const horizontal = [-4.55, -2.05, 2.05, 4.55];
+  const vertical = [-4.55, -2.05, 2.05, 4.55];
+  return [
+    ...horizontal.map((x) => ({ position: [x, y, -roomD / 2 + inset] as [number, number, number], rotation: [0, 0, 0] as [number, number, number] })),
+    ...horizontal.map((x) => ({ position: [x, y, roomD / 2 - inset] as [number, number, number], rotation: [0, Math.PI, 0] as [number, number, number] })),
+    ...vertical.map((z) => ({ position: [-roomW / 2 + inset, y, z] as [number, number, number], rotation: [0, Math.PI / 2, 0] as [number, number, number] })),
+    ...vertical.map((z) => ({ position: [roomW / 2 - inset, y, z] as [number, number, number], rotation: [0, -Math.PI / 2, 0] as [number, number, number] })),
+  ];
+}
+
+function TealArtworkPlaceholder({ position, rotation, title }: { position: [number, number, number]; rotation: [number, number, number]; title: string }) {
+  return (
+    <group position={position} rotation={rotation}>
+      <mesh>
+        <boxGeometry args={[FRAME_W, FRAME_H, 0.16]} />
+        <meshStandardMaterial color="#3d2c1d" />
+      </mesh>
+      <mesh position={[0, 0, -0.1]}>
+        <planeGeometry args={[ARTWORK_IMAGE_W, ARTWORK_IMAGE_H]} />
+        <meshStandardMaterial color={BRAND_TEAL} />
+      </mesh>
+      <Html position={[0, -1.8, 0]} center distanceFactor={5}>
+        <div style={{ color: "white", fontSize: "0.75rem", pointerEvents: "none" }}>{title}</div>
+      </Html>
     </group>
   );
 }
