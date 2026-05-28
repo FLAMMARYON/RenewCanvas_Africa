@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useGalleryData } from "@/lib/frontend/useGalleryData";
+import { useGalleryData, type GalleryData } from "@/lib/frontend/useGalleryData";
 
 // Design system colors (from globals.css)
 const COLORS = {
@@ -17,8 +17,13 @@ const COLORS = {
 /**
  * WebGL fallback: Accessible image grid for browsers without WebGL support
  */
-export function WebGLFallback() {
-  const result = useGalleryData();
+export function WebGLFallback({ data, initialError }: { data?: GalleryData; initialError?: string }) {
+  const fetchedResult = useGalleryData();
+  const result = data
+    ? ({ status: "success", data } as const)
+    : initialError
+    ? ({ status: "error", error: initialError } as const)
+    : fetchedResult;
 
   return (
     <div
@@ -107,9 +112,8 @@ export function WebGLFallback() {
                 {/* Artwork grid */}
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {room.artworks.map((artwork) => (
-                    <Link
+                    <div
                       key={artwork.id}
-                      href={`/artwork/${artwork.id}`}
                       className="group overflow-hidden rounded-xl border backdrop-blur-md transition-transform hover:scale-105"
                       style={{
                         backgroundColor: COLORS.galleryPanel,
@@ -135,7 +139,10 @@ export function WebGLFallback() {
                       {/* Artwork info */}
                       <div className="p-4">
                         <h3 className="mb-1 font-semibold">{artwork.title}</h3>
-                        <p className="mb-2 text-sm text-white/65">by {artwork.artist.name}</p>
+                        {artwork.ownerType !== "renewcanvas" && (
+                          <p className="mb-2 text-sm text-white/65">by {artwork.artist?.name ?? "Unknown Artist"}</p>
+                        )}
+                        <p className="mb-2 text-sm font-semibold text-amber-300">{artwork.priceAmount.toLocaleString()} RWF</p>
 
                         {/* Materials */}
                         {artwork.materials.length > 0 && (
@@ -161,8 +168,18 @@ export function WebGLFallback() {
                             {artwork.kgDiverted} kg waste diverted
                           </p>
                         )}
+                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                          <Link href={`/artwork/${artwork.id}`} className="rounded-lg bg-teal-600 px-3 py-2 text-center text-sm font-semibold hover:bg-teal-700">
+                            View Details
+                          </Link>
+                          {artwork.ownerType !== "renewcanvas" && (
+                            <Link href={`/checkout?artworkId=${encodeURIComponent(artwork.id)}`} className="rounded-lg bg-amber-500 px-3 py-2 text-center text-sm font-semibold text-black hover:bg-amber-400">
+                              Buy Now
+                            </Link>
+                          )}
+                        </div>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
 

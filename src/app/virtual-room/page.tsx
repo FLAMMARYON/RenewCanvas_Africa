@@ -2,13 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Compass, Home, Info, List, Map as MapIcon, Maximize2, RotateCcw, X } from "lucide-react";
+import { Compass, Home, Info, List, Map as MapIcon, Maximize2, RotateCcw, Share2, ShoppingBag, X } from "lucide-react";
 import * as THREE from "three";
 import { GalleryLoadingScreen } from "@/components/gallery/GalleryLoadingScreen";
 import { WebGLFallback } from "@/components/gallery/WebGLFallback";
-import { curateMuseum, type CurationArtworkInput, type CuratedMuseumRoom } from "@/lib/ml/curator";
-import type { RecyclableMaterial } from "@/lib/ml/schemas";
-import { virtualRoomArtworks, type VirtualRoomArtwork } from "@/lib/frontend/virtual-room-data";
+import { useGalleryData } from "@/lib/frontend/useGalleryData";
+import { flattenGalleryRooms, type VirtualRoomArtwork } from "@/lib/frontend/virtual-room-data";
 import Navbar from "@/components/Navbar";
 
 type RoomKey = "entrance" | "main" | "left" | "right" | "court" | "corridor";
@@ -49,8 +48,6 @@ type ArtworkPlacement = {
   curationExplanation: string;
 };
 
-const artworks: Artwork[] = virtualRoomArtworks;
-
 const WING_SPACING = 76;
 const ROOM_W = 14;
 const ROOM_D = 16;
@@ -66,11 +63,11 @@ const BRAND_DARK = "#101417";
 // indoor rooms live at z < -12. Glass doors at z=-12 are the only boundary.
 const roomStations: Station[] = [
   { key: "entrance", label: "Entrance Lobby", x: 0, z: -20, heading: 0 },
-  { key: "main", label: "Main Gallery", x: 0, z: -38, heading: 0 },
-  { key: "left", label: "Left Gallery", x: -17, z: -38, heading: -90 },
-  { key: "right", label: "Right Gallery", x: 17, z: -38, heading: 90 },
-  { key: "court", label: "Sculpture Court", x: 0, z: -56, heading: 0 },
-  { key: "corridor", label: "Forward Corridor", x: 0, z: -74, heading: 0 },
+  { key: "main", label: "Painting Room", x: 0, z: -38, heading: 0 },
+  { key: "left", label: "Wearables Room", x: -17, z: -38, heading: -90 },
+  { key: "right", label: "Living Space Room", x: 17, z: -38, heading: 90 },
+  { key: "court", label: "Sculpture Room", x: 0, z: -56, heading: 0 },
+  { key: "corridor", label: "Mixed Media Room", x: 0, z: -74, heading: 0 },
 ];
 
 const roomColors: Record<RoomKey, { wall: string; trim: string; rail: string; floor: string }> = {
@@ -82,68 +79,45 @@ const roomColors: Record<RoomKey, { wall: string; trim: string; rail: string; fl
   corridor: { wall: "#cfc5b6", trim: "#f5eee2", rail: "#f59e0b", floor: "#665d51" },
 };
 
-const materialAliases: Record<string, RecyclableMaterial> = {
-  "pet bottles": "PET bottles",
-  "bottle caps": "Bottle caps",
-  cardboard: "Cardboard",
-  paper: "Paper",
-  fabric: "Fabric scraps",
-  "fabric scraps": "Fabric scraps",
-  "aluminum cans": "Aluminium cans",
-  "aluminium cans": "Aluminium cans",
-  glass: "Glass",
-  "e-waste": "Electronic waste",
-  "electronic waste": "Electronic waste",
-  burlap: "Burlap/grain sacks",
-  "grain sacks": "Burlap/grain sacks",
-  "plastic bags": "Plastic bags",
-  metal: "Metal scraps",
-  "metal scraps": "Metal scraps",
-};
-
 const doors: Record<RoomKey, DoorTarget[]> = {
-  entrance: [{ label: "Main Gallery", room: "main", heading: 0 }],
+  entrance: [{ label: "Painting Room", room: "main", heading: 0 }],
   main: [
-    { label: "Left Gallery", room: "left", heading: 90 },
-    { label: "Right Gallery", room: "right", heading: -90 },
-    { label: "Sculpture Court", room: "court", heading: 0 },
+    { label: "Wearables Room", room: "left", heading: 90 },
+    { label: "Living Space Room", room: "right", heading: -90 },
+    { label: "Sculpture Room", room: "court", heading: 0 },
     { label: "Entrance", room: "entrance", heading: 180 },
   ],
-  left: [{ label: "Main Gallery", room: "main", heading: -90 }],
-  right: [{ label: "Main Gallery", room: "main", heading: 90 }],
+  left: [{ label: "Painting Room", room: "main", heading: -90 }],
+  right: [{ label: "Painting Room", room: "main", heading: 90 }],
   court: [
-    { label: "Main Gallery", room: "main", heading: 180 },
-    { label: "Forward Corridor", room: "corridor", heading: 0 },
+    { label: "Painting Room", room: "main", heading: 180 },
+    { label: "Mixed Media Room", room: "corridor", heading: 0 },
   ],
-  corridor: [
-    { label: "Sculpture Court", room: "court", heading: 180 },
-    { label: "Next Wing", room: "entrance", wingOffset: 1, heading: 0 },
-  ],
+  corridor: [{ label: "Sculpture Room", room: "court", heading: 180 }],
 };
 
 const doorRuntimeTargets: Record<RoomKey, DoorRuntimeTarget[]> = {
   entrance: [
-    { label: "Main Gallery", room: "main", heading: 0, fromRoom: "entrance", localPosition: [0, 0.06, -6.8] },
+    { label: "Painting Room", room: "main", heading: 0, fromRoom: "entrance", localPosition: [0, 0.06, -6.8] },
   ],
   main: [
-    { label: "Left Gallery", room: "left", heading: 90, fromRoom: "main", localPosition: [-6, 0.06, 0] },
-    { label: "Right Gallery", room: "right", heading: -90, fromRoom: "main", localPosition: [6, 0.06, 0] },
-    { label: "Sculpture Court", room: "court", heading: 0, fromRoom: "main", localPosition: [0, 0.06, -6.8] },
+    { label: "Wearables Room", room: "left", heading: 90, fromRoom: "main", localPosition: [-6, 0.06, 0] },
+    { label: "Living Space Room", room: "right", heading: -90, fromRoom: "main", localPosition: [6, 0.06, 0] },
+    { label: "Sculpture Room", room: "court", heading: 0, fromRoom: "main", localPosition: [0, 0.06, -6.8] },
     { label: "Entrance", room: "entrance", heading: 180, fromRoom: "main", localPosition: [0, 0.06, 6.8] },
   ],
   left: [
-    { label: "Main Gallery", room: "main", heading: -90, fromRoom: "left", localPosition: [6, 0.06, 0] },
+    { label: "Painting Room", room: "main", heading: -90, fromRoom: "left", localPosition: [6, 0.06, 0] },
   ],
   right: [
-    { label: "Main Gallery", room: "main", heading: 90, fromRoom: "right", localPosition: [-6, 0.06, 0] },
+    { label: "Painting Room", room: "main", heading: 90, fromRoom: "right", localPosition: [-6, 0.06, 0] },
   ],
   court: [
-    { label: "Main Gallery", room: "main", heading: 180, fromRoom: "court", localPosition: [0, 0.06, 6.8] },
-    { label: "Forward Corridor", room: "corridor", heading: 0, fromRoom: "court", localPosition: [0, 0.06, -6.8] },
+    { label: "Painting Room", room: "main", heading: 180, fromRoom: "court", localPosition: [0, 0.06, 6.8] },
+    { label: "Mixed Media Room", room: "corridor", heading: 0, fromRoom: "court", localPosition: [0, 0.06, -6.8] },
   ],
   corridor: [
-    { label: "Sculpture Court", room: "court", heading: 180, fromRoom: "corridor", localPosition: [0, 0.06, 6.8] },
-    { label: "Next Wing", room: "entrance", wingOffset: 1, heading: 0, fromRoom: "corridor", localPosition: [0, 0.06, -6.8] },
+    { label: "Sculpture Room", room: "court", heading: 180, fromRoom: "corridor", localPosition: [0, 0.06, 6.8] },
   ],
 };
 
@@ -156,56 +130,30 @@ function stationFor(room: RoomKey, wing: number) {
   return { ...station, z: station.z - wing * WING_SPACING };
 }
 
-function normalizeCurationMaterials(materials: string[]): RecyclableMaterial[] {
-  const normalized = materials
-    .map((material) => materialAliases[material.trim().toLowerCase()] ?? "Other")
-    .filter((material, index, allMaterials) => allMaterials.indexOf(material) === index);
-
-  return normalized.length > 0 ? normalized : ["Other"];
-}
-
-function toCurationArtwork(artwork: Artwork): CurationArtworkInput {
-  return {
-    id: String(artwork.id),
-    title: artwork.title,
-    artistName: artwork.artist,
-    category: artwork.category,
-    materials: normalizeCurationMaterials(artwork.materials),
-    imageUrl: artwork.image,
-    impactScore: Math.min(100, Math.round(artwork.kgDiverted * 18)),
-    kgDiverted: artwork.kgDiverted,
-  };
-}
-
-function roomForCuratedRoom(room: CuratedMuseumRoom): RoomKey {
-  if (room.roomKind === "court") return "court";
-  if (room.roomKind === "side_gallery") return room.groupingValue === "Functional Art" ? "right" : "left";
-  if (room.roomKind === "cabinet") return "left";
-  if (room.grouping === "impact") return "court";
-  return "main";
-}
-
-const museumCurationPlan = curateMuseum({ artworks: artworks.map(toCurationArtwork) });
-
 function getArtworkPlacements(items: Artwork[]): ArtworkPlacement[] {
-  const artworkById = new Map(items.map((artwork) => [String(artwork.id), artwork]));
-  const roomById = new Map(museumCurationPlan.rooms.map((room) => [room.id, room]));
-
-  return museumCurationPlan.placements.flatMap((placement) => {
-    const artwork = artworkById.get(placement.artworkId);
-    const curatedRoom = roomById.get(placement.roomId);
-    if (!artwork || !curatedRoom) return [];
-
+  const roomSlots = new Map<RoomKey, number>();
+  return items.map((artwork) => {
+    const roomKey = roomForArtworkCategory(artwork.category);
+    const slotIndex = roomSlots.get(roomKey) ?? 0;
+    roomSlots.set(roomKey, slotIndex + 1);
     return {
       artwork,
-      roomKey: roomForCuratedRoom(curatedRoom),
-      slotIndex: placement.slotIndex,
-      wingIndex: placement.wingIndex,
-      curationRoomTitle: curatedRoom.title,
-      curationGrouping: `${curatedRoom.grouping}: ${curatedRoom.groupingValue}`,
-      curationExplanation: placement.arrangementExplanation,
+      roomKey,
+      slotIndex,
+      wingIndex: Math.floor(slotIndex / 4),
+      curationRoomTitle: stationFor(roomKey, 0).label,
+      curationGrouping: artwork.category,
+      curationExplanation: `${artwork.title} is grouped by category in the ${stationFor(roomKey, 0).label}.`,
     };
   });
+}
+
+function roomForArtworkCategory(category: string): RoomKey {
+  if (category === "Sculpture") return "court";
+  if (category === "Wall Art" || category === "Painting") return "main";
+  if (category === "Jewelry" || category === "Fashion") return "left";
+  if (category === "Home Decor" || category === "Furniture") return "right";
+  return "corridor";
 }
 
 function degToRad(value: number) {
@@ -358,6 +306,7 @@ function addBox(
 }
 
 export default function VirtualRoomPage() {
+  const galleryData = useGalleryData();
   const mountRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -375,6 +324,8 @@ export default function VirtualRoomPage() {
   const exteriorGroupRef = useRef<THREE.Group | null>(null);
   const exteriorHotspotRef = useRef<THREE.Mesh | null>(null);
   const exteriorLabelRef = useRef<THREE.Mesh | null>(null);
+  const savedRoomIdRef = useRef<string | null>(null);
+  const loadRoomTexturesRef = useRef<(room: RoomKey, wing: number) => void>(() => {});
   const [wing, setWing] = useState(0);
   const [room, setRoom] = useState<RoomKey>("entrance");
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
@@ -382,10 +333,17 @@ export default function VirtualRoomPage() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [hasWebGL, setHasWebGL] = useState<boolean | null>(null);
+  const [shareMessage, setShareMessage] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
 
+  const artworks = useMemo<Artwork[]>(
+    () => (galleryData.status === "success" ? flattenGalleryRooms(galleryData.data.rooms) : []),
+    [galleryData]
+  );
   const currentStation = useMemo(() => stationFor(room, wing), [room, wing]);
   const currentDoors = doors[room];
-  const accessiblePlacements = useMemo(() => getArtworkPlacements(artworks), []);
+  const accessiblePlacements = useMemo(() => getArtworkPlacements(artworks), [artworks]);
+  const accessibilitySummary = `${artworks.length} listed marketplace artworks grouped into category-based rooms.`;
 
   useEffect(() => {
     roomRef.current = room;
@@ -405,7 +363,7 @@ export default function VirtualRoomPage() {
   }, []);
 
   useEffect(() => {
-    if (hasWebGL !== true || !mountRef.current) return;
+    if (hasWebGL !== true || !mountRef.current || galleryData.status !== "success") return;
 
     const mount = mountRef.current;
     const scene = new THREE.Scene();
@@ -445,6 +403,32 @@ export default function VirtualRoomPage() {
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin("anonymous");
     const floorTexture = createFloorTexture();
+    const artworkTextureTargets: Array<{
+      plane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshPhysicalMaterial>;
+      placement: ArtworkPlacement;
+      imageUrl: string;
+      loaded: boolean;
+    }> = [];
+
+    const loadTexturesForActiveRoom = (activeRoom: RoomKey, activeWing: number) => {
+      artworkTextureTargets.forEach((target) => {
+        if (target.loaded || !target.imageUrl || target.placement.roomKey !== activeRoom || target.placement.wingIndex !== activeWing) return;
+        target.loaded = true;
+        loader.load(
+          target.imageUrl,
+          (texture) => {
+            texture.colorSpace = THREE.SRGBColorSpace;
+            target.plane.material.map = texture;
+            target.plane.material.needsUpdate = true;
+          },
+          undefined,
+          () => {
+            target.loaded = false;
+          }
+        );
+      });
+    };
+    loadRoomTexturesRef.current = loadTexturesForActiveRoom;
 
     function addWallSegments(group: THREE.Group, z: number, color: string, doorCenter?: number) {
       const gap = doorCenter === undefined ? 0 : 3.5;
@@ -719,11 +703,7 @@ export default function VirtualRoomPage() {
       plane.position.z = -0.14;
       group.add(plane);
 
-      loader.load(artwork.image, (texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        plane.material.map = texture;
-        plane.material.needsUpdate = true;
-      });
+      artworkTextureTargets.push({ plane, placement, imageUrl: artwork.image, loaded: false });
 
       const plaqueTexture = new THREE.CanvasTexture(createTextCanvas(artwork.title, artwork.artist));
       const plaque = new THREE.Mesh(
@@ -1187,6 +1167,7 @@ export default function VirtualRoomPage() {
       getArtworkPlacements(artworks).forEach((placement) => {
         addArtwork(placement);
       });
+      loadTexturesForActiveRoom(roomRef.current, wingRef.current);
     }
 
     let museumBuilt = false;
@@ -1213,6 +1194,7 @@ export default function VirtualRoomPage() {
       wingRef.current = 0;
       setRoom("entrance");
       setWing(0);
+      loadTexturesForActiveRoom("entrance", 0);
     };
 
     // Always start outside with the camera intro animation.
@@ -1253,6 +1235,7 @@ export default function VirtualRoomPage() {
       wingRef.current = nextWing;
       setWing(nextWing);
       setRoom(target.room);
+      loadTexturesForActiveRoom(target.room, nextWing);
     };
 
     const chooseDoorFromHeading = (activeRoom: RoomKey, activeWing: number, backward: boolean) => {
@@ -1466,7 +1449,7 @@ export default function VirtualRoomPage() {
       mount.removeChild(renderer.domElement);
       renderer.dispose();
     };
-  }, [hasWebGL]);
+  }, [galleryData, hasWebGL, artworks]);
 
   const goToRoom = (nextRoom: RoomKey, nextWing = wing) => {
     const station = stationFor(nextRoom, nextWing);
@@ -1476,9 +1459,87 @@ export default function VirtualRoomPage() {
     wingRef.current = nextWing;
     setWing(nextWing);
     setRoom(nextRoom);
+    loadRoomTexturesRef.current(nextRoom, nextWing);
   };
 
-  // No camera/room persistence: every visit starts fresh outdoors.
+  const saveRoomState = async (isPublic = false) => {
+    const response = await fetch("/api/virtual-room", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        id: savedRoomIdRef.current ?? undefined,
+        name: `${currentStation.label} visit`,
+        isPublic,
+        viewedArtworkIds: selectedArtwork ? [selectedArtwork.id] : [],
+        roomState: {
+          activeRoom: room,
+          wing,
+          cameraPosition: cameraRef.current
+            ? {
+                x: cameraRef.current.position.x,
+                y: cameraRef.current.position.y,
+                z: cameraRef.current.position.z,
+              }
+            : null,
+        },
+      }),
+    });
+    const payload = (await response.json()) as { ok?: boolean; room?: { id: string; shareToken?: string | null }; message?: string };
+    if (!response.ok || !payload.ok || !payload.room) {
+      throw new Error(payload.message ?? "Could not save room state.");
+    }
+    savedRoomIdRef.current = payload.room.id;
+    return payload.room;
+  };
+
+  const shareRoom = async () => {
+    setShareMessage("");
+    try {
+      const response = await fetch("/api/virtual-room/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          id: savedRoomIdRef.current ?? undefined,
+          name: `${currentStation.label} shared visit`,
+          viewedArtworkIds: selectedArtwork ? [selectedArtwork.id] : [],
+          roomState: {
+            activeRoom: room,
+            wing,
+            cameraPosition: cameraRef.current
+              ? {
+                  x: cameraRef.current.position.x,
+                  y: cameraRef.current.position.y,
+                  z: cameraRef.current.position.z,
+                }
+              : null,
+          },
+        }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; room?: { id: string; shareToken?: string | null }; message?: string };
+      if (!response.ok || !payload.ok || !payload.room?.shareToken) {
+        throw new Error(payload.message ?? "Could not create share link.");
+      }
+      const savedRoom = payload.room;
+      savedRoomIdRef.current = savedRoom.id;
+      const url = `${window.location.origin}/api/virtual-room/share/${savedRoom.shareToken}`;
+      await navigator.clipboard.writeText(url);
+      setShareMessage("Share link copied.");
+    } catch (error) {
+      setShareMessage(error instanceof Error ? error.message : "Could not create share link.");
+    }
+  };
+
+  const saveCurrentRoom = async () => {
+    setSaveMessage("");
+    try {
+      await saveRoomState(false);
+      setSaveMessage("Room state saved.");
+    } catch (error) {
+      setSaveMessage(error instanceof Error ? error.message : "Could not save room state.");
+    }
+  };
 
   const reset = () => {
     // Reset returns to the OUTDOOR starting point, not indoors.
@@ -1487,12 +1548,20 @@ export default function VirtualRoomPage() {
     }
   };
 
+  if (galleryData.status === "loading") {
+    return <GalleryLoadingScreen message="Loading marketplace artworks..." />;
+  }
+
+  if (galleryData.status === "error") {
+    return <WebGLFallback initialError={galleryData.error} />;
+  }
+
   if (hasWebGL === null) {
     return <GalleryLoadingScreen message="Initializing virtual museum..." />;
   }
 
   if (!hasWebGL) {
-    return <WebGLFallback />;
+    return <WebGLFallback data={galleryData.data} />;
   }
 
   return (
@@ -1513,6 +1582,12 @@ export default function VirtualRoomPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <button type="button" onClick={saveCurrentRoom} className="pointer-events-auto rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold backdrop-blur hover:bg-white/15" title="Save current room state">
+              Save
+            </button>
+            <button type="button" onClick={shareRoom} className="pointer-events-auto rounded-lg bg-white/10 p-2 backdrop-blur hover:bg-white/15" title="Copy share link">
+              <Share2 className="h-5 w-5" />
+            </button>
             <button type="button" onClick={() => setMapOpen((value) => !value)} className="pointer-events-auto rounded-lg bg-white/10 p-2 backdrop-blur hover:bg-white/15" title="Toggle map">
               <MapIcon className="h-5 w-5" />
             </button>
@@ -1521,6 +1596,7 @@ export default function VirtualRoomPage() {
             </button>
           </div>
         </div>
+        {(shareMessage || saveMessage) && <p className="pointer-events-auto mx-auto max-w-7xl px-4 pb-2 text-right text-xs text-white/75">{shareMessage || saveMessage}</p>}
       </header>
 
       {mapOpen && (
@@ -1610,7 +1686,7 @@ export default function VirtualRoomPage() {
       {listOpen && (
         <section className="fixed bottom-36 left-5 z-[60] max-h-[46vh] w-[min(92vw,430px)] overflow-auto rounded-xl border border-white/10 bg-black/78 p-4 text-sm shadow-2xl backdrop-blur-md">
           <h2 className="font-semibold">Artwork List</h2>
-          <p className="mt-1 text-xs text-white/65">{museumCurationPlan.accessibilitySummary}</p>
+          <p className="mt-1 text-xs text-white/65">{accessibilitySummary}</p>
           <ul className="mt-3 space-y-3">
             {accessiblePlacements.map((placement) => (
               <li key={`${placement.artwork.id}-${placement.curationRoomTitle}`} className="border-b border-white/10 pb-3 last:border-b-0">
@@ -1625,7 +1701,7 @@ export default function VirtualRoomPage() {
 
       <section className="sr-only" aria-label="Accessible museum artwork list">
         <h2>Infinite Museum artwork list</h2>
-        <p>{museumCurationPlan.accessibilitySummary}</p>
+        <p>{accessibilitySummary}</p>
         <ul>
           {accessiblePlacements.map((placement) => (
             <li key={`${placement.artwork.id}-${placement.curationRoomTitle}`}>
@@ -1648,7 +1724,9 @@ export default function VirtualRoomPage() {
               <div className="flex-1">
                 <p className="mb-1 text-xs font-medium text-teal-300">On view in Infinite Museum</p>
                 <h2 className="text-xl font-bold leading-tight">{selectedArtwork.title}</h2>
-                <p className="mt-1 text-sm text-white/65">by {selectedArtwork.artist}</p>
+                {selectedArtwork.ownerType !== "renewcanvas" && (
+                  <p className="mt-1 text-sm text-white/65">by {selectedArtwork.artist}</p>
+                )}
                 <div className="mt-4 space-y-3 text-sm">
                   <div className="flex items-center justify-between border-b border-white/10 pb-2">
                     <span className="text-white/55">Price</span>
@@ -1675,10 +1753,18 @@ export default function VirtualRoomPage() {
                   )}
                 </div>
               </div>
-              <Link href={`/artwork/${selectedArtwork.id}`} className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-sm font-semibold hover:bg-teal-700">
-                <Maximize2 className="h-4 w-4" />
-                Open Artwork Page
-              </Link>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <Link href={`/artwork/${selectedArtwork.id}`} className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-sm font-semibold hover:bg-teal-700">
+                  <Maximize2 className="h-4 w-4" />
+                  View Details
+                </Link>
+                {selectedArtwork.ownerType !== "renewcanvas" && (
+                  <Link href={`/checkout?artworkId=${encodeURIComponent(selectedArtwork.id)}`} className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-400">
+                    <ShoppingBag className="h-4 w-4" />
+                    Buy Now
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>
