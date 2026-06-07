@@ -19,6 +19,7 @@ import {
   FileText,
   Globe,
   Truck,
+  ChevronDown,
 } from "lucide-react";
 
 // LinkedIn icon as inline SVG since lucide-react doesn't have it
@@ -120,14 +121,14 @@ function HeroSection() {
           <div className="group flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href="#contact-form"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white border-2 border-teal-600 rounded-xl font-medium group-hover:bg-white group-hover:text-teal-600 [transition:all_0.4s_ease] group-hover:scale-105 shadow-lg shadow-teal-600/30"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white border-2 border-teal-600 rounded-xl font-medium group-hover:bg-white group-hover:text-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105 shadow-lg shadow-teal-600/30"
             >
               Send a Message
               <ArrowRight className="w-5 h-5" />
             </a>
             <a
               href="/book-collection"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white border-2 border-amber-500 rounded-xl font-medium group-hover:bg-white group-hover:text-amber-500 [transition:all_0.4s_ease] group-hover:scale-105 shadow-lg shadow-amber-500/30"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white border-2 border-amber-500 rounded-xl font-medium group-hover:bg-white group-hover:text-amber-500 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105 shadow-lg shadow-amber-500/30"
             >
               <Truck className="w-5 h-5" />
               Book a Collection
@@ -147,9 +148,9 @@ function ContactInfoSection() {
     {
       icon: Mail,
       title: "Email Us",
-      details: ["hello.renewcanvas.africa@gmail.com"],
+      details: ["hello.renewcanvas@gmail.com"],
       color: "teal",
-      href: "mailto:hello.renewcanvas.africa@gmail.com",
+      href: "mailto:hello.renewcanvas@gmail.com",
     },
     {
       icon: Phone,
@@ -196,9 +197,9 @@ function ContactInfoSection() {
                 href={info.href}
                 target={info.href.startsWith("http") ? "_blank" : undefined}
                 rel={info.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                className={`${colors.bg} border ${colors.border} rounded-2xl p-6 text-center hover:shadow-lg [transition:all_0.3s_ease] hover:-translate-y-1 block`}
+                className={`${colors.bg} border ${colors.border} rounded-xl p-6 text-center hover:shadow-lg [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)] hover:-translate-y-1 block`}
               >
-                <div className={`w-16 h-16 ${colors.iconBg} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
+                <div className={`w-16 h-16 ${colors.iconBg} rounded-xl flex items-center justify-center mx-auto mb-4`}>
                   <info.icon className={`w-8 h-8 ${colors.icon}`} />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">{info.title}</h3>
@@ -228,7 +229,7 @@ function ContactInfoSection() {
               <LinkedInIcon className="w-6 h-6 text-blue-600" />
             </a>
             <a
-              href="mailto:hello.renewcanvas.africa@gmail.com"
+              href="mailto:hello.renewcanvas@gmail.com"
               className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center hover:bg-teal-200 transition-colors"
             >
               <Mail className="w-6 h-6 text-teal-600" />
@@ -274,14 +275,14 @@ function BookCollectionCTA() {
           <div className="group flex flex-col sm:flex-row gap-4">
             <a
               href="/book-collection"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-amber-500 border-2 border-white rounded-xl font-bold group-hover:bg-amber-500 group-hover:text-white group-hover:border-white [transition:all_0.4s_ease] group-hover:scale-105 shadow-lg"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-amber-500 border-2 border-white rounded-xl font-bold group-hover:bg-amber-500 group-hover:text-white group-hover:border-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105 shadow-lg"
             >
               <Truck className="w-5 h-5" />
               Book a Collection
             </a>
             <a
               href="/how-it-works#collection"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-teal-600 text-white border-2 border-teal-600 rounded-xl font-medium group-hover:bg-white group-hover:text-teal-600 [transition:all_0.4s_ease] group-hover:scale-105"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-teal-600 text-white border-2 border-teal-600 rounded-xl font-medium group-hover:bg-white group-hover:text-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
             >
               Learn More
               <ArrowRight className="w-5 h-5" />
@@ -425,7 +426,7 @@ function ContactFormSection() {
     amber: { selectedBg: "bg-amber-100", icon: "text-amber-600", border: "border-amber-500" },
   };
 
-  const inputClasses = "w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-gray-900 placeholder-gray-400 [transition:all_0.3s_ease]";
+  const inputClasses = "w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-gray-900 placeholder-gray-400 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]";
 
   return (
     <section id="contact-form" className="py-16 bg-gray-50 relative">
@@ -448,7 +449,7 @@ function ContactFormSection() {
           </p>
         </div>
 
-        <div className="bg-white rounded-3xl p-8 shadow-xl">
+        <div className="bg-white rounded-xl p-8 shadow-xl">
           {/* Status Message */}
           {submitStatus && (
             <div
@@ -477,14 +478,14 @@ function ContactFormSection() {
                       key={type.value}
                       type="button"
                       onClick={() => setSelectedInquiry(type.value)}
-                      className={`relative flex items-center gap-3 p-4 bg-white border-2 rounded-xl cursor-pointer [transition:all_0.3s_ease] ${
+                      className={`relative flex items-center gap-3 p-4 bg-white border-2 rounded-xl cursor-pointer [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)] ${
                         isSelected ? colors.border : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center [transition:all_0.3s_ease] ${
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)] ${
                         isSelected ? colors.selectedBg : "bg-gray-100"
                       }`}>
-                        <type.icon className={`w-5 h-5 [transition:all_0.3s_ease] ${
+                        <type.icon className={`w-5 h-5 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)] ${
                           isSelected ? colors.icon : "text-gray-600"
                         }`} />
                       </div>
@@ -681,7 +682,7 @@ function ContactFormSection() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 text-white rounded-xl [transition:all_0.4s_ease] font-medium hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+              className={`inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 text-white rounded-xl [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
                 selectedInquiry === "general"
                   ? "bg-teal-600 hover:bg-teal-700 shadow-teal-600/30"
                   : selectedInquiry === "artist"
@@ -741,7 +742,7 @@ function FAQSection() {
   ];
 
   return (
-    <section className="py-16 bg-white">
+    <section id="faq" className="py-16 bg-white scroll-mt-24">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
@@ -756,20 +757,25 @@ function FAQSection() {
           </p>
         </div>
 
+        {/* Native <details> accordion: keyboard-accessible and focusable by default. */}
         <div className="space-y-4">
           {faqs.map((faq, index) => (
-            <div
+            <details
               key={index}
-              className="bg-amber-50 rounded-2xl p-6 border-l-4 border-amber-400 hover:shadow-lg [transition:all_0.3s_ease] hover:-translate-y-1"
+              className="group bg-amber-50 rounded-xl border-l-4 border-amber-400 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)] open:shadow-lg"
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-start gap-3">
-                <span className="w-7 h-7 bg-amber-200 rounded-full flex items-center justify-center flex-shrink-0 text-amber-700 text-sm font-bold">
+              <summary className="flex items-start gap-3 cursor-pointer list-none p-6 text-lg font-semibold text-gray-900 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500">
+                <span
+                  aria-hidden="true"
+                  className="w-7 h-7 bg-amber-200 rounded-full flex items-center justify-center flex-shrink-0 text-amber-700 text-sm font-bold"
+                >
                   {index + 1}
                 </span>
-                {faq.question}
-              </h3>
-              <p className="text-gray-600 ml-10">{faq.answer}</p>
-            </div>
+                <span className="flex-1">{faq.question}</span>
+                <ChevronDown className="w-5 h-5 mt-1 text-amber-600 flex-shrink-0 transition-transform group-open:rotate-180" />
+              </summary>
+              <p className="text-gray-600 px-6 pb-6 ml-10">{faq.answer}</p>
+            </details>
           ))}
         </div>
       </div>

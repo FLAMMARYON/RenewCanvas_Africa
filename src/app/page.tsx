@@ -111,21 +111,21 @@ function HeroSection() {
             <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center lg:justify-start">
               <a
                 href="/marketplace"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-white bg-teal-700 rounded-lg hover:bg-teal-800 [transition:all_0.4s_ease] font-medium shadow-lg shadow-teal-700/30 hover:shadow-xl hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-white bg-teal-700 rounded-lg hover:bg-teal-800 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium shadow-lg shadow-teal-700/30 hover:shadow-xl hover:scale-105"
               >
                 Explore Artwork
                 <ArrowRight className="w-5 h-5" />
               </a>
               <a
                 href="/register?role=artist"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-teal-700 bg-teal-100 rounded-lg hover:bg-teal-800 hover:text-white [transition:all_0.4s_ease] font-medium hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-teal-700 bg-teal-100 rounded-lg hover:bg-teal-800 hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-105"
               >
                 Join as Artist
                 <Palette className="w-5 h-5" />
               </a>
               <a
                 href="/book-collection"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-500 hover:text-white [transition:all_0.4s_ease] font-medium hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-500 hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-105"
               >
                 <Truck className="w-5 h-5" />
                 Book a Collection
@@ -153,7 +153,7 @@ function HeroSection() {
           <div className="relative hidden lg:block">
             <div className="relative w-full h-[500px]">
               {/* Main Image Placeholder */}
-              <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-teal-100 to-teal-200 rounded-2xl shadow-xl transform rotate-3 flex items-center justify-center">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-teal-100 to-teal-200 rounded-xl shadow-xl transform rotate-3 flex items-center justify-center">
                 <div className="text-center p-8">
                   <Palette className="w-16 h-16 text-teal-700 mx-auto mb-4" />
                   <p className="text-teal-700 font-medium">
@@ -166,7 +166,7 @@ function HeroSection() {
               </div>
 
               {/* Secondary Image Placeholder */}
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-br from-amber-100 to-amber-200 rounded-2xl shadow-lg transform -rotate-6 flex items-center justify-center">
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl shadow-lg transform -rotate-6 flex items-center justify-center">
                 <div className="text-center p-6">
                   <Recycle className="w-12 h-12 text-amber-600 mx-auto mb-3" />
                   <p className="text-amber-700 font-medium text-sm">
@@ -176,8 +176,8 @@ function HeroSection() {
               </div>
 
               {/* Small Accent */}
-              <div className="absolute top-40 left-20 w-32 h-32 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl shadow-md transform rotate-12 flex items-center justify-center">
-                <Heart className="w-10 h-10 text-purple-500" />
+              <div className="absolute top-40 left-20 w-32 h-32 bg-gradient-to-br from-teal-100 to-teal-200 rounded-xl shadow-md transform rotate-12 flex items-center justify-center">
+                <Heart className="w-10 h-10 text-teal-500" />
               </div>
             </div>
           </div>
@@ -202,7 +202,7 @@ function AboutSection() {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left - Image/Visual */}
           <div className="relative">
-            <div className="aspect-square bg-gradient-to-br from-teal-50 to-teal-100 rounded-3xl p-8 flex items-center justify-center">
+            <div className="aspect-square bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-8 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-32 h-32 mx-auto mb-6 bg-white rounded-full shadow-lg flex items-center justify-center">
                   <Globe className="w-16 h-16 text-teal-700" />
@@ -240,7 +240,7 @@ function AboutSection() {
               </p>
               <p>
                 Every artwork on our platform comes with a verified
-                environmental impact story—you will know exactly how much waste was
+                environmental impact story, so you will know exactly how much waste was
                 diverted, which artist created it, and the journey from
                 discarded material to treasured art piece.
               </p>
@@ -290,7 +290,7 @@ function HowItWorksSection() {
       icon: Recycle,
       title: "We Collect & Clean",
       description:
-        "We source recyclable materials—plastics, fabrics, metals—from verified partners, clean and sort them for artistic use.",
+        "We source recyclable materials (plastics, fabrics, metals) from verified partners, clean and sort them for artistic use.",
       color: "teal",
     },
     {
@@ -306,7 +306,7 @@ function HowItWorksSection() {
       icon: TrendingUp,
       title: "Impact Tracked",
       description:
-        "Every artwork is logged with its environmental impact—kg of waste diverted, materials used, artist earnings.",
+        "Every artwork is logged with its environmental impact: kg of waste diverted, materials used, and artist earnings.",
       color: "purple",
     },
     {
@@ -366,7 +366,7 @@ function HowItWorksSection() {
             return (
               <div
                 key={index}
-                className="relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow"
+                className="relative bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
               >
                 {/* Step Number */}
                 <span className="absolute -top-3 -right-3 w-12 h-12 bg-gray-900 text-white rounded-full flex items-center justify-center font-bold text-sm">
@@ -489,7 +489,7 @@ function ImpactSection() {
           {stats.map((stat, index) => (
             <div
               key={index}
-              className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-2xl hover:bg-white/15 transition-colors"
+              className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/15 transition-colors"
             >
               <div className="w-14 h-14 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center">
                 <stat.icon className="w-7 h-7 text-white" />
@@ -505,7 +505,7 @@ function ImpactSection() {
         <div className="text-center mt-12">
           <a
             href="/impact"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-teal-700 rounded-lg font-medium hover:bg-teal-800 hover:text-white [transition:all_0.4s_ease] hover:scale-105"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-teal-700 rounded-lg font-medium hover:bg-teal-800 hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105"
           >
             View Full Impact Report
             <ArrowRight className="w-5 h-5" />
@@ -525,7 +525,7 @@ function WhySection() {
       icon: Award,
       title: "Verified Impact",
       description:
-        "Every artwork comes with documented environmental impact—kg of waste diverted and materials traced.",
+        "Every artwork comes with documented environmental impact: kg of waste diverted and materials traced.",
     },
     {
       icon: Users,
@@ -569,7 +569,7 @@ function WhySection() {
           {reasons.map((reason, index) => (
             <div
               key={index}
-              className="flex gap-4 p-6 rounded-2xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50/50 transition-all"
+              className="flex gap-4 p-6 rounded-xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50/50 transition-all"
             >
               <div className="flex-shrink-0">
                 <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
@@ -602,21 +602,21 @@ function CTASection() {
         </h2>
         <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
           Whether you want to buy unique art, join as an artist, or partner with
-          us for corporate impact—there is a place for you in the RenewCanvas
+          us for corporate impact, and there is a place for you in the RenewCanvas
           community.
         </p>
 
         <div className="group flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="/marketplace"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] font-medium shadow-lg shadow-teal-700/30 text-lg group-hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium shadow-lg shadow-teal-700/30 text-lg group-hover:scale-105"
           >
             Browse Artwork
             <ArrowRight className="w-5 h-5" />
           </a>
           <a
             href="/register?role=artist"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-white border-2 border-teal-200 rounded-lg group-hover:bg-teal-800 group-hover:text-white group-hover:border-teal-700 [transition:all_0.4s_ease] font-medium text-lg group-hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-white border-2 border-teal-200 rounded-lg group-hover:bg-teal-800 group-hover:text-white group-hover:border-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium text-lg group-hover:scale-105"
           >
             Apply as Artist
             <Palette className="w-5 h-5" />

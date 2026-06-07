@@ -15,9 +15,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabaseClient } from "@/lib/backend/db";
 import { sendEmail } from "@/lib/backend/messaging-providers";
+import { getSupportInboxEmail } from "@/lib/config/constants";
 
-// Admin email to receive reminders
-const ADMIN_EMAIL = "hello.renewcanvas.africa@gmail.com";
+// Support inbox (server-only env var, falls back to public support address).
+const ADMIN_EMAIL = getSupportInboxEmail();
 
 // Reminder thresholds
 const UNREAD_MESSAGE_HOURS = 24; // Remind about messages older than 24 hours

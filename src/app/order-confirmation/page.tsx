@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { readOrder, type FrontendOrder } from "@/lib/frontend/orders-api";
 import { listPaymentSessions, type FrontendPayment } from "@/lib/frontend/payments-api";
+import { CancellationRequest } from "@/components/CancellationRequest";
 
 const instructionMeta = {
   momo: { title: "MTN MoMo Phone Approval", icon: Smartphone },
@@ -67,7 +68,7 @@ function OrderConfirmationContent() {
       steps,
       note:
         order.paymentMethod === "bank"
-          ? "Please complete the transfer within 48 hours. Send proof of payment to hello.renewcanvas.africa@gmail.com."
+          ? "Please complete the transfer within 48 hours. Send proof of payment to hello.renewcanvas@gmail.com."
           : "Payment goes to RenewCanvas Africa. Admins confirm payment and coordinate delivery with the artist.",
     };
   }, [order, item, payment]);
@@ -224,7 +225,7 @@ function OrderConfirmationContent() {
 
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
           <h2 className="mb-4 font-semibold text-gray-900">Need Help?</h2>
-          <a href="mailto:hello.renewcanvas.africa@gmail.com" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-50">
+          <a href="mailto:hello.renewcanvas@gmail.com" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-50">
             <Mail className="h-4 w-4" />
             Email Support
           </a>
@@ -233,6 +234,12 @@ function OrderConfirmationContent() {
             Call Us
           </a>
         </div>
+
+        <CancellationRequest
+          orderReference={order.id}
+          buyerEmail={String(delivery.email ?? "")}
+          buyerName={String(delivery.fullName ?? "")}
+        />
       </main>
     </div>
   );

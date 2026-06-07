@@ -99,7 +99,7 @@ export default function ArtistDashboard() {
   return (
     <DashboardLayout role="artist" userName={userName}>
       <div className="space-y-8">
-        <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-2xl p-6 text-white">
+        <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-xl p-6 text-white">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold mb-2">Welcome back, {firstName}!</h1>

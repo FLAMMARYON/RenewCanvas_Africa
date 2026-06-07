@@ -346,7 +346,7 @@ class ManualPaymentClient implements PaymentProviderClient {
  * In production, requires Rwandan format 2507XXXXXXXX.
  */
 function normalizeRwandaPhone(phone: string): string | null {
-  const cleaned = phone.replace(/[\s\-\(\)\+]/g, "");
+  const cleaned = phone.replace(/[\s()+-]/g, "");
   const config = requireBackendConfig();
   const isSandbox = config.momoTargetEnvironment !== "production";
 

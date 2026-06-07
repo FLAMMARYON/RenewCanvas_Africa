@@ -126,7 +126,7 @@ export function WebGLFallback({ data, initialError }: { data?: GalleryData; init
                           <img
                             src={artwork.images[0].url}
                             alt={artwork.images[0].altText || artwork.title}
-                            className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
                             role="img"
                           />
                         ) : (

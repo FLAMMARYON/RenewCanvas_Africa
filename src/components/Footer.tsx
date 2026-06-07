@@ -30,8 +30,8 @@ export default function Footer() {
       // { name: "Press", href: "/press" },
     ],
     support: [
-      { name: "FAQ", href: "/faq" },
-      { name: "Email Us", href: "mailto:hello.renewcanvas.africa@gmail.com", external: true },
+      { name: "FAQ", href: "/contact#faq" },
+      { name: "Email Us", href: "mailto:hello.renewcanvas@gmail.com", external: true },
       // { name: "Help Center", href: "/help" },
       // { name: "Shipping", href: "/shipping" },
       // { name: "Returns", href: "/returns" },
@@ -69,11 +69,11 @@ export default function Footer() {
             {/* Contact Info */}
             <div className="space-y-2 mb-4">
               <a
-                href="mailto:hello.renewcanvas.africa@gmail.com"
+                href="mailto:hello.renewcanvas@gmail.com"
                 className="flex items-center gap-2 text-sm text-gray-400 hover:text-teal-400 transition-colors"
               >
                 <Mail className="w-4 h-4" />
-                <span>hello.renewcanvas.africa@gmail.com</span>
+                <span>hello.renewcanvas@gmail.com</span>
               </a>
               <a
                 href="tel:+250798654776"
@@ -96,7 +96,7 @@ export default function Footer() {
                 <LinkedInIcon className="w-4 h-4 text-white" />
               </a>
               <a
-                href="mailto:hello.renewcanvas.africa@gmail.com"
+                href="mailto:hello.renewcanvas@gmail.com"
                 className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center hover:bg-teal-600 transition-colors"
                 aria-label="Email"
               >

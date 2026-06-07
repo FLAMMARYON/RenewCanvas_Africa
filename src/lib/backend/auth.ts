@@ -194,41 +194,23 @@ export async function readSessionUser(
   sessionToken: string | undefined,
   now = new Date()
 ): Promise<AuthPublicUser | null> {
-  console.info("Auth readSessionUser: start.", {
-    hasSessionToken: Boolean(sessionToken),
-  });
-
   if (!sessionToken) {
-    console.info("Auth readSessionUser: missing session token.");
     return null;
   }
 
-  console.info("Auth readSessionUser: querying session.");
   const session = await db.authSession.findUnique({
     where: { tokenHash: hashToken(sessionToken) },
     include: { user: true },
   });
 
   if (!session || session.revokedAt || session.expiresAt <= now) {
-    console.info("Auth readSessionUser: session unavailable.", {
-      foundSession: Boolean(session),
-      revoked: Boolean(session?.revokedAt),
-      expired: session ? session.expiresAt <= now : undefined,
-    });
     return null;
   }
 
   if (session.user.status === "suspended" || session.user.status === "deleted") {
-    console.info("Auth readSessionUser: user account unavailable.", {
-      status: session.user.status,
-    });
     return null;
   }
 
-  console.info("Auth readSessionUser: success.", {
-    role: session.user.role,
-    status: session.user.status,
-  });
   return toPublicUser(session.user);
 }
 
@@ -238,24 +220,64 @@ export async function requireRole(
   roles: AuthUserRole[],
   now = new Date()
 ): Promise<AuthPublicUser> {
-  console.info("Auth requireRole: start.", { roles });
   const user = await readSessionUser(db, sessionToken, now);
 
   if (!user) {
-    console.info("Auth requireRole: unauthenticated.");
     throw new AuthError("unauthenticated", "Sign in to continue.", 401);
   }
 
   if (!roles.includes(user.role)) {
-    console.info("Auth requireRole: forbidden.", {
-      userRole: user.role,
-      roles,
-    });
     throw new AuthError("forbidden", "You do not have access to this resource.", 403);
   }
 
-  console.info("Auth requireRole: success.", { userRole: user.role });
   return user;
+}
+
+export type PasswordChangeDatabase = {
+  user: {
+    findUnique(args: { where: { id: string } }): Promise<(AuthUserRecord) | null>;
+    update(args: { where: { id: string }; data: { passwordHash: string } }): Promise<AuthUserRecord>;
+  };
+  authSession: {
+    updateMany(args: {
+      where: { userId: string; revokedAt: null };
+      data: { revokedAt: Date };
+    }): Promise<{ count: number }>;
+  };
+};
+
+/**
+ * Authenticated, in-app password change. Verifies the current password, sets a
+ * new one, and revokes ALL of the user's sessions (forcing re-login everywhere).
+ */
+export async function changePassword(
+  db: PasswordChangeDatabase,
+  userId: string,
+  input: { currentPassword: string; newPassword: string },
+  now = new Date()
+): Promise<void> {
+  assertStrongPassword(input.newPassword);
+
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user || !user.passwordHash) {
+    throw new AuthError("invalid_credentials", "Current password is incorrect.", 400);
+  }
+  if (!(await verifyPassword(input.currentPassword, user.passwordHash))) {
+    throw new AuthError("invalid_credentials", "Current password is incorrect.", 400);
+  }
+  if (user.status === "suspended" || user.status === "deleted") {
+    throw new AuthError("account_unavailable", "This account cannot change its password.", 403);
+  }
+
+  await db.user.update({
+    where: { id: userId },
+    data: { passwordHash: await hashPassword(input.newPassword) },
+  });
+
+  await db.authSession.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: now },
+  });
 }
 
 export async function logoutSession(db: AuthDatabase, sessionToken: string | undefined): Promise<void> {

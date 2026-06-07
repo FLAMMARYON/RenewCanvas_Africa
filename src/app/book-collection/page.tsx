@@ -18,7 +18,7 @@ import {
   Gift,
   Info,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 
@@ -105,14 +105,14 @@ function HeroSection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href="#collection-form"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 [transition:all_0.4s_ease] hover:scale-105 shadow-lg shadow-amber-500/30"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105 shadow-lg shadow-amber-500/30"
             >
               Schedule Pickup
               <ArrowRight className="w-5 h-5" />
             </a>
             <a
               href="#materials"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl font-medium hover:border-teal-500 hover:text-teal-600 [transition:all_0.4s_ease]"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl font-medium hover:border-teal-500 hover:text-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)]"
             >
               <Package className="w-5 h-5" />
               What We Accept
@@ -171,7 +171,7 @@ function HowItWorksSection() {
           {steps.map((step, index) => (
             <div
               key={index}
-              className="relative bg-gray-50 rounded-2xl p-6 hover:shadow-lg [transition:all_0.3s_ease] hover:-translate-y-1"
+              className="relative bg-gray-50 rounded-xl p-6 hover:shadow-lg [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)] hover:-translate-y-1"
             >
               {/* Step Number */}
               <div className="text-5xl font-bold text-teal-100 absolute top-4 right-4">
@@ -203,6 +203,8 @@ function HowItWorksSection() {
    ============================================ */
 function CollectionFormSection() {
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const materials = [
     { id: "plastic", label: "Plastic Bottles & Caps", icon: "🧴" },
@@ -219,8 +221,84 @@ function CollectionFormSection() {
     );
   };
 
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStatus(null);
+
+    if (selectedMaterials.length === 0) {
+      setStatus({ type: "error", message: "Please select at least one material to collect." });
+      return;
+    }
+
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const get = (k: string) => String(fd.get(k) ?? "").trim();
+
+    const name = get("fullName");
+    const email = get("email");
+    const phone = get("phone");
+    const selectedLabels = materials
+      .filter((m) => selectedMaterials.includes(m.id))
+      .map((m) => m.label);
+
+    // Compose a human-readable message; full structured detail goes in metadata.
+    const message = [
+      `Collection request from ${name}.`,
+      `Materials: ${selectedLabels.join(", ")}.`,
+      `Pickup: ${get("address")}, ${get("district")}, ${get("city")}.`,
+      `Preferred: ${get("preferredDate")} (${get("preferredTime")}).`,
+      get("notes") ? `Notes: ${get("notes")}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "booking_request",
+          name,
+          email,
+          phone,
+          subject: `Collection Booking — ${get("city") || "Rwanda"}`,
+          message,
+          metadata: {
+            organizationType: get("organizationType"),
+            materials: selectedLabels,
+            address: get("address"),
+            district: get("district"),
+            city: get("city"),
+            landmark: get("landmark"),
+            quantity: get("quantity"),
+            preferredDate: get("preferredDate"),
+            preferredTime: get("preferredTime"),
+          },
+        }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body.error ?? "We couldn't submit your request. Please try again.");
+      }
+      setStatus({
+        type: "success",
+        message: "Request received! Our team will contact you within 24-48 hours to confirm pickup.",
+      });
+      form.reset();
+      setSelectedMaterials([]);
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const inputClasses =
-    "w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 placeholder-gray-400 [transition:all_0.3s_ease]";
+    "w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 placeholder-gray-400 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]";
 
   return (
     <section id="collection-form" className="py-16 bg-gradient-to-b from-gray-50 to-white">
@@ -238,8 +316,8 @@ function CollectionFormSection() {
           </p>
         </div>
 
-        <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
-          <form className="space-y-6">
+        <div className="bg-white rounded-xl p-8 shadow-xl border border-gray-100">
+          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             {/* Personal Information */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -379,7 +457,7 @@ function CollectionFormSection() {
                     key={material.id}
                     type="button"
                     onClick={() => toggleMaterial(material.id)}
-                    className={`flex items-center gap-3 p-4 rounded-xl border-2 [transition:all_0.3s_ease] ${
+                    className={`flex items-center gap-3 p-4 rounded-xl border-2 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)] ${
                       selectedMaterials.includes(material.id)
                         ? "border-amber-500 bg-amber-50"
                         : "border-gray-200 hover:border-gray-300 bg-white"
@@ -470,13 +548,29 @@ function CollectionFormSection() {
               </div>
             </div>
 
+            {/* Status banner (success / error) */}
+            {status && (
+              <div
+                role="status"
+                aria-live="polite"
+                className={`p-4 rounded-xl border text-sm ${
+                  status.type === "success"
+                    ? "bg-teal-50 border-teal-200 text-teal-700"
+                    : "bg-red-50 border-red-200 text-red-700"
+                }`}
+              >
+                {status.message}
+              </div>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 [transition:all_0.4s_ease] hover:scale-[1.02] shadow-lg shadow-amber-500/30"
+              disabled={isSubmitting}
+              className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-[1.02] shadow-lg shadow-amber-500/30 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Truck className="w-5 h-5" />
-              Submit Collection Request
+              {isSubmitting ? "Submitting..." : "Submit Collection Request"}
             </button>
           </form>
         </div>
@@ -546,7 +640,7 @@ function MaterialsSection() {
             return (
               <div
                 key={index}
-                className={`${colors.bg} border ${colors.border} rounded-2xl p-6 hover:shadow-lg [transition:all_0.3s_ease]`}
+                className={`${colors.bg} border ${colors.border} rounded-xl p-6 hover:shadow-lg [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]`}
               >
                 <span className={`inline-block px-3 py-1 ${colors.badge} rounded-full text-sm font-medium mb-4`}>
                   {material.category}
@@ -565,7 +659,7 @@ function MaterialsSection() {
         </div>
 
         {/* Not Accepted */}
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-red-700 mb-4">Materials We Cannot Accept</h3>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {notAccepted.map((item, index) => (
@@ -628,9 +722,9 @@ function BenefitsSection() {
           {benefits.map((benefit, index) => (
             <div
               key={index}
-              className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center hover:bg-white/20 [transition:all_0.3s_ease]"
+              className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center hover:bg-white/20 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
             >
-              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <benefit.icon className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">{benefit.title}</h3>

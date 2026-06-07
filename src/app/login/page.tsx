@@ -9,7 +9,6 @@ import {
   ArrowRight,
   Palette,
   Heart,
-  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -60,13 +59,13 @@ export default function LoginPage() {
       />
 
       {/* Floating Decorative Cards */}
-      <div className="absolute top-20 right-[10%] w-48 h-32 bg-teal-200 rounded-3xl rotate-12 opacity-60 hidden lg:block" />
-      <div className="absolute top-40 right-[5%] w-40 h-28 bg-purple-200 rounded-3xl -rotate-6 opacity-60 hidden lg:block">
+      <div className="absolute top-20 right-[10%] w-48 h-32 bg-teal-200 rounded-xl rotate-12 opacity-60 hidden lg:block" />
+      <div className="absolute top-40 right-[5%] w-40 h-28 bg-purple-200 rounded-xl -rotate-6 opacity-60 hidden lg:block">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           <Heart className="w-8 h-8 text-purple-400" />
         </div>
       </div>
-      <div className="absolute bottom-32 right-[15%] w-56 h-36 bg-amber-200 rounded-3xl rotate-6 opacity-60 hidden lg:block">
+      <div className="absolute bottom-32 right-[15%] w-56 h-36 bg-amber-200 rounded-xl rotate-6 opacity-60 hidden lg:block">
         <div className="absolute top-4 left-1/2 -translate-x-1/2">
           <Recycle className="w-8 h-8 text-amber-500" />
         </div>
@@ -94,11 +93,10 @@ export default function LoginPage() {
           </a>
 
           {/* Form Card */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/50">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl p-8 border border-white/50">
             {/* Header */}
             <div className="text-center mb-8">
               <span className="inline-flex items-center gap-2 px-4 py-2 bg-teal-100 text-teal-700 rounded-full text-sm font-medium mb-4">
-                <Sparkles className="w-4 h-4" />
                 Welcome Back
               </span>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -135,7 +133,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_ease]"
+                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                     required
                   />
                 </div>
@@ -159,7 +157,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_ease]"
+                    className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                     required
                   />
                   <button
@@ -169,9 +167,9 @@ export default function LoginPage() {
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
-                      <EyeOff className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_ease]" />
+                      <EyeOff className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]" />
                     ) : (
-                      <Eye className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_ease]" />
+                      <Eye className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]" />
                     )}
                   </button>
                 </div>
@@ -198,10 +196,19 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white bg-teal-700 rounded-xl hover:bg-teal-800 [transition:all_0.4s_ease] font-medium hover:scale-[1.02] shadow-lg shadow-teal-700/30"
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white bg-teal-700 rounded-xl hover:bg-teal-800 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-[1.02] shadow-lg shadow-teal-700/30"
               >
-                {isSubmitting ? "Signing In..." : "Sign In"}
-                <ArrowRight className="w-5 h-5" />
+                {isSubmitting ? (
+                  <>
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Signing In...
+                  </>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
               </button>
             </form>
 
@@ -220,7 +227,7 @@ export default function LoginPage() {
             {/* Google Login Button */}
             <button
               type="button"
-              className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-gray-300 [transition:all_0.3s_ease] font-medium text-gray-700"
+              className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-gray-300 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)] font-medium text-gray-700"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path

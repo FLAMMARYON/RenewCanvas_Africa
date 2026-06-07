@@ -54,18 +54,13 @@ export async function POST(request: Request) {
   const configResult = readBackendConfig();
   const anthropicApiKey = configResult.ok ? configResult.config.anthropicApiKey : undefined;
 
-  // Debug logging to confirm env loading
-  const rawEnvKey = process.env.ANTHROPIC_API_KEY;
-  console.log("[listing-assistant] DEBUG: process.env.ANTHROPIC_API_KEY =", rawEnvKey ? `sk-...${rawEnvKey.slice(-8)}` : "undefined");
-  console.log("[listing-assistant] DEBUG: config.anthropicApiKey =", anthropicApiKey ? `sk-...${anthropicApiKey.slice(-8)}` : "undefined");
-
   if (!anthropicApiKey) {
     writeLog(
       createLogEvent("error", "listing assistant missing API key", {
         requestId,
         metadata: {
           endpoint: "/api/pricing/listing-assistant",
-          rawEnvDefined: !!rawEnvKey,
+          rawEnvDefined: !!process.env.ANTHROPIC_API_KEY,
           configKeyDefined: !!anthropicApiKey,
         },
       })

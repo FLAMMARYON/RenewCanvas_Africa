@@ -83,7 +83,7 @@ export default function ArtworkDetailPage() {
         <section className="bg-gray-50 py-8">
           <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
             <div>
-              <div className="relative aspect-square overflow-hidden rounded-2xl bg-white shadow-sm">
+              <div className="relative aspect-square overflow-hidden rounded-xl bg-white shadow-sm">
                 {activeImage ? (
                   <img src={activeImage.url} alt={activeImage.altText} className="h-full w-full object-cover" />
                 ) : (
@@ -186,9 +186,9 @@ export default function ArtworkDetailPage() {
 
         <section className="bg-white py-12">
           <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-            <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6">
+            <div className="rounded-xl border border-gray-100 bg-gray-50 p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-teal-100">
+                <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-teal-100">
                   <Award className="h-10 w-10 text-teal-700" />
                 </div>
                 <div>

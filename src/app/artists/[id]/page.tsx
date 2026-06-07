@@ -144,7 +144,7 @@ export default function ArtistProfilePage() {
       {/* Profile Header */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative -mt-20 mb-8">
-          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+          <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row gap-6">
               {/* Avatar */}
               <div className="flex-shrink-0 -mt-20 sm:-mt-24">

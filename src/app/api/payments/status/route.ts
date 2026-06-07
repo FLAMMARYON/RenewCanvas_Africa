@@ -35,15 +35,6 @@ export async function GET(request: NextRequest) {
 
     const config = requireBackendConfig();
 
-    // Debug: print MoMo config values at runtime
-    console.log("[MoMo Config Debug]", {
-      momoApiUser: config.momoApiUser ?? "(undefined)",
-      momoApiKey: config.momoApiKey ? `${config.momoApiKey.slice(0, 4)}...` : "(undefined)",
-      momoSubscriptionKey: config.momoSubscriptionKey ? `${config.momoSubscriptionKey.slice(0, 4)}...` : "(undefined)",
-      momoTargetEnvironment: config.momoTargetEnvironment ?? "(undefined)",
-      momoBaseUrl: config.momoBaseUrl ?? "(undefined)",
-    });
-
     if (!config.momoApiUser || !config.momoApiKey || !config.momoSubscriptionKey) {
       return NextResponse.json(
         { ok: false, error: "MTN MoMo not configured" },

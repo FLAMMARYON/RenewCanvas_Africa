@@ -40,7 +40,7 @@ export default function AdminSettingsPage() {
   const [generalSettings, setGeneralSettings] = useState({
     siteName: "RenewCanvas Africa",
     siteUrl: "https://renewcanvas.africa",
-    supportEmail: "hello.renewcanvas.africa@gmail.com",
+    supportEmail: "hello.renewcanvas@gmail.com",
     timezone: "Africa/Kigali",
     currency: "USD",
     language: "en",
@@ -51,10 +51,10 @@ export default function AdminSettingsPage() {
   const [emailSettings, setEmailSettings] = useState({
     smtpHost: "smtp.example.com",
     smtpPort: "587",
-    smtpUser: "hello.renewcanvas.africa@gmail.com",
+    smtpUser: "hello.renewcanvas@gmail.com",
     smtpPassword: "••••••••••••",
     fromName: "RenewCanvas Africa",
-    fromEmail: "hello.renewcanvas.africa@gmail.com",
+    fromEmail: "hello.renewcanvas@gmail.com",
   });
 
   // Notification settings

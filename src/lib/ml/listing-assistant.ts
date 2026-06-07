@@ -5,8 +5,6 @@
  * and recommend price ranges for artist listings.
  */
 
-import { artworkCategories, recyclableMaterials, type ArtworkCategory, type RecyclableMaterial } from "./schemas";
-
 export const LISTING_ASSISTANT_VERSION = "listing-assistant-v1";
 
 export type ListingAssistantInput = {

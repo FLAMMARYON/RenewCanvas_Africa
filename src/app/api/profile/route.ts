@@ -8,6 +8,7 @@ import {
   type ProfileDatabase,
   type ProfileUpdateInput,
 } from "@/lib/backend/profiles";
+import { flattenZodError, profileUpdateSchema } from "@/lib/validation/schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +29,20 @@ export async function PATCH(request: NextRequest) {
     const db = getDatabaseClient();
     const user = await requireRole(db, readSessionCookie(request), ["buyer", "artist", "admin"]);
     const profileDb = db as unknown as ProfileDatabase;
-    const body = (await readJsonBody(request)) as ProfileUpdateInput;
 
-    return NextResponse.json({ ok: true, ...(await updateProfile(profileDb, user, body)) });
+    // Server-side Zod validation + sanitisation (authoritative).
+    const parsed = profileUpdateSchema.safeParse(await readJsonBody(request));
+    if (!parsed.success) {
+      return NextResponse.json(
+        { ok: false, code: "invalid_profile", errors: flattenZodError(parsed.error) },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      ...(await updateProfile(profileDb, user, parsed.data as ProfileUpdateInput)),
+    });
   } catch (error) {
     return authErrorResponse(error);
   }

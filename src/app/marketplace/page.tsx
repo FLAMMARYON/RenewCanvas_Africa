@@ -92,7 +92,7 @@ export default function MarketplacePage() {
                 </div>
                 <button
                   type="submit"
-                  className="m-1.5 rounded-md bg-teal-600 px-5 py-2 text-sm font-medium text-white hover:bg-teal-700"
+                  className="m-1.5 rounded-lg bg-teal-600 px-5 py-2 text-sm font-medium text-white hover:bg-teal-700"
                 >
                   Search
                 </button>
@@ -161,7 +161,7 @@ export default function MarketplacePage() {
                 ))}
               </div>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5">
+                <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5">
                   <Filter className="h-4 w-4 text-gray-400" />
                   <label htmlFor="marketplace-sort" className="sr-only">
                     Sort artworks
@@ -184,12 +184,12 @@ export default function MarketplacePage() {
                 </div>
                 <button
                   type="button"
-                  className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+                  className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
                 >
                   <Filter className="h-4 w-4" />
                   Filters
                 </button>
-                <div className="flex overflow-hidden rounded-md border border-gray-200 bg-white">
+                <div className="flex overflow-hidden rounded-lg border border-gray-200 bg-white">
                   <button
                     type="button"
                     onClick={() => setViewMode("grid")}
@@ -222,8 +222,21 @@ export default function MarketplacePage() {
             )}
 
             {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent"></div>
+              /* Skeleton grid — mirrors the artwork card layout for a calm load. */
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Loading artworks">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                    <div className="aspect-square w-full animate-pulse bg-gray-200" />
+                    <div className="space-y-3 p-4">
+                      <div className="h-4 w-3/4 animate-pulse rounded-lg bg-gray-200" />
+                      <div className="h-3 w-1/2 animate-pulse rounded-lg bg-gray-100" />
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="h-5 w-20 animate-pulse rounded-lg bg-gray-200" />
+                        <div className="h-8 w-8 animate-pulse rounded-full bg-gray-100" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : artworks.length > 0 ? (
               <div className={viewMode === "grid" ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3" : "space-y-4"}>
@@ -244,14 +257,14 @@ export default function MarketplacePage() {
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
                   <Link
                     href="/contact"
-                    className="inline-flex items-center gap-2 rounded-md bg-teal-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-teal-700"
+                    className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-teal-700"
                   >
                     Get Notified
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                   <Link
                     href="/register?role=artist"
-                    className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
                   >
                     Join as Artist
                   </Link>
@@ -265,7 +278,7 @@ export default function MarketplacePage() {
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm disabled:opacity-50"
                 >
                   Previous
                 </button>
@@ -276,7 +289,7 @@ export default function MarketplacePage() {
                   type="button"
                   disabled={page >= pagination.pageCount}
                   onClick={() => setPage((current) => Math.min(pagination.pageCount, current + 1))}
-                  className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm disabled:opacity-50"
                 >
                   Next
                 </button>
@@ -332,7 +345,7 @@ export default function MarketplacePage() {
                   </p>
                   <Link
                     href="/contact"
-                    className="mt-5 inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
+                    className="mt-5 inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
                   >
                     Join Waitlist
                     <ArrowRight className="h-4 w-4" />
@@ -341,7 +354,7 @@ export default function MarketplacePage() {
 
                 {/* Are You an Artist Card */}
                 <div className="relative rounded-xl bg-amber-50 p-8">
-                  <span className="absolute right-6 top-6 rounded-md bg-teal-600 px-2.5 py-1 text-xs font-medium text-white">
+                  <span className="absolute right-6 top-6 rounded-lg bg-teal-600 px-2.5 py-1 text-xs font-medium text-white">
                     Coming Soon
                   </span>
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-amber-100">
@@ -353,7 +366,7 @@ export default function MarketplacePage() {
                   </p>
                   <Link
                     href="/register?role=artist"
-                    className="mt-5 inline-flex items-center gap-2 rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+                    className="mt-5 inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
                   >
                     Apply as Artist
                     <ArrowRight className="h-4 w-4" />
@@ -419,7 +432,7 @@ function ArtworkCard({
                 onStatus(error instanceof Error ? error.message : "Sign in as a buyer to save artwork.");
               }
             }}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-rose-50 hover:text-rose-600"
+            className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-rose-50 hover:text-rose-600"
           >
             <Heart className="h-4 w-4" />
             {artwork.favouriteCount}

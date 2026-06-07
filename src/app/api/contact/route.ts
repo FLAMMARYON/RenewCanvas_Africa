@@ -1,126 +1,134 @@
 /**
- * Contact Form API
- * Handles contact form submissions, artist applications, and partnership inquiries
+ * Contact / inbound form API.
  *
- * POST /api/contact - Submit a contact message
+ * Single entry point for every public inbound form (general contact, artist
+ * application, partnership, waste supply, commission enquiry, donation,
+ * booking/collection, cancellation request, newsletter signup). Each is
+ * discriminated by `type` and stored in the ContactMessage table.
+ *
+ * Flow: rate-limit -> Zod validate + sanitise -> store in DB -> email support
+ * inbox + opted-in admins -> audit log -> success/error response.
+ *
+ * POST /api/contact
  */
 
 import { NextResponse } from "next/server";
 import { getDatabaseClient } from "@/lib/backend/db";
-import { sendEmail } from "@/lib/backend/messaging-providers";
+import { notifySupportAndAdmins } from "@/lib/backend/email/notify";
+import { recordSecurityEvent, type HardeningDatabase } from "@/lib/backend/hardening";
+import { checkInMemoryRateLimit } from "@/lib/foundation/rate-limit";
+import { getClientIp } from "@/lib/foundation/request";
+import { contactFormSchema, flattenZodError, type ContactFormInput } from "@/lib/validation/schemas";
 import type { Prisma } from "@prisma/client";
 
-// Admin email to receive notifications
-const ADMIN_EMAIL = "hello.renewcanvas.africa@gmail.com";
+// Prevent contact-form spam / admin inbox flooding: 5 submissions / 10 min / IP.
+const CONTACT_RATE_LIMIT = { limit: 5, windowMs: 10 * 60_000 };
 
-interface ContactFormInput {
-  type: "contact_form" | "artist_application" | "partnership_inquiry" | "waste_supply_request";
-  name: string;
-  email: string;
-  phone?: string;
-  subject?: string;
-  message: string;
-  metadata?: Record<string, unknown>;
-}
-
-function validateContactInput(input: unknown): { valid: true; data: ContactFormInput } | { valid: false; error: string } {
-  if (!input || typeof input !== "object") {
-    return { valid: false, error: "Invalid request body" };
-  }
-
-  const body = input as Record<string, unknown>;
-
-  // Validate type
-  const validTypes = ["contact_form", "artist_application", "partnership_inquiry", "waste_supply_request"];
-  if (!body.type || !validTypes.includes(body.type as string)) {
-    return { valid: false, error: "Invalid message type" };
-  }
-
-  // Validate required fields
-  if (!body.name || typeof body.name !== "string" || body.name.trim().length < 2) {
-    return { valid: false, error: "Name is required (minimum 2 characters)" };
-  }
-
-  if (!body.email || typeof body.email !== "string" || !isValidEmail(body.email)) {
-    return { valid: false, error: "Valid email address is required" };
-  }
-
-  if (!body.message || typeof body.message !== "string" || body.message.trim().length < 10) {
-    return { valid: false, error: "Message is required (minimum 10 characters)" };
-  }
-
-  return {
-    valid: true,
-    data: {
-      type: body.type as ContactFormInput["type"],
-      name: (body.name as string).trim(),
-      email: (body.email as string).trim().toLowerCase(),
-      phone: body.phone ? String(body.phone).trim() : undefined,
-      subject: body.subject ? String(body.subject).trim() : undefined,
-      message: (body.message as string).trim(),
-      metadata: body.metadata as Record<string, unknown> | undefined,
-    },
-  };
-}
-
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
+const TYPE_LABELS: Record<ContactFormInput["type"], string> = {
+  contact_form: "General Inquiry",
+  artist_application: "Artist Application",
+  partnership_inquiry: "Partnership Inquiry",
+  waste_supply_request: "Waste Supply Request",
+  commission_request: "Commission Request",
+  donation_request: "Donation Request",
+  booking_request: "Collection Booking",
+  cancellation_request: "Cancellation Request",
+  newsletter_signup: "Newsletter Signup",
+};
 
 function getTypeLabel(type: ContactFormInput["type"]): string {
-  const labels: Record<string, string> = {
-    contact_form: "General Inquiry",
-    artist_application: "Artist Application",
-    partnership_inquiry: "Partnership Inquiry",
-    waste_supply_request: "Waste Supply Request",
-  };
-  return labels[type] || "Message";
+  return TYPE_LABELS[type] ?? "Message";
+}
+
+// The DB `type` column is a fixed Prisma enum (4 values). Newer form types are
+// mapped onto the closest existing value for storage; the precise form type is
+// always preserved in metadata.formType so nothing is lost (avoids a migration).
+type ContactMessageType =
+  | "contact_form"
+  | "artist_application"
+  | "partnership_inquiry"
+  | "waste_supply_request";
+
+function toStoredType(type: ContactFormInput["type"]): ContactMessageType {
+  switch (type) {
+    case "contact_form":
+    case "artist_application":
+    case "partnership_inquiry":
+    case "waste_supply_request":
+      return type;
+    case "booking_request":
+      return "waste_supply_request";
+    case "donation_request":
+      return "partnership_inquiry";
+    case "commission_request":
+    case "cancellation_request":
+    case "newsletter_signup":
+    default:
+      return "contact_form";
+  }
 }
 
 export async function POST(request: Request) {
   try {
-    const db = getDatabaseClient();
-    const body = await request.json();
-
-    // Validate input
-    const validation = validateContactInput(body);
-    if (!validation.valid) {
+    const clientIp = getClientIp(request.headers);
+    const rate = checkInMemoryRateLimit(`contact:${clientIp}`, CONTACT_RATE_LIMIT);
+    if (!rate.allowed) {
       return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
+        { error: "Too many submissions. Please try again later." },
+        { status: 429, headers: { "retry-after": String(Math.ceil(CONTACT_RATE_LIMIT.windowMs / 1000)) } }
       );
     }
 
-    const { data } = validation;
+    const db = getDatabaseClient();
+    const rawBody = await request.json().catch(() => null);
 
-    // Save to database
+    // Zod validation + sanitisation (authoritative).
+    const parsed = contactFormSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      const errors = flattenZodError(parsed.error);
+      return NextResponse.json(
+        { error: Object.values(errors)[0] ?? "Invalid submission.", errors },
+        { status: 400 }
+      );
+    }
+    const data = parsed.data;
+
+    // Persist (this row is itself the durable audit record of the submission).
     const message = await db.contactMessage.create({
       data: {
-        type: data.type,
+        type: toStoredType(data.type),
         name: data.name,
         email: data.email,
         phone: data.phone,
         subject: data.subject || getTypeLabel(data.type),
         message: data.message,
-        metadata: data.metadata as Prisma.InputJsonValue | undefined,
+        // Preserve the precise form type alongside any caller-supplied metadata.
+        metadata: { formType: data.type, ...(data.metadata ?? {}) } as Prisma.InputJsonValue,
         status: "unread",
       },
     });
 
-    // Send notification email to admin
+    // Notify support inbox + opted-in admins (best-effort; never blocks the user).
     try {
-      const emailSubject = `[RenewCanvas] New ${getTypeLabel(data.type)}: ${data.subject || data.name}`;
-      const emailBody = formatAdminNotificationEmail(data, message.id);
-
-      await sendEmail({
-        to: ADMIN_EMAIL,
-        subject: emailSubject,
-        body: emailBody,
+      await notifySupportAndAdmins(db as never, {
+        subject: `[RenewCanvas] New ${getTypeLabel(data.type)}: ${data.subject || data.name}`,
+        body: formatAdminNotificationEmail(data, message.id),
       });
     } catch (emailError) {
-      // Log but don't fail the request if email fails
-      console.error("Failed to send admin notification email:", emailError);
+      console.error("Failed to send form notification email:", emailError);
+    }
+
+    // Security audit trail (in addition to the ContactMessage row).
+    try {
+      await recordSecurityEvent(db as unknown as HardeningDatabase, {
+        eventType: `form.${data.type}`,
+        severity: "info",
+        ipAddress: clientIp,
+        userAgent: request.headers.get("user-agent") ?? undefined,
+        metadata: { messageId: message.id, email: data.email },
+      });
+    } catch {
+      /* audit best-effort */
     }
 
     return NextResponse.json({
@@ -137,10 +145,7 @@ export async function POST(request: Request) {
   }
 }
 
-function formatAdminNotificationEmail(
-  data: ContactFormInput,
-  messageId: string
-): string {
+function formatAdminNotificationEmail(data: ContactFormInput, messageId: string): string {
   const typeLabel = getTypeLabel(data.type);
   const metadataSection = data.metadata
     ? `\n\nAdditional Details:\n${JSON.stringify(data.metadata, null, 2)}`

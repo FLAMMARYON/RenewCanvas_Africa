@@ -193,7 +193,7 @@ export default function AdminImpactPage() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <SummaryStat icon={Palette} value={metrics?.artworkCount.toLocaleString() ?? "-"} label="Artworks with Impact" color="purple" />
+          <SummaryStat icon={Palette} value={metrics?.artworkCount.toLocaleString() ?? "-"} label="Artworks with Impact" color="teal" />
           <SummaryStat icon={Users} value={metrics?.artistCount.toLocaleString() ?? "-"} label="Contributing Artists" color="blue" />
           <SummaryStat icon={Scale} value={avgKgPerArtwork.toFixed(1)} label="Avg kg per Artwork" color="amber" />
           <SummaryStat icon={Globe} value={metrics ? (metrics.kgDiverted / 1000).toFixed(2) : "-"} label="Tonnes Diverted" color="green" />
@@ -215,9 +215,9 @@ function MetricCard({ icon: Icon, value, label, iconClass, bgClass }: { icon: ty
   );
 }
 
-function SummaryStat({ icon: Icon, value, label, color }: { icon: typeof Palette; value: string; label: string; color: "purple" | "blue" | "amber" | "green" }) {
+function SummaryStat({ icon: Icon, value, label, color }: { icon: typeof Palette; value: string; label: string; color: "teal" | "blue" | "amber" | "green" }) {
   const colors = {
-    purple: "from-purple-50 to-pink-50 border-purple-100 bg-purple-100 text-purple-600 text-purple-700",
+    teal: "from-teal-50 to-teal-100 border-teal-100 bg-teal-100 text-teal-600 text-teal-700",
     blue: "from-blue-50 to-cyan-50 border-blue-100 bg-blue-100 text-blue-600 text-blue-700",
     amber: "from-amber-50 to-orange-50 border-amber-100 bg-amber-100 text-amber-600 text-amber-700",
     green: "from-green-50 to-emerald-50 border-green-100 bg-green-100 text-green-600 text-green-700",

@@ -11,7 +11,6 @@ import {
   ShoppingBag,
   User,
   Phone,
-  Sparkles,
   Check,
 } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
@@ -109,13 +108,13 @@ function RegisterForm() {
       />
 
       {/* Floating Decorative Cards */}
-      <div className="absolute top-20 right-[10%] w-48 h-32 bg-teal-200 rounded-3xl rotate-12 opacity-60 hidden lg:block" />
-      <div className="absolute top-40 right-[5%] w-40 h-28 bg-purple-200 rounded-3xl -rotate-6 opacity-60 hidden lg:block">
+      <div className="absolute top-20 right-[10%] w-48 h-32 bg-teal-200 rounded-xl rotate-12 opacity-60 hidden lg:block" />
+      <div className="absolute top-40 right-[5%] w-40 h-28 bg-purple-200 rounded-xl -rotate-6 opacity-60 hidden lg:block">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           <Palette className="w-8 h-8 text-purple-400" />
         </div>
       </div>
-      <div className="absolute bottom-32 right-[15%] w-56 h-36 bg-amber-200 rounded-3xl rotate-6 opacity-60 hidden lg:block">
+      <div className="absolute bottom-32 right-[15%] w-56 h-36 bg-amber-200 rounded-xl rotate-6 opacity-60 hidden lg:block">
         <div className="absolute top-4 left-1/2 -translate-x-1/2">
           <Recycle className="w-8 h-8 text-amber-500" />
         </div>
@@ -143,11 +142,10 @@ function RegisterForm() {
           </a>
 
           {/* Form Card */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/50">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl p-8 border border-white/50">
             {/* Header */}
             <div className="text-center mb-8">
               <span className="inline-flex items-center gap-2 px-4 py-2 bg-teal-100 text-teal-700 rounded-full text-sm font-medium mb-4">
-                <Sparkles className="w-4 h-4" />
                 Join the Community
               </span>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -169,7 +167,7 @@ function RegisterForm() {
                     key={option.id}
                     type="button"
                     onClick={() => setRole(option.id)}
-                    className={`relative p-4 rounded-xl border-2 text-left [transition:all_0.3s_ease] ${
+                    className={`relative p-4 rounded-xl border-2 text-left [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)] ${
                       role === option.id
                         ? "border-teal-500 bg-teal-50"
                         : "border-gray-200 hover:border-teal-200 hover:bg-gray-50"
@@ -227,7 +225,7 @@ function RegisterForm() {
                     value={formData.fullName}
                     onChange={handleChange}
                     placeholder="Enter your full name"
-                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_ease]"
+                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                     required
                   />
                 </div>
@@ -252,7 +250,7 @@ function RegisterForm() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="you@example.com"
-                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_ease]"
+                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                     required
                   />
                 </div>
@@ -278,7 +276,7 @@ function RegisterForm() {
                     value={formData.phone}
                     onChange={handleChange}
                     placeholder="+250 xxx xxx xxx"
-                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_ease]"
+                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                   />
                 </div>
               </div>
@@ -302,7 +300,7 @@ function RegisterForm() {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Create a strong password"
-                    className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_ease]"
+                    className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                     required
                     minLength={8}
                   />
@@ -312,9 +310,9 @@ function RegisterForm() {
                     className="absolute inset-y-0 right-0 pr-4 flex items-center"
                   >
                     {showPassword ? (
-                      <EyeOff className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_ease]" />
+                      <EyeOff className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]" />
                     ) : (
-                      <Eye className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_ease]" />
+                      <Eye className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]" />
                     )}
                   </button>
                 </div>
@@ -339,7 +337,7 @@ function RegisterForm() {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="Confirm your password"
-                    className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_ease]"
+                    className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                     required
                   />
                   <button
@@ -348,9 +346,9 @@ function RegisterForm() {
                     className="absolute inset-y-0 right-0 pr-4 flex items-center"
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_ease]" />
+                      <EyeOff className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]" />
                     ) : (
-                      <Eye className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_ease]" />
+                      <Eye className="w-5 h-5 text-gray-400 hover:text-teal-600 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]" />
                     )}
                   </button>
                 </div>
@@ -388,10 +386,19 @@ function RegisterForm() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white bg-teal-600 rounded-xl hover:bg-teal-700 [transition:all_0.4s_ease] font-medium hover:scale-[1.02] shadow-lg shadow-teal-600/30"
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white bg-teal-600 rounded-xl hover:bg-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-[1.02] shadow-lg shadow-teal-600/30"
               >
-                {isSubmitting ? "Creating Account..." : "Create Account"}
-                <ArrowRight className="w-5 h-5" />
+                {isSubmitting ? (
+                  <>
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
               </button>
             </form>
 
@@ -410,7 +417,7 @@ function RegisterForm() {
             {/* Google Sign Up Button */}
             <button
               type="button"
-              className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-gray-300 [transition:all_0.3s_ease] font-medium text-gray-700"
+              className="w-full flex items-center justify-center gap-3 px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-gray-300 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)] font-medium text-gray-700"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path

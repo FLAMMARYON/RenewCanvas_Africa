@@ -15,7 +15,6 @@ import {
   DollarSign,
   GraduationCap,
   Home,
-  Sparkles,
   Target,
   BarChart3,
   Truck,
@@ -116,14 +115,14 @@ function HeroSection() {
           <div className="group flex flex-wrap justify-center gap-4">
             <a
               href="#metrics"
-              className="inline-flex items-center gap-2 px-6 py-3 text-teal-700 bg-white rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_ease] font-medium group-hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-3 text-teal-700 bg-white rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium group-hover:scale-105"
             >
               See Our Impact
               <ArrowRight className="w-5 h-5" />
             </a>
             <a
               href="/marketplace"
-              className="inline-flex items-center gap-2 px-6 py-3 text-white border-2 border-white/50 rounded-lg group-hover:bg-white group-hover:text-teal-700 group-hover:border-white [transition:all_0.4s_ease] font-medium group-hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-3 text-white border-2 border-white/50 rounded-lg group-hover:bg-white group-hover:text-teal-700 group-hover:border-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium group-hover:scale-105"
             >
               Support the Cause
             </a>
@@ -223,7 +222,7 @@ function KeyMetricsSection({
             return (
               <div
                 key={index}
-                className="group relative bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-transparent [transition:all_0.4s_ease] hover:scale-105 cursor-pointer"
+                className="group relative bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-transparent [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105 cursor-pointer"
               >
                 {/* Icon */}
                 <div className={`w-14 h-14 ${colors.light} rounded-xl flex items-center justify-center mb-4`}>
@@ -311,7 +310,7 @@ function EnvironmentalImpactSection({
               {impacts.map((impact, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md [transition:all_0.4s_ease] hover:scale-105 cursor-pointer"
+                  className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105 cursor-pointer"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -330,17 +329,17 @@ function EnvironmentalImpactSection({
 
           {/* Visual */}
           <div className="relative">
-            <div className="group aspect-square rounded-3xl overflow-hidden shadow-xl cursor-pointer transition-shadow duration-300 hover:shadow-2xl">
+            <div className="group aspect-square rounded-xl overflow-hidden shadow-xl cursor-pointer transition-shadow duration-300 hover:shadow-2xl">
               <img
                 src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&q=80"
                 alt="Environmental conservation"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               {/* Green hue overlay */}
               <div className="absolute inset-0 bg-green-600/0 transition-all duration-300 group-hover:bg-green-600/40" />
               {/* Centered Icon */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+                <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
                   <Leaf className="w-10 h-10 text-green-600" />
                 </div>
               </div>
@@ -423,7 +422,7 @@ function SocialImpactSection() {
           {impacts.map((impact, index) => (
             <div
               key={index}
-              className="group bg-gradient-to-br from-amber-50 to-white rounded-2xl p-6 border border-amber-100 hover:shadow-xl hover:border-amber-200 [transition:all_0.4s_ease] hover:scale-105 cursor-pointer"
+              className="group bg-gradient-to-br from-amber-50 to-white rounded-xl p-6 border border-amber-100 hover:shadow-xl hover:border-amber-200 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105 cursor-pointer"
             >
               <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-amber-200 transition-colors duration-300">
                 <impact.icon className="w-6 h-6 text-amber-600" />
@@ -499,14 +498,14 @@ function ImpactStoriesSection() {
           {stories.map((story, index) => (
             <div
               key={index}
-              className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl [transition:all_0.4s_ease] hover:scale-105 cursor-pointer"
+              className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105 cursor-pointer"
             >
               {/* Image */}
               <div className="relative h-48 overflow-hidden">
                 <img
                   src={story.image}
                   alt={story.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-teal-600/0 transition-all duration-300 group-hover:bg-teal-600/30" />
               </div>
@@ -591,7 +590,7 @@ function GoalsSection() {
           {goals.map((goal, index) => (
             <div
               key={index}
-              className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/20 transition-all duration-300"
+              className="bg-white/10 backdrop-blur-sm rounded-xl p-6 hover:bg-white/20 transition-all duration-300"
             >
               <div className="mb-4">
                 <p className="text-3xl font-bold">{goal.current}</p>
@@ -634,21 +633,21 @@ function CTASection() {
         <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center">
           <a
             href="/marketplace"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white bg-teal-600 rounded-lg hover:bg-teal-700 [transition:all_0.4s_ease] font-medium shadow-lg shadow-teal-600/30 text-lg hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white bg-teal-600 rounded-lg hover:bg-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium shadow-lg shadow-teal-600/30 text-lg hover:scale-105"
           >
             Shop with Impact
             <ArrowRight className="w-5 h-5" />
           </a>
           <a
             href="/register?role=artist"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-teal-100 rounded-lg hover:bg-teal-600 hover:text-white [transition:all_0.4s_ease] font-medium text-lg hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-teal-100 rounded-lg hover:bg-teal-600 hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium text-lg hover:scale-105"
           >
             Join as Artist
             <Palette className="w-5 h-5" />
           </a>
           <a
             href="/book-collection"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-500 hover:text-white [transition:all_0.4s_ease] font-medium text-lg hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-500 hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium text-lg hover:scale-105"
           >
             <Truck className="w-5 h-5" />
             Book a Collection

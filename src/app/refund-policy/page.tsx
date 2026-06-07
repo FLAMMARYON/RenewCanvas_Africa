@@ -28,7 +28,7 @@ export default function RefundPolicyPage() {
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 md:p-12">
+        <div className="bg-white rounded-xl border border-gray-100 p-8 md:p-12">
           {/* Title */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-100 rounded-full mb-4">
@@ -158,7 +158,7 @@ export default function RefundPolicyPage() {
                   <div>
                     <p className="font-medium text-gray-900">Contact Us</p>
                     <p className="text-sm text-gray-600">
-                      Email hello.renewcanvas.africa@gmail.com within 48 hours of delivery
+                      Email hello.renewcanvas@gmail.com within 48 hours of delivery
                       with your order number and reason for return
                     </p>
                   </div>
@@ -342,7 +342,7 @@ export default function RefundPolicyPage() {
             </p>
             <ul className="list-none text-gray-600 space-y-2 mb-4">
               <li>
-                <strong>Email:</strong> hello.renewcanvas.africa@gmail.com
+                <strong>Email:</strong> hello.renewcanvas@gmail.com
               </li>
               <li>
                 <strong>Phone:</strong> +250 788 000 000

@@ -28,7 +28,7 @@ export default function PrivacyPage() {
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 md:p-12">
+        <div className="bg-white rounded-xl border border-gray-100 p-8 md:p-12">
           {/* Title */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
@@ -191,7 +191,7 @@ export default function PrivacyPage() {
               <li>Withdraw consent at any time</li>
             </ul>
             <p className="text-gray-600 mb-4">
-              To exercise these rights, contact us at hello.renewcanvas.africa@gmail.com.
+              To exercise these rights, contact us at hello.renewcanvas@gmail.com.
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
@@ -240,7 +240,44 @@ export default function PrivacyPage() {
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              12. Changes to This Policy
+              12. User-Generated Content
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Artists and users may submit content to the platform, including
+              artwork images, profile details, descriptions, and messages
+              (&quot;User Content&quot;). You are responsible for the content you
+              submit and confirm you have the rights to share it. By submitting
+              User Content you grant RenewCanvas Africa a non-exclusive licence to
+              display, reproduce, and promote it for the operation and marketing of
+              the marketplace.
+            </p>
+            <p className="text-gray-600 mb-4">
+              We may review, moderate, or remove content that is unlawful,
+              infringing, or violates our terms. To report content or request
+              removal, contact us at hello.renewcanvas@gmail.com.
+            </p>
+
+            <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
+              13. California Privacy Rights (CCPA / CPRA)
+            </h2>
+            <p className="text-gray-600 mb-4">
+              If you are a California resident, you have the right to know what
+              personal information we collect and how we use it, to request access
+              to or deletion of your personal information, to correct inaccurate
+              information, and to not be discriminated against for exercising these
+              rights.
+            </p>
+            <p className="text-gray-600 mb-4">
+              We do <strong>not</strong> sell your personal information, and we do
+              not &quot;share&quot; it for cross-context behavioural advertising as
+              those terms are defined under the CPRA. To exercise your California
+              rights, email hello.renewcanvas@gmail.com with the subject
+              &quot;California Privacy Request&quot;. We will verify your request
+              before acting on it.
+            </p>
+
+            <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
+              14. Changes to This Policy
             </h2>
             <p className="text-gray-600 mb-4">
               We may update this Privacy Policy periodically. We will notify you
@@ -250,7 +287,7 @@ export default function PrivacyPage() {
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              13. Contact Us
+              15. Contact Us
             </h2>
             <p className="text-gray-600 mb-4">
               For questions or concerns about this Privacy Policy or our data
@@ -258,10 +295,10 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-none text-gray-600 space-y-2 mb-4">
               <li>
-                <strong>Data Protection Officer:</strong> hello.renewcanvas.africa@gmail.com
+                <strong>Data Protection Officer:</strong> hello.renewcanvas@gmail.com
               </li>
               <li>
-                <strong>General Inquiries:</strong> hello.renewcanvas.africa@gmail.com
+                <strong>General Inquiries:</strong> hello.renewcanvas@gmail.com
               </li>
               <li>
                 <strong>Phone:</strong> +250 788 000 000

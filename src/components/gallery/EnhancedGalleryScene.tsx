@@ -233,15 +233,6 @@ function ArtworkFrame({
   const textureUrl = artworkImageUrl || "/brand/renewcanvas-icon-full-color.png";
   const texture = useTexture(textureUrl);
 
-  useEffect(() => {
-    console.log("[virtual-gallery] artwork texture URL", {
-      title: artworkTitle,
-      url: textureUrl,
-      hasArtworkImage: Boolean(artworkImageUrl),
-      isAbsoluteUrl: /^https?:\/\//.test(textureUrl),
-    });
-  }, [artworkImageUrl, artworkTitle, textureUrl]);
-
   // Apply texture to the center backing plane (if found)
   useEffect(() => {
     texture.colorSpace = THREE.SRGBColorSpace;

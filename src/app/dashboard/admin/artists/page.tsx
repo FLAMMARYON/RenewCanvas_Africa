@@ -104,7 +104,7 @@ export default function AdminArtistsPage() {
                 <button type="button" className="w-full p-4 text-left hover:bg-gray-50 transition-colors" onClick={() => setExpandedItem(isExpanded ? null : item.id)}>
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                     <div className="flex items-center gap-4 flex-1">
-                      <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center font-bold text-purple-700 text-lg">
+                      <div className="w-14 h-14 bg-gradient-to-br from-teal-100 to-teal-50 rounded-full flex items-center justify-center font-bold text-teal-700 text-lg">
                         {(item.artist?.name ?? "Artist").split(" ").map((name) => name[0]).join("").slice(0, 2)}
                       </div>
                       <div className="flex-1">

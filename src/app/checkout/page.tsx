@@ -708,6 +708,32 @@ function CheckoutContent() {
                     </div>
                   </div>
 
+                  {/* Pre-payment disclosure */}
+                  <div className="bg-amber-50 rounded-xl border border-amber-200 p-6 space-y-3">
+                    <h3 className="text-sm font-semibold text-amber-800">Before you confirm</h3>
+                    <ul className="text-sm text-amber-900/80 space-y-2 list-disc pl-5">
+                      <li>
+                        <strong>Recycled-art materials:</strong> each piece is handmade from cleaned,
+                        upcycled waste. Minor variations in texture, colour, and finish are part of the
+                        character of the work, not defects.
+                      </li>
+                      <li>
+                        <strong>Totals:</strong> the order summary shows the item price and any delivery
+                        amount. No hidden fees are added at payment; any applicable taxes are included in
+                        the displayed total.
+                      </li>
+                      <li>
+                        <strong>Delivery:</strong> we&apos;ll confirm your delivery timeline by email after
+                        the order is placed. Local (Rwanda) delivery first; international on request.
+                      </li>
+                      <li>
+                        <strong>Refunds &amp; cancellations:</strong> you can request a cancellation before
+                        payment is confirmed, or a return/refund within the window in our{" "}
+                        <Link href="/refund-policy" className="text-teal-700 underline">Refund Policy</Link>.
+                      </li>
+                    </ul>
+                  </div>
+
                   {/* Terms */}
                   <div className="bg-white rounded-xl border border-gray-200 p-6">
                     <label className="flex items-start gap-3 cursor-pointer">
@@ -729,12 +755,16 @@ function CheckoutContent() {
                         >
                           Terms of Service
                         </Link>{" "}
-                        and{" "}
+                        ,{" "}
                         <Link
                           href="/refund-policy"
                           className="text-teal-600 hover:underline"
                         >
                           Refund Policy
+                        </Link>
+                        , and{" "}
+                        <Link href="/privacy" className="text-teal-600 hover:underline">
+                          Privacy Policy
                         </Link>
                         . I understand that RenewCanvas Africa will send payment
                         instructions after submitting this order, manages payment

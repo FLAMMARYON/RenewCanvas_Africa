@@ -11,7 +11,22 @@ export async function POST(request: NextRequest) {
   try {
     const payloadText = await request.text();
     const secret = process.env.PAYMENT_WEBHOOK_SECRET;
-    if (secret && !verifyWebhookSignature(payloadText, request.headers.get("x-renewcanvas-signature"), secret)) {
+
+    // Fail closed: a webhook that flips orders to "paid" and artworks to "sold"
+    // MUST be authenticated. If no secret is configured we refuse to process the
+    // event rather than trusting an unsigned payload (payment-fraud vector).
+    if (!secret) {
+      // Outside production we allow unsigned webhooks so local/sandbox testing
+      // still works, but we never silently accept them in production.
+      if (process.env.NODE_ENV === "production") {
+        console.error("[payments/webhook] PAYMENT_WEBHOOK_SECRET is not configured; refusing unsigned webhook.");
+        return NextResponse.json(
+          { ok: false, code: "webhook_not_configured" },
+          { status: 503 }
+        );
+      }
+      console.warn("[payments/webhook] PAYMENT_WEBHOOK_SECRET not set; accepting unsigned webhook (non-production only).");
+    } else if (!verifyWebhookSignature(payloadText, request.headers.get("x-renewcanvas-signature"), secret)) {
       return NextResponse.json({ ok: false, code: "invalid_signature" }, { status: 401 });
     }
     const body = JSON.parse(payloadText) as Partial<{

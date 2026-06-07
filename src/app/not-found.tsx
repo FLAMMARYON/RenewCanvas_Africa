@@ -60,7 +60,7 @@ export default function NotFound() {
         </div>
 
         {/* Quick Links */}
-        <div className="bg-white rounded-2xl p-8 shadow-lg">
+        <div className="bg-white rounded-xl p-8 shadow-lg">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">
             Or check out these popular pages:
           </h2>

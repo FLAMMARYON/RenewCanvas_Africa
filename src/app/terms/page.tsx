@@ -28,7 +28,7 @@ export default function TermsPage() {
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 md:p-12">
+        <div className="bg-white rounded-xl border border-gray-100 p-8 md:p-12">
           {/* Title */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-teal-100 rounded-full mb-4">
@@ -237,7 +237,7 @@ export default function TermsPage() {
             </p>
             <ul className="list-none text-gray-600 space-y-2 mb-4">
               <li>
-                <strong>Email:</strong> hello.renewcanvas.africa@gmail.com
+                <strong>Email:</strong> hello.renewcanvas@gmail.com
               </li>
               <li>
                 <strong>Phone:</strong> +250 788 000 000

@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-xl shadow-xl p-8">
           {!isSubmitted ? (
             <>
               <div className="text-center mb-8">

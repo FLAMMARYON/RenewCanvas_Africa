@@ -185,7 +185,7 @@ export default function BuyerDashboard() {
     <DashboardLayout role="buyer" userName={loading ? "..." : userName}>
       <div className="space-y-8">
         {/* Welcome Header */}
-        <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-2xl p-6 text-white">
+        <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-xl p-6 text-white">
           <h1 className="text-2xl font-bold mb-2">
             Welcome back{loading ? "" : `, ${userName}`}!
           </h1>

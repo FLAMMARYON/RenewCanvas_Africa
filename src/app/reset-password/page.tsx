@@ -105,7 +105,7 @@ export default function ResetPasswordPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-xl shadow-xl p-8">
           {!isReset ? (
             <>
               <div className="text-center mb-8">

@@ -203,13 +203,13 @@ export default function Navbar() {
               <div className="group flex items-center gap-3">
                 <a
                   href="/login"
-                  className="px-4 py-2 text-sm font-medium text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
+                  className="px-4 py-2 text-sm font-medium text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
                 >
                   Sign In
                 </a>
                 <a
                   href="/register"
-                  className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] group-hover:scale-105"
+                  className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
                 >
                   Get Started
                 </a>
@@ -286,13 +286,13 @@ export default function Navbar() {
               <div className="group pt-4 flex flex-col gap-2">
                 <a
                   href="/login"
-                  className="w-full py-2 text-center text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_ease] group-hover:scale-105"
+                  className="w-full py-2 text-center text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
                 >
                   Sign In
                 </a>
                 <a
                   href="/register"
-                  className="w-full py-2 text-center text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_ease] group-hover:scale-105"
+                  className="w-full py-2 text-center text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
                 >
                   Get Started
                 </a>

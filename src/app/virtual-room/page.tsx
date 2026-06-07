@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Compass, Home, Info, List, Map as MapIcon, Maximize2, RotateCcw, Share2, ShoppingBag, X } from "lucide-react";
+import { Compass, Home, Info, List, Map as MapIcon, Maximize2, RotateCcw, Share2, ShoppingBag, Volume2, VolumeX, X } from "lucide-react";
+import { useNarration } from "@/lib/frontend/useNarration";
 import * as THREE from "three";
 import { GalleryLoadingScreen } from "@/components/gallery/GalleryLoadingScreen";
 import { WebGLFallback } from "@/components/gallery/WebGLFallback";
@@ -234,6 +235,34 @@ function normalizeAngle(value: number) {
   return Math.atan2(Math.sin(value), Math.cos(value));
 }
 
+function goldSignSideMaterial(mode: "day" | "night") {
+  return new THREE.MeshStandardMaterial({
+    color: "#caa14a",
+    metalness: 0.85,
+    roughness: 0.3,
+    emissive: "#7a5a18",
+    emissiveIntensity: mode === "night" ? 0.55 : 0.2,
+  });
+}
+
+// Wide entrance-sign texture for the brand tagline (gold lettering on dark).
+function createSignTexture(text: string) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return canvas;
+
+  ctx.fillStyle = "#141414";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#caa14a";
+  ctx.font = "700 56px Georgia, 'Times New Roman', serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text.toUpperCase(), canvas.width / 2, canvas.height / 2 + 4);
+  return canvas;
+}
+
 function createTextCanvas(title: string, subtitle: string, bg = "#f2eadc") {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
@@ -399,6 +428,21 @@ export default function VirtualRoomPage() {
   const [wing, setWing] = useState(0);
   const [room, setRoom] = useState<RoomKey>("entrance");
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
+  const narration = useNarration();
+  const narrationEnabled = narration.enabled;
+  const narrationSpeak = narration.speak;
+
+  // Speak the selected artwork's details when narration is on (language-matched).
+  useEffect(() => {
+    if (!selectedArtwork || !narrationEnabled) return;
+    const parts = [
+      selectedArtwork.title,
+      selectedArtwork.ownerType !== "renewcanvas" ? `by ${selectedArtwork.artist}` : "",
+      selectedArtwork.materials.length ? `Made from ${selectedArtwork.materials.join(", ")}.` : "",
+      `${selectedArtwork.kgDiverted} kilograms of waste diverted.`,
+    ].filter(Boolean);
+    narrationSpeak(parts.join(". "));
+  }, [selectedArtwork, narrationEnabled, narrationSpeak]);
   const [mapOpen, setMapOpen] = useState(true);
   const [infoOpen, setInfoOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
@@ -485,20 +529,9 @@ export default function VirtualRoomPage() {
       artworkTextureTargets.forEach((target) => {
         if (target.loaded || !target.imageUrl || target.placement.roomKey !== activeRoom || target.placement.wingIndex !== activeWing) return;
         target.loaded = true;
-        console.log("[virtual-room] loading artwork texture", {
-          title: target.placement.artwork.title,
-          url: target.imageUrl,
-          isAbsoluteUrl: /^https?:\/\//.test(target.imageUrl),
-        });
         loader.load(
           target.imageUrl,
           (texture) => {
-            console.log("[virtual-room] loaded artwork texture", {
-              title: target.placement.artwork.title,
-              url: target.imageUrl,
-              width: texture.image?.width,
-              height: texture.image?.height,
-            });
             texture.colorSpace = THREE.SRGBColorSpace;
             texture.wrapS = THREE.ClampToEdgeWrapping;
             texture.wrapT = THREE.ClampToEdgeWrapping;
@@ -1117,15 +1150,27 @@ export default function VirtualRoomPage() {
       );
       signPanel.position.set(0, 7.5, FACADE_Z + 0.5);
       buildingShell.add(signPanel);
+      // Entrance signboard carries the brand tagline: "ANYTHING IS ART IN THE RIGHT EYES".
+      const signTexture = new THREE.CanvasTexture(
+        createSignTexture("Anything is art in the right eyes")
+      );
+      signTexture.colorSpace = THREE.SRGBColorSpace;
+      signTexture.anisotropy = 4;
       const signText = new THREE.Mesh(
         new THREE.BoxGeometry(4.2, 0.35, 0.18),
-        new THREE.MeshStandardMaterial({
-          color: "#caa14a",
-          metalness: 0.85,
-          roughness: 0.3,
-          emissive: "#7a5a18",
-          emissiveIntensity: mode === "night" ? 0.55 : 0.2,
-        })
+        [
+          // side faces use the gold material; front (index 4) shows the tagline texture
+          ...Array.from({ length: 4 }, () => goldSignSideMaterial(mode)),
+          new THREE.MeshStandardMaterial({
+            map: signTexture,
+            emissive: "#caa14a",
+            emissiveMap: signTexture,
+            emissiveIntensity: mode === "night" ? 0.7 : 0.35,
+            metalness: 0.4,
+            roughness: 0.5,
+          }),
+          goldSignSideMaterial(mode),
+        ]
       );
       signText.position.set(0, 7.5, FACADE_Z + 0.6);
       buildingShell.add(signText);
@@ -1688,6 +1733,18 @@ export default function VirtualRoomPage() {
             <button type="button" onClick={() => setMapOpen((value) => !value)} className="pointer-events-auto rounded-lg bg-white/10 p-2 backdrop-blur hover:bg-white/15" title="Toggle map">
               <MapIcon className="h-5 w-5" />
             </button>
+            {narration.supported && (
+              <button
+                type="button"
+                onClick={narration.toggle}
+                className={`pointer-events-auto rounded-lg p-2 backdrop-blur ${narration.enabled ? "bg-teal-500/30 hover:bg-teal-500/40" : "bg-white/10 hover:bg-white/15"}`}
+                title={narration.enabled ? "Turn narration off" : "Turn narration on"}
+                aria-pressed={narration.enabled ? "true" : "false"}
+                aria-label={narration.enabled ? "Turn narration off" : "Turn narration on"}
+              >
+                {narration.enabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+              </button>
+            )}
             <button type="button" onClick={reset} className="pointer-events-auto rounded-lg bg-white/10 p-2 backdrop-blur hover:bg-white/15" title="Return to entrance">
               <RotateCcw className="h-5 w-5" />
             </button>

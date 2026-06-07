@@ -41,7 +41,7 @@ export default function GoogleTranslate() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="w-10 h-10 bg-white border border-gray-200 rounded-full shadow-md hover:shadow-lg [transition:all_0.3s_ease] hover:scale-110 flex items-center justify-center group"
+          className="w-10 h-10 bg-white border border-gray-200 rounded-full shadow-md hover:shadow-lg [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105 flex items-center justify-center group"
           aria-label="Translate page"
           title="Translate"
         >
@@ -72,7 +72,7 @@ export default function GoogleTranslate() {
               <button
                 key={lang.code}
                 onClick={() => handleTranslate(lang.code)}
-                className={`w-full px-3 py-1.5 text-left text-xs hover:bg-teal-50 [transition:all_0.2s_ease] flex items-center justify-between ${
+                className={`w-full px-3 py-1.5 text-left text-xs hover:bg-teal-50 [transition:all_0.2s_cubic-bezier(0.4,0,0.2,1)] flex items-center justify-between ${
                   currentLang === lang.code
                     ? "text-teal-600 font-medium bg-teal-50"
                     : "text-gray-600"

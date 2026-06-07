@@ -72,7 +72,7 @@ function HeroSection() {
 
           <a
             href="/register?role=artist"
-            className="inline-flex items-center gap-2 px-6 py-3 text-white bg-amber-500 rounded-lg hover:bg-white hover:text-amber-600 border border-transparent hover:border-amber-500 [transition:all_0.4s_ease] font-medium hover:scale-105"
+            className="inline-flex items-center gap-2 px-6 py-3 text-white bg-amber-500 rounded-lg hover:bg-white hover:text-amber-600 border border-transparent hover:border-amber-500 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-105"
           >
             Apply as Artist
             <ArrowRight className="w-5 h-5" />
@@ -156,7 +156,7 @@ function WhyJoinSection() {
             return (
               <div
                 key={index}
-                className="relative bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-transparent [transition:all_0.4s_ease] hover:scale-105 cursor-pointer"
+                className="relative bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-transparent [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105 cursor-pointer"
               >
                 {benefit.comingSoon && (
                   <span className="absolute top-4 right-4 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
@@ -251,7 +251,7 @@ function HowToJoinSection() {
             <div className="mt-8">
               <a
                 href="/register?role=artist"
-                className="inline-flex items-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg hover:bg-white hover:text-teal-600 border border-transparent hover:border-teal-600 [transition:all_0.4s_ease] font-medium hover:scale-105"
+                className="inline-flex items-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg hover:bg-white hover:text-teal-600 border border-transparent hover:border-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-105"
               >
                 Apply Now
                 <ArrowRight className="w-5 h-5" />
@@ -261,17 +261,17 @@ function HowToJoinSection() {
 
           {/* Visual */}
           <div className="relative">
-            <div className="group aspect-square rounded-3xl overflow-hidden shadow-xl cursor-pointer transition-shadow duration-300 hover:shadow-2xl">
+            <div className="group aspect-square rounded-xl overflow-hidden shadow-xl cursor-pointer transition-shadow duration-300 hover:shadow-2xl">
               <img
                 src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&q=80"
                 alt="Artist at work"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               {/* Teal hue overlay */}
               <div className="absolute inset-0 bg-teal-600/0 transition-all duration-300 group-hover:bg-teal-600/40" />
               {/* Centered Icon */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+                <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
                   <Palette className="w-10 h-10 text-teal-600" />
                 </div>
               </div>
@@ -321,7 +321,7 @@ function CTASection() {
         </p>
 
         {/* Requirements */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8 max-w-xl mx-auto">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-8 max-w-xl mx-auto">
           <h3 className="font-semibold mb-4">What We Look For:</h3>
           <ul className="space-y-3 text-left">
             {requirements.map((req, index) => (
@@ -336,14 +336,14 @@ function CTASection() {
         <div className="group flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="/register?role=artist"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-white rounded-lg group-hover:bg-teal-600 group-hover:text-white group-hover:border-white border border-transparent [transition:all_0.4s_ease] font-medium text-lg group-hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-white rounded-lg group-hover:bg-teal-600 group-hover:text-white group-hover:border-white border border-transparent [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium text-lg group-hover:scale-105"
           >
             Apply as Artist
             <ArrowRight className="w-5 h-5" />
           </a>
           <a
             href="/contact"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white border-2 border-white/50 rounded-lg group-hover:bg-white group-hover:text-teal-700 group-hover:border-white [transition:all_0.4s_ease] font-medium text-lg group-hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white border-2 border-white/50 rounded-lg group-hover:bg-white group-hover:text-teal-700 group-hover:border-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium text-lg group-hover:scale-105"
           >
             Have Questions?
           </a>

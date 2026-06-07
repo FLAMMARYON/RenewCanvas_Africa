@@ -169,7 +169,7 @@ function AuctionCard({ auction, isLive = true }: { auction: typeof liveAuctions[
   const isEndingSoon = auction.endTime.getTime() - Date.now() < 60 * 60 * 1000; // Less than 1 hour
 
   return (
-    <div className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+    <div className="group bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
@@ -427,7 +427,7 @@ export default function AuctionsPage() {
             {upcomingAuctions.map((auction) => (
               <div
                 key={auction.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
               >
                 <div className="relative aspect-[4/3]">
                   <img
@@ -469,7 +469,7 @@ export default function AuctionsPage() {
             {pastAuctions.map((auction) => (
               <div
                 key={auction.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
               >
                 <div className="relative aspect-[4/3]">
                   <img
@@ -500,7 +500,7 @@ export default function AuctionsPage() {
         )}
 
         {/* How Auctions Work */}
-        <section className="mt-16 bg-white rounded-2xl p-8 border border-gray-100">
+        <section className="mt-16 bg-white rounded-xl p-8 border border-gray-100">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
             How Auctions Work
           </h2>

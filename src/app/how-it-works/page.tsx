@@ -15,7 +15,6 @@ import {
   Users,
   Award,
   Package,
-  Sparkles,
   ClipboardCheck,
   HandHeart,
   CircleDot,
@@ -80,7 +79,6 @@ function HeroSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-100 text-teal-700 rounded-full text-sm font-medium mb-6">
-            <Sparkles className="w-4 h-4" />
             <span>The RenewCanvas Process</span>
           </div>
 
@@ -98,14 +96,14 @@ function HeroSection() {
           <div className="group flex flex-wrap justify-center gap-4">
             <a
               href="#process"
-              className="inline-flex items-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] font-medium group-hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium group-hover:scale-105"
             >
               See the Process
               <ArrowRight className="w-5 h-5" />
             </a>
             <a
               href="/marketplace"
-              className="inline-flex items-center gap-2 px-6 py-3 text-teal-700 bg-white border-2 border-teal-200 rounded-lg group-hover:bg-teal-600 group-hover:text-white group-hover:border-teal-600 [transition:all_0.4s_ease] font-medium group-hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-3 text-teal-700 bg-white border-2 border-teal-200 rounded-lg group-hover:bg-teal-600 group-hover:text-white group-hover:border-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium group-hover:scale-105"
             >
               Browse Artwork
             </a>
@@ -286,7 +284,7 @@ function ProcessStepsSection() {
                       </p>
                       <a
                         href="/book-collection"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 [transition:all_0.3s_ease] text-sm"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)] text-sm"
                       >
                         <Truck className="w-4 h-4" />
                         Book a Collection
@@ -297,18 +295,18 @@ function ProcessStepsSection() {
 
                 {/* Visual - Image with hue + zoom hover effects */}
                 <div className="flex-1 w-full">
-                  <div className="group relative aspect-video rounded-2xl overflow-hidden shadow-lg cursor-pointer transition-shadow duration-300 hover:shadow-2xl">
+                  <div className="group relative aspect-video rounded-xl overflow-hidden shadow-lg cursor-pointer transition-shadow duration-300 hover:shadow-2xl">
                     {/* Background Image with zoom effect */}
                     <img
                       src={step.image}
                       alt={step.title}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     {/* Color Hue Overlay - matches icon color, appears on hover */}
                     <div className={`absolute inset-0 ${colors.hue} ${colors.hueHover} transition-all duration-300`} />
                     {/* Icon */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+                      <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
                         <step.icon className={`w-10 h-10 ${colors.text}`} />
                       </div>
                     </div>
@@ -365,7 +363,7 @@ function ForArtistsSection() {
             </h2>
             <p className="text-gray-600 mb-8">
               Join our curated community of artists creating impact through
-              upcycled art. We provide the materials, platform, and support—you
+              upcycled art. We provide the materials, platform, and support, so you
               bring the creativity.
             </p>
 
@@ -389,7 +387,7 @@ function ForArtistsSection() {
 
             <a
               href="/register?role=artist"
-              className="inline-flex items-center gap-2 px-6 py-3 text-white bg-amber-500 rounded-lg hover:bg-white hover:text-amber-600 border border-transparent hover:border-amber-500 [transition:all_0.4s_ease] font-medium hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-3 text-white bg-amber-500 rounded-lg hover:bg-white hover:text-amber-600 border border-transparent hover:border-amber-500 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-105"
             >
               Apply as Artist
               <ArrowRight className="w-5 h-5" />
@@ -398,17 +396,17 @@ function ForArtistsSection() {
 
           {/* Visual - Image of artist at work with hue + zoom hover effects */}
           <div className="relative">
-            <div className="group aspect-square rounded-3xl overflow-hidden shadow-xl cursor-pointer transition-shadow duration-300 hover:shadow-2xl">
+            <div className="group aspect-square rounded-xl overflow-hidden shadow-xl cursor-pointer transition-shadow duration-300 hover:shadow-2xl">
               <img
                 src="https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80"
                 alt="Artist creating artwork"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               {/* Amber hue overlay - matches icon color */}
               <div className="absolute inset-0 bg-amber-600/0 transition-all duration-300 group-hover:bg-amber-600/50" />
               {/* Centered Icon */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+                <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
                   <Palette className="w-10 h-10 text-amber-600" />
                 </div>
               </div>
@@ -472,17 +470,17 @@ function ForBuyersSection() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Visual - Image of art shopping/gallery with hue + zoom hover effects */}
           <div className="relative order-2 lg:order-1">
-            <div className="group aspect-square rounded-3xl overflow-hidden shadow-xl cursor-pointer transition-shadow duration-300 hover:shadow-2xl">
+            <div className="group aspect-square rounded-xl overflow-hidden shadow-xl cursor-pointer transition-shadow duration-300 hover:shadow-2xl">
               <img
                 src="https://images.unsplash.com/photo-1577720643272-265f09367456?w=800&q=80"
                 alt="Art gallery display"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               {/* Teal hue overlay - matches icon color */}
               <div className="absolute inset-0 bg-teal-600/0 transition-all duration-300 group-hover:bg-teal-600/50" />
               {/* Centered Icon */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+                <div className="w-20 h-20 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
                   <ShoppingBag className="w-10 h-10 text-teal-600" />
                 </div>
               </div>
@@ -536,7 +534,7 @@ function ForBuyersSection() {
 
             <a
               href="/marketplace"
-              className="inline-flex items-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg hover:bg-white hover:text-teal-600 border border-transparent hover:border-teal-600 [transition:all_0.4s_ease] font-medium hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg hover:bg-white hover:text-teal-600 border border-transparent hover:border-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-105"
             >
               Explore Marketplace
               <ArrowRight className="w-5 h-5" />
@@ -582,7 +580,7 @@ function WasteToDiscountSection() {
           {tiers.map((tier, index) => (
             <div
               key={index}
-              className={`relative p-6 rounded-2xl text-center ${
+              className={`relative p-6 rounded-xl text-center ${
                 tier.popular
                   ? "bg-white text-gray-900"
                   : "bg-white/10 backdrop-blur-sm"
@@ -626,7 +624,7 @@ function WasteToDiscountSection() {
         </div>
 
         {/* How it works */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8">
           <h3 className="text-xl font-bold mb-6 text-center">How Does It Work?</h3>
           <div className="grid sm:grid-cols-3 gap-6">
             <div className="text-center">
@@ -702,7 +700,7 @@ function MaterialsSection() {
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Accepted */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm">
+          <div className="bg-white rounded-xl p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-teal-600" />
@@ -730,7 +728,7 @@ function MaterialsSection() {
           </div>
 
           {/* Not Accepted */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm">
+          <div className="bg-white rounded-xl p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                 <X className="w-5 h-5 text-red-600" />
@@ -779,20 +777,20 @@ function CTASection() {
         </h2>
         <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
           Whether you are an artist looking to create, a buyer seeking unique art,
-          or a partner wanting to contribute—join the RenewCanvas movement today.
+          or a partner wanting to contribute, join the RenewCanvas movement today.
         </p>
 
         <div className="group flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="/register"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_ease] font-medium shadow-lg shadow-teal-600/30 text-lg group-hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium shadow-lg shadow-teal-600/30 text-lg group-hover:scale-105"
           >
             Get Started
             <ArrowRight className="w-5 h-5" />
           </a>
           <a
             href="/contact"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_ease] font-medium text-lg group-hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium text-lg group-hover:scale-105"
           >
             Contact Us
           </a>

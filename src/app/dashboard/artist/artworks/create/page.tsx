@@ -390,7 +390,7 @@ export default function CreateArtworkPage() {
           {step === 1 && (
             <div className="space-y-6">
               {/* AI Listing Assistant Card */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-100 p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                     <Lightbulb className="w-6 h-6 text-blue-600" />
@@ -838,10 +838,10 @@ export default function CreateArtworkPage() {
           {step === 3 && (
             <div className="space-y-6">
               {/* AI Pricing Assistant */}
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-100 p-6">
+              <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl border border-teal-100 p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Sparkles className="w-6 h-6 text-purple-600" />
+                    <Sparkles className="w-6 h-6 text-teal-600" />
                   </div>
                   <div>
                     <h2 className="font-semibold text-gray-900">
@@ -1099,6 +1099,15 @@ export default function CreateArtworkPage() {
                       Your artwork will be reviewed by our team before appearing
                       on the marketplace. This typically takes 1-2 business
                       days.
+                    </p>
+                    <p className="mt-2">
+                      By submitting, you confirm this is your original work (or
+                      that you hold the rights to it), that it contains no
+                      prohibited or infringing content, and you grant RenewCanvas
+                      Africa a licence to display and promote it on the
+                      marketplace. See our{" "}
+                      <a href="/terms" className="underline">Terms</a> and{" "}
+                      <a href="/privacy" className="underline">Privacy Policy</a>.
                     </p>
                   </div>
                 </div>
