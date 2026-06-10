@@ -8,7 +8,6 @@ import {
   Package,
   DollarSign,
   Eye,
-  GraduationCap,
   CheckCircle,
 } from "lucide-react";
 import Footer from "@/components/Footer";
@@ -106,19 +105,11 @@ function WhyJoinSection() {
     },
     {
       icon: Eye,
-      title: "Global Visibility",
+      title: "Visibility",
       description:
         "Get featured on our platform with a professional profile. Reach buyers who value sustainable art.",
       color: "blue",
       comingSoon: false,
-    },
-    {
-      icon: GraduationCap,
-      title: "Training & Workshops",
-      description:
-        "Access upcycling techniques and creative resources. Grow your skills while creating impact.",
-      color: "purple",
-      comingSoon: true,
     },
   ];
 
@@ -150,7 +141,7 @@ function WhyJoinSection() {
         </div>
 
         {/* Benefits Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {benefits.map((benefit, index) => {
             const colors = colorClasses[benefit.color];
             return (

@@ -4,17 +4,13 @@ import {
   Recycle,
   Palette,
   TrendingUp,
-  Heart,
   ArrowRight,
   Leaf,
   Users,
   Award,
   Globe,
-  TreePine,
   Wind,
   DollarSign,
-  GraduationCap,
-  Home,
   Target,
   BarChart3,
   Truck,
@@ -63,9 +59,6 @@ export default function ImpactPage() {
 
       {/* Environmental Impact */}
       <EnvironmentalImpactSection metrics={metrics} loading={loading} />
-
-      {/* Social Impact */}
-      <SocialImpactSection />
 
       {/* Impact Stories - Commented out until we have real stories */}
       {/* <ImpactStoriesSection /> */}
@@ -275,12 +268,6 @@ function EnvironmentalImpactSection({
 
   const impacts = [
     {
-      icon: TreePine,
-      value: formatValue(metrics?.treesEquivalent),
-      label: "Trees Worth of Paper Saved",
-      description: "Through cardboard and paper recycling",
-    },
-    {
       icon: Wind,
       value: formatValue(metrics?.co2SavedKg),
       label: "Kg CO2 Prevented",
@@ -359,89 +346,6 @@ function EnvironmentalImpactSection({
             </div>
             <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-amber-200 rounded-full opacity-50 -z-10" />
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ============================================
-   SOCIAL IMPACT SECTION
-   ============================================ */
-function SocialImpactSection() {
-  const impacts = [
-    {
-      icon: DollarSign,
-      title: "Economic Empowerment",
-      description: "Artists earn sustainable income, with 75-80% of each sale going directly to creators.",
-      stat: "75-80%",
-      statLabel: "Goes to Artists",
-    },
-    {
-      icon: GraduationCap,
-      title: "Skills Development",
-      description: "Workshops teaching upcycling techniques and creative methods for transforming waste into art.",
-      stat: "-",
-      statLabel: "Workshops Planned",
-    },
-    {
-      icon: Home,
-      title: "Driving Change",
-      description: "Incentivizing communities to participate in waste reduction through our waste-to-discount program and raising environmental awareness.",
-      stat: "Growing",
-      statLabel: "Movement",
-    },
-    {
-      icon: Heart,
-      title: "School Donations",
-      description: "Artworks donated to schools to inspire creativity and environmental awareness.",
-      stat: "Coming",
-      statLabel: "Soon",
-    },
-  ];
-
-  return (
-    <section className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-amber-600 font-semibold text-sm uppercase tracking-wider">
-            Social Impact
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2 mb-4">
-            Empowering <span className="text-amber-500">Communities</span>
-          </h2>
-          <p className="text-gray-600">
-            Beyond environmental benefits, we are creating economic opportunities
-            and building stronger communities across Africa.
-          </p>
-        </div>
-
-        {/* Impact Cards */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {impacts.map((impact, index) => (
-            <div
-              key={index}
-              className="group bg-gradient-to-br from-amber-50 to-white rounded-xl p-6 border border-amber-100 hover:shadow-xl hover:border-amber-200 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105 cursor-pointer"
-            >
-              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-amber-200 transition-colors duration-300">
-                <impact.icon className="w-6 h-6 text-amber-600" />
-              </div>
-
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {impact.title}
-              </h3>
-
-              <p className="text-sm text-gray-600 mb-4">
-                {impact.description}
-              </p>
-
-              <div className="pt-4 border-t border-amber-100">
-                <p className="text-2xl font-bold text-amber-600">{impact.stat}</p>
-                <p className="text-xs text-gray-500">{impact.statLabel}</p>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </section>
@@ -654,21 +558,6 @@ function CTASection() {
           </a>
         </div>
 
-        {/* Trust indicators */}
-        <div className="mt-12 flex flex-wrap justify-center gap-8 text-gray-400">
-          <div className="flex items-center gap-2">
-            <Leaf className="w-5 h-5 text-green-500" />
-            <span className="text-sm">Verified Impact</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Award className="w-5 h-5 text-amber-500" />
-            <span className="text-sm">Transparent Tracking</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-teal-500" />
-            <span className="text-sm">Community Driven</span>
-          </div>
-        </div>
       </div>
     </section>
   );
