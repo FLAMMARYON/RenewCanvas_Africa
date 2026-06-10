@@ -322,7 +322,6 @@ function ContactFormSection() {
     // Map inquiry type to API type
     const typeMap: Record<string, string> = {
       general: "contact_form",
-      artist: "artist_application",
       partnership: "partnership_inquiry",
     };
 
@@ -338,14 +337,7 @@ function ContactFormSection() {
           subject: formData.subject || undefined,
           message: formData.message,
           metadata:
-            selectedInquiry === "artist"
-              ? {
-                  location: formData.location,
-                  portfolio: formData.portfolio,
-                  artStyle: formData.artStyle,
-                  experience: formData.experience,
-                }
-              : selectedInquiry === "partnership"
+            selectedInquiry === "partnership"
               ? {
                   organization: formData.organization,
                   website: formData.website,
@@ -585,8 +577,6 @@ function ContactFormSection() {
               className={`inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 text-white rounded-xl [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
                 selectedInquiry === "general"
                   ? "bg-teal-600 hover:bg-teal-700 shadow-teal-600/30"
-                  : selectedInquiry === "artist"
-                  ? "bg-purple-600 hover:bg-purple-700 shadow-purple-600/30"
                   : "bg-amber-600 hover:bg-amber-700 shadow-amber-600/30"
               }`}
             >
@@ -597,7 +587,7 @@ function ContactFormSection() {
                 </>
               ) : (
                 <>
-                  {selectedInquiry === "artist" ? "Submit Application" : selectedInquiry === "partnership" ? "Submit Proposal" : "Send Message"}
+                  {selectedInquiry === "partnership" ? "Submit Proposal" : "Send Message"}
                   <Send className="w-5 h-5" />
                 </>
               )}

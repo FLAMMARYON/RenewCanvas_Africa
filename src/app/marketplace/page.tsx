@@ -1,6 +1,6 @@
 "use client";
 
-import { listArtworks, listRecommendations, type FrontendArtwork } from "@/lib/frontend/artworks-api";
+import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api";
 import { addToWishlist } from "@/lib/frontend/wishlist-api";
 import { artworkCategories } from "@/lib/ml/schemas";
 import { ArrowRight, Filter, Grid3X3, Heart, LayoutList, Leaf, Package, Recycle, Search, Sparkles } from "lucide-react";
@@ -21,20 +21,6 @@ export default function MarketplacePage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [statusMessage, setStatusMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [recommendations, setRecommendations] = useState<FrontendArtwork[]>([]);
-  const [recommendationsSource, setRecommendationsSource] = useState<"personalized" | "recent">("recent");
-
-  // Fetch recommendations on mount
-  useEffect(() => {
-    listRecommendations()
-      .then((result) => {
-        setRecommendations(result.artworks);
-        setRecommendationsSource(result.source);
-      })
-      .catch(() => {
-        // Silently fail - recommendations are optional
-      });
-  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
