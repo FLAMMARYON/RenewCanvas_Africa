@@ -15,6 +15,7 @@ import {
 import { useEffect, useState } from "react";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import { AfricaMap } from "@/components/AfricaMap";
 
 export default function HomePage() {
   return (
@@ -197,7 +198,7 @@ function AboutSection() {
           {/* Left - Image/Visual */}
           <div className="relative">
             <div className="aspect-square bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-8 flex items-center justify-center">
-              {/* TODO: African map (Phase 4) — Africa with Rwanda highlighted goes here */}
+              <AfricaMap className="h-full w-full" />
             </div>
             {/* Decorative elements */}
             <div className="absolute -top-4 -right-4 w-24 h-24 bg-amber-200 rounded-full opacity-60" />
