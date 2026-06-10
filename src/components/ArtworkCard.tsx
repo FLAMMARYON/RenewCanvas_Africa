@@ -26,9 +26,21 @@ export function ArtworkCard({
         compact ? "sm:flex" : ""
       }`}
     >
-      <Link href={`/artwork/${artwork.slug}`} className={`relative block bg-teal-50 ${compact ? "sm:w-56" : "aspect-[4/3]"}`}>
+      <Link
+        href={`/artwork/${artwork.slug}`}
+        className={`relative block bg-teal-50 ${
+          compact
+            ? // List view: fixed box, contain (no crop/stretch), uniform across items
+              "flex h-44 items-center justify-center sm:w-56 sm:shrink-0"
+            : "aspect-[4/3]"
+        }`}
+      >
         {image ? (
-          <img src={image.url} alt={image.altText} className="h-full w-full object-cover" />
+          <img
+            src={image.url}
+            alt={image.altText}
+            className={compact ? "max-h-full max-w-full object-contain" : "h-full w-full object-cover"}
+          />
         ) : (
           <div className="flex h-full min-h-48 items-center justify-center">
             <Package className="h-10 w-10 text-teal-300" />
