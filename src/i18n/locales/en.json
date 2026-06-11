@@ -1,0 +1,28 @@
+{
+  "nav": {
+    "home": "Home",
+    "howItWorks": "How It Works",
+    "marketplace": "Marketplace",
+    "artists": "Artists",
+    "impact": "Impact",
+    "contact": "Contact",
+    "signIn": "Sign In",
+    "getStarted": "Get Started"
+  },
+  "home": {
+    "heroTitle": "Transforming <teal>Waste</teal> Into <amber>Art</amber>",
+    "heroSubtitle": "RenewCanvas Africa connects recycled materials with talented artists to create unique, impact-verified artwork. Every piece tells a story of transformation.",
+    "exploreArtwork": "Explore Artwork",
+    "joinAsArtist": "Join as Artist",
+    "bookCollection": "Book a Collection",
+    "ourImpact": "OUR IMPACT"
+  },
+  "footer": {
+    "tagline": "Turning waste into art, and art into impact.",
+    "rights": "All rights reserved.",
+    "sustainable": "Built for a sustainable future"
+  },
+  "common": {
+    "language": "Language"
+  }
+}

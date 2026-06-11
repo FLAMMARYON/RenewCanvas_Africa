@@ -1,6 +1,7 @@
 "use client";
 
 import { Leaf, Mail, Phone } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // LinkedIn icon as inline SVG since lucide-react doesn't have it
 const LinkedInIcon = ({ className }: { className?: string }) => (
@@ -15,6 +16,7 @@ const LinkedInIcon = ({ className }: { className?: string }) => (
 );
 
 export default function Footer() {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
 
   const footerLinks = {
@@ -62,7 +64,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-sm text-gray-400 mb-4">
-              Turning waste into art, and art into impact.
+              {t("footer.tagline")}
             </p>
             <p className="text-sm text-gray-400 mb-4">Kigali, Rwanda</p>
 
@@ -179,13 +181,12 @@ export default function Footer() {
           <p className="text-sm text-gray-400 flex items-center gap-2 flex-wrap justify-center">
             <span>
               &copy; {currentYear} RenewCanvas{" "}
-              <span className="text-amber-500">Africa</span>. All rights
-              reserved.
+              <span className="text-amber-500">Africa</span>. {t("footer.rights")}
             </span>
             <span className="text-gray-600">|</span>
             <span className="flex items-center gap-1">
               <Leaf className="w-4 h-4 text-teal-500" />
-              Built for a sustainable future
+              {t("footer.sustainable")}
             </span>
           </p>
         </div>

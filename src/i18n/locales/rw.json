@@ -1,0 +1,29 @@
+{
+  "_comment": "MACHINE-TRANSLATED — needs native-speaker review before production. Kinyarwanda machine-translation quality is weak; OK for staging, not for production unreviewed.",
+  "nav": {
+    "home": "Ahabanza",
+    "howItWorks": "Uko Bikorwa",
+    "marketplace": "Isoko",
+    "artists": "Abahanzi",
+    "impact": "Ingaruka",
+    "contact": "Twandikire",
+    "signIn": "Injira",
+    "getStarted": "Tangira"
+  },
+  "home": {
+    "heroTitle": "Guhindura <teal>Imyanda</teal> mu <amber>Bukorikori</amber>",
+    "heroSubtitle": "RenewCanvas Africa ihuza ibikoresho byongera gukoreshwa n'abahanzi b'impuguke kugira ngo bakore ubukorikori budasanzwe bufite ingaruka zigaragara. Buri gice kivuga inkuru y'ihinduka.",
+    "exploreArtwork": "Reba Ubukorikori",
+    "joinAsArtist": "Injira nk'Umuhanzi",
+    "bookCollection": "Saba Gukusanya",
+    "ourImpact": "INGARUKA ZACU"
+  },
+  "footer": {
+    "tagline": "Guhindura imyanda mu bukorikori, n'ubukorikori mu ngaruka.",
+    "rights": "Uburenganzira bwose burabitswe.",
+    "sustainable": "Yubatswe ku bw'ejo hazaza harambye"
+  },
+  "common": {
+    "language": "Ururimi"
+  }
+}

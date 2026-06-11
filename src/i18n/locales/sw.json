@@ -1,0 +1,28 @@
+{
+  "nav": {
+    "home": "Nyumbani",
+    "howItWorks": "Jinsi Inavyofanya Kazi",
+    "marketplace": "Soko",
+    "artists": "Wasanii",
+    "impact": "Athari",
+    "contact": "Wasiliana",
+    "signIn": "Ingia",
+    "getStarted": "Anza"
+  },
+  "home": {
+    "heroTitle": "Kubadilisha <teal>Taka</teal> Kuwa <amber>Sanaa</amber>",
+    "heroSubtitle": "RenewCanvas Africa inaunganisha malighafi zilizorejeshwa na wasanii wenye vipaji kuunda kazi za sanaa za kipekee zenye athari iliyothibitishwa. Kila kipande kinasimulia hadithi ya mabadiliko.",
+    "exploreArtwork": "Tazama Sanaa",
+    "joinAsArtist": "Jiunge kama Msanii",
+    "bookCollection": "Panga Ukusanyaji",
+    "ourImpact": "ATHARI YETU"
+  },
+  "footer": {
+    "tagline": "Kugeuza taka kuwa sanaa, na sanaa kuwa athari.",
+    "rights": "Haki zote zimehifadhiwa.",
+    "sustainable": "Imejengwa kwa ajili ya mustakabali endelevu"
+  },
+  "common": {
+    "language": "Lugha"
+  }
+}

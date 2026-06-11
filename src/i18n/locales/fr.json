@@ -1,0 +1,28 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "howItWorks": "Comment ça marche",
+    "marketplace": "Marché",
+    "artists": "Artistes",
+    "impact": "Impact",
+    "contact": "Contact",
+    "signIn": "Se connecter",
+    "getStarted": "Commencer"
+  },
+  "home": {
+    "heroTitle": "Transformer les <teal>déchets</teal> en <amber>art</amber>",
+    "heroSubtitle": "RenewCanvas Africa relie les matériaux recyclés à des artistes talentueux pour créer des œuvres uniques à l'impact vérifié. Chaque pièce raconte une histoire de transformation.",
+    "exploreArtwork": "Découvrir les œuvres",
+    "joinAsArtist": "Devenir artiste",
+    "bookCollection": "Réserver une collecte",
+    "ourImpact": "NOTRE IMPACT"
+  },
+  "footer": {
+    "tagline": "Transformer les déchets en art, et l'art en impact.",
+    "rights": "Tous droits réservés.",
+    "sustainable": "Conçu pour un avenir durable"
+  },
+  "common": {
+    "language": "Langue"
+  }
+}
