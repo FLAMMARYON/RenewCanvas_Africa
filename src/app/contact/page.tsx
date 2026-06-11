@@ -11,7 +11,6 @@ import {
   Send,
   MessageSquare,
   Users,
-  Palette,
   Building,
   ExternalLink,
   Briefcase,
@@ -216,26 +215,6 @@ function ContactInfoSection() {
           })}
         </div>
 
-        {/* Social Links */}
-        <div className="mt-12 text-center">
-          <h3 className="font-semibold text-gray-900 mb-4">Connect With Us</h3>
-          <div className="flex justify-center gap-4">
-            <a
-              href="https://www.linkedin.com/company/renewcanvas-africa/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors"
-            >
-              <LinkedInIcon className="w-6 h-6 text-blue-600" />
-            </a>
-            <a
-              href="mailto:hello.renewcanvas@gmail.com"
-              className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center hover:bg-teal-200 transition-colors"
-            >
-              <Mail className="w-6 h-6 text-teal-600" />
-            </a>
-          </div>
-        </div>
       </div>
     </section>
   );
@@ -343,7 +322,6 @@ function ContactFormSection() {
     // Map inquiry type to API type
     const typeMap: Record<string, string> = {
       general: "contact_form",
-      artist: "artist_application",
       partnership: "partnership_inquiry",
     };
 
@@ -359,14 +337,7 @@ function ContactFormSection() {
           subject: formData.subject || undefined,
           message: formData.message,
           metadata:
-            selectedInquiry === "artist"
-              ? {
-                  location: formData.location,
-                  portfolio: formData.portfolio,
-                  artStyle: formData.artStyle,
-                  experience: formData.experience,
-                }
-              : selectedInquiry === "partnership"
+            selectedInquiry === "partnership"
               ? {
                   organization: formData.organization,
                   website: formData.website,
@@ -416,7 +387,6 @@ function ContactFormSection() {
 
   const inquiryTypes = [
     { icon: Users, label: "General Inquiry", value: "general", color: "teal" },
-    { icon: Palette, label: "Artist Application", value: "artist", color: "purple" },
     { icon: Building, label: "Partnership", value: "partnership", color: "amber" },
   ];
 
@@ -532,84 +502,6 @@ function ContactFormSection() {
               </div>
             )}
 
-            {/* ===== ARTIST APPLICATION FORM ===== */}
-            {selectedInquiry === "artist" && (
-              <div className="space-y-4">
-                <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl">
-                  <p className="text-sm text-purple-700">
-                    <Palette className="w-4 h-4 inline mr-2" />
-                    Join our community of artists creating sustainable art from recycled materials.
-                  </p>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Your full name" required className={inputClasses} />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address <span className="text-red-500">*</span>
-                    </label>
-                    <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="artist@example.com" required className={inputClasses} />
-                  </div>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleInputChange} placeholder="+250 798 654 776" className={inputClasses} />
-                  </div>
-                  <div>
-                    <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                      Location / City
-                    </label>
-                    <input type="text" id="location" name="location" value={formData.location} onChange={handleInputChange} placeholder="Kigali, Rwanda" className={inputClasses} />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="portfolio" className="block text-sm font-medium text-gray-700 mb-2">
-                    <ExternalLink className="w-4 h-4 inline mr-1" />
-                    Portfolio Link (Website, Instagram, etc.)
-                  </label>
-                  <input type="url" id="portfolio" name="portfolio" value={formData.portfolio} onChange={handleInputChange} placeholder="https://your-portfolio.com" className={inputClasses} />
-                </div>
-
-                <div>
-                  <label htmlFor="artStyle" className="block text-sm font-medium text-gray-700 mb-2">
-                    <Image className="w-4 h-4 inline mr-1" />
-                    Art Style / Medium
-                  </label>
-                  <input type="text" id="artStyle" name="artStyle" value={formData.artStyle} onChange={handleInputChange} placeholder="e.g., Sculpture, Painting, Mixed Media, Textile Art" className={inputClasses} />
-                </div>
-
-                <div>
-                  <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-2">
-                    Experience with Recycled Materials
-                  </label>
-                  <select id="experience" name="experience" value={formData.experience} onChange={handleInputChange} className={inputClasses}>
-                    <option value="">Select your experience level</option>
-                    <option value="beginner">Beginner - New to upcycled art</option>
-                    <option value="intermediate">Intermediate - Some experience</option>
-                    <option value="experienced">Experienced - Regular upcycled art creator</option>
-                    <option value="professional">Professional - Full-time artist</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                    Tell Us About Yourself <span className="text-red-500">*</span>
-                  </label>
-                  <textarea id="message" name="message" value={formData.message} onChange={handleInputChange} rows={4} placeholder="Share your artistic journey, inspiration, and why you want to join RenewCanvas..." required className={`${inputClasses} resize-none`} />
-                </div>
-              </div>
-            )}
-
             {/* ===== PARTNERSHIP FORM ===== */}
             {selectedInquiry === "partnership" && (
               <div className="space-y-4">
@@ -685,8 +577,6 @@ function ContactFormSection() {
               className={`inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 text-white rounded-xl [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
                 selectedInquiry === "general"
                   ? "bg-teal-600 hover:bg-teal-700 shadow-teal-600/30"
-                  : selectedInquiry === "artist"
-                  ? "bg-purple-600 hover:bg-purple-700 shadow-purple-600/30"
                   : "bg-amber-600 hover:bg-amber-700 shadow-amber-600/30"
               }`}
             >
@@ -697,7 +587,7 @@ function ContactFormSection() {
                 </>
               ) : (
                 <>
-                  {selectedInquiry === "artist" ? "Submit Application" : selectedInquiry === "partnership" ? "Submit Proposal" : "Send Message"}
+                  {selectedInquiry === "partnership" ? "Submit Proposal" : "Send Message"}
                   <Send className="w-5 h-5" />
                 </>
               )}

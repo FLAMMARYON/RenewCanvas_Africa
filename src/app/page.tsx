@@ -6,7 +6,6 @@ import {
   Users,
   TrendingUp,
   ArrowRight,
-  Leaf,
   Heart,
   Globe,
   Award,
@@ -16,6 +15,8 @@ import {
 import { useEffect, useState } from "react";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import { AfricaMap } from "@/components/AfricaMap";
+import { useTranslation, Trans } from "react-i18next";
 
 export default function HomePage() {
   return (
@@ -51,6 +52,7 @@ export default function HomePage() {
    HERO SECTION
    ============================================ */
 function HeroSection() {
+  const { t } = useTranslation();
   return (
     <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
       {/* Background Pattern */}
@@ -91,21 +93,18 @@ function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
           <div className="text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-100 text-teal-700 rounded-full text-sm font-medium mb-6">
-              <Leaf className="w-4 h-4" />
-              <span>Circular Economy Art Platform</span>
-            </div>
-
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
-              Transforming{" "}
-              <span className="text-teal-700">Waste</span> Into{" "}
-              <span className="text-amber-500">Art</span>
+              <Trans
+                i18nKey="home.heroTitle"
+                components={{
+                  teal: <span className="text-teal-700" />,
+                  amber: <span className="text-amber-500" />,
+                }}
+              />
             </h1>
 
             <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0">
-              RenewCanvas Africa connects recycled materials with talented
-              artists to create unique, impact-verified artwork. Every piece
-              tells a story of transformation.
+              {t("home.heroSubtitle")}
             </p>
 
             <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center lg:justify-start">
@@ -113,14 +112,14 @@ function HeroSection() {
                 href="/marketplace"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 text-white bg-teal-700 rounded-lg hover:bg-teal-800 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium shadow-lg shadow-teal-700/30 hover:shadow-xl hover:scale-105"
               >
-                Explore Artwork
+                {t("home.exploreArtwork")}
                 <ArrowRight className="w-5 h-5" />
               </a>
               <a
                 href="/register?role=artist"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 text-teal-700 bg-teal-100 rounded-lg hover:bg-teal-800 hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-105"
               >
-                Join as Artist
+                {t("home.joinAsArtist")}
                 <Palette className="w-5 h-5" />
               </a>
               <a
@@ -128,7 +127,7 @@ function HeroSection() {
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-500 hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-105"
               >
                 <Truck className="w-5 h-5" />
-                Book a Collection
+                {t("home.bookCollection")}
               </a>
             </div>
 
@@ -203,17 +202,7 @@ function AboutSection() {
           {/* Left - Image/Visual */}
           <div className="relative">
             <div className="aspect-square bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-8 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-32 h-32 mx-auto mb-6 bg-white rounded-full shadow-lg flex items-center justify-center">
-                  <Globe className="w-16 h-16 text-teal-700" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Based in Kigali, Rwanda
-                </h3>
-                <p className="text-gray-600">
-                  Serving artists and buyers across Africa
-                </p>
-              </div>
+              <AfricaMap className="h-full w-full" />
             </div>
             {/* Decorative elements */}
             <div className="absolute -top-4 -right-4 w-24 h-24 bg-amber-200 rounded-full opacity-60" />
@@ -409,6 +398,7 @@ function HowItWorksSection() {
    IMPACT SECTION
    ============================================ */
 function ImpactSection() {
+  const { t } = useTranslation();
   const [metrics, setMetrics] = useState({
     kgDiverted: 0,
     artistCount: 0,
@@ -507,7 +497,7 @@ function ImpactSection() {
             href="/impact"
             className="inline-flex items-center gap-2 px-6 py-3 bg-white text-teal-700 rounded-lg font-medium hover:bg-teal-800 hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105"
           >
-            View Full Impact Report
+            {t("home.ourImpact")}
             <ArrowRight className="w-5 h-5" />
           </a>
         </div>
@@ -623,21 +613,6 @@ function CTASection() {
           </a>
         </div>
 
-        {/* Trust Badges */}
-        <div className="mt-12 flex flex-wrap justify-center gap-8 text-gray-600">
-          <div className="flex items-center gap-2">
-            <Leaf className="w-5 h-5" />
-            <span className="text-sm">Eco-Verified</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Award className="w-5 h-5" />
-            <span className="text-sm">Quality Guaranteed</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            <span className="text-sm">Artist-First Platform</span>
-          </div>
-        </div>
       </div>
     </section>
   );

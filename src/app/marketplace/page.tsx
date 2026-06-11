@@ -1,12 +1,12 @@
 "use client";
 
-import { listArtworks, listRecommendations, type FrontendArtwork } from "@/lib/frontend/artworks-api";
-import { addToWishlist } from "@/lib/frontend/wishlist-api";
+import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api";
 import { artworkCategories } from "@/lib/ml/schemas";
-import { ArrowRight, Filter, Gavel, Grid3X3, Heart, LayoutList, Leaf, Package, Recycle, Search, Sparkles } from "lucide-react";
+import { ArrowRight, Filter, Grid3X3, LayoutList, Recycle, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import { ArtworkCard } from "@/components/ArtworkCard";
 import { useEffect, useState } from "react";
 
 const categories = ["All", ...artworkCategories];
@@ -21,23 +21,6 @@ export default function MarketplacePage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [statusMessage, setStatusMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [recommendations, setRecommendations] = useState<FrontendArtwork[]>([]);
-  const [recommendationsSource, setRecommendationsSource] = useState<"personalized" | "recent">("recent");
-
-  // Set to true when there are active auctions
-  const hasActiveAuctions = true;
-
-  // Fetch recommendations on mount
-  useEffect(() => {
-    listRecommendations()
-      .then((result) => {
-        setRecommendations(result.artworks);
-        setRecommendationsSource(result.source);
-      })
-      .catch(() => {
-        // Silently fail - recommendations are optional
-      });
-  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -114,25 +97,6 @@ export default function MarketplacePage() {
                 </div>
                 <ArrowRight className="ml-1 h-4 w-4 text-gray-400" />
               </Link>
-
-              {hasActiveAuctions && (
-                <Link
-                  href="/auctions"
-                  className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-5 py-3 shadow-sm transition hover:shadow-md"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100">
-                    <Gavel className="h-4 w-4 text-amber-600" />
-                  </div>
-                  <div className="text-left">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                      Live Auctions
-                      <span className="rounded bg-rose-500 px-1.5 py-0.5 text-[10px] font-medium text-white">3 LIVE</span>
-                    </div>
-                    <div className="text-xs text-gray-500">Bid on exclusive pieces</div>
-                  </div>
-                  <ArrowRight className="ml-1 h-4 w-4 text-amber-500" />
-                </Link>
-              )}
             </div>
           </div>
         </section>
@@ -176,7 +140,7 @@ export default function MarketplacePage() {
                     className="border-0 bg-transparent pr-6 text-sm text-gray-600 focus:outline-none focus:ring-0"
                   >
                     <option value="newest">Sort by</option>
-                    <option value="newest">Newest</option>
+                    <option value="newest">Recently Added</option>
                     <option value="popular">Most saved</option>
                     <option value="price_low">Price: low to high</option>
                     <option value="price_high">Price: high to low</option>
@@ -239,11 +203,22 @@ export default function MarketplacePage() {
                 ))}
               </div>
             ) : artworks.length > 0 ? (
-              <div className={viewMode === "grid" ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3" : "space-y-4"}>
-                {artworks.map((artwork) => (
-                  <ArtworkCard key={artwork.id} artwork={artwork} compact={viewMode === "list"} onStatus={setStatusMessage} />
-                ))}
-              </div>
+              <>
+                <div className={viewMode === "grid" ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3" : "space-y-4"}>
+                  {artworks.map((artwork) => (
+                    <ArtworkCard key={artwork.id} artwork={artwork} compact={viewMode === "list"} onStatus={setStatusMessage} />
+                  ))}
+                </div>
+                <div className="mt-8 flex justify-center">
+                  <Link
+                    href="/artworks"
+                    className="inline-flex items-center gap-2 rounded-lg border border-teal-200 bg-white px-6 py-3 text-sm font-medium text-teal-700 hover:bg-teal-600 hover:text-white hover:border-teal-600 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
+                  >
+                    See all Artworks
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </>
             ) : (
               /* Empty State - Artwork Coming Soon */
               <div className="rounded-xl border border-gray-200 bg-white px-6 py-16 text-center">
@@ -297,37 +272,6 @@ export default function MarketplacePage() {
             )}
           </div>
         </section>
-
-        {/* You Might Also Like Section */}
-        {recommendations.length > 0 && (
-          <section className="bg-white py-12">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">
-                    {recommendationsSource === "personalized" ? "You Might Also Like" : "Recently Added"}
-                  </h2>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {recommendationsSource === "personalized"
-                      ? "Based on your wishlist and past orders"
-                      : "Fresh artworks just added to our collection"}
-                  </p>
-                </div>
-                <Link
-                  href="/marketplace"
-                  className="text-sm font-medium text-teal-600 hover:text-teal-700"
-                >
-                  View All
-                </Link>
-              </div>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {recommendations.map((artwork) => (
-                  <ArtworkCard key={artwork.id} artwork={artwork} compact={false} onStatus={setStatusMessage} />
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
 
         {/* Promotional Cards */}
         {artworks.length === 0 && (
@@ -384,61 +328,3 @@ export default function MarketplacePage() {
   );
 }
 
-function ArtworkCard({
-  artwork,
-  compact,
-  onStatus,
-}: {
-  artwork: FrontendArtwork;
-  compact: boolean;
-  onStatus: (message: string) => void;
-}) {
-  const image = artwork.images[0];
-  return (
-    <article
-      className={`group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-        compact ? "sm:flex" : ""
-      }`}
-    >
-      <Link href={`/artwork/${artwork.slug}`} className={`relative block bg-teal-50 ${compact ? "sm:w-56" : "aspect-[4/3]"}`}>
-        {image ? (
-          <img src={image.url} alt={image.altText} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full min-h-48 items-center justify-center">
-            <Package className="h-10 w-10 text-teal-300" />
-          </div>
-        )}
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-gray-700">
-          {artwork.ownerType === "renewcanvas" ? "RenewCanvas-owned" : "Artist artwork"}
-        </span>
-      </Link>
-      <div className="p-5">
-        <div className="flex items-center gap-2 text-xs font-medium text-teal-600">
-          <Leaf className="h-4 w-4" />
-          {artwork.kgDiverted.toFixed(1)} kg diverted
-        </div>
-        <h2 className="mt-2 text-lg font-semibold text-gray-900 group-hover:text-teal-600">{artwork.title}</h2>
-        <p className="mt-1 text-sm text-gray-500">by {artwork.artist?.name ?? "RenewCanvas Africa"}</p>
-        <p className="mt-3 line-clamp-2 text-sm text-gray-600">{artwork.description}</p>
-        <div className="mt-4 flex items-center justify-between">
-          <span className="font-bold text-gray-900">{artwork.priceAmount.toLocaleString()} RWF</span>
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                await addToWishlist(artwork.id);
-                onStatus("Artwork saved to your wishlist.");
-              } catch (error) {
-                onStatus(error instanceof Error ? error.message : "Sign in as a buyer to save artwork.");
-              }
-            }}
-            className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-rose-50 hover:text-rose-600"
-          >
-            <Heart className="h-4 w-4" />
-            {artwork.favouriteCount}
-          </button>
-        </div>
-      </div>
-    </article>
-  );
-}

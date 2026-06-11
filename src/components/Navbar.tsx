@@ -10,6 +10,8 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 interface UserSession {
   id: string;
@@ -66,13 +68,15 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const { t } = useTranslation();
+
   const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "How It Works", href: "/how-it-works" },
-    { name: "Marketplace", href: "/marketplace" },
-    { name: "Artists", href: "/artists" },
-    { name: "Impact", href: "/impact" },
-    { name: "Contact", href: "/contact" },
+    { key: "nav.home", href: "/" },
+    { key: "nav.howItWorks", href: "/how-it-works" },
+    { key: "nav.marketplace", href: "/marketplace" },
+    { key: "nav.artists", href: "/artists" },
+    { key: "nav.impact", href: "/impact" },
+    { key: "nav.contact", href: "/contact" },
   ];
 
   // Get user initials for avatar
@@ -126,11 +130,11 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <a
-                key={link.name}
+                key={link.href}
                 href={link.href}
                 className="text-gray-600 hover:text-teal-700 transition-colors font-medium text-sm"
               >
-                {link.name}
+                {t(link.key)}
               </a>
             ))}
           </div>
@@ -200,21 +204,22 @@ export default function Navbar() {
               </div>
             ) : (
               // Not logged in - Show Sign In / Get Started
-              <div className="group flex items-center gap-3">
+              <div className="flex items-center gap-3">
                 <a
                   href="/login"
-                  className="px-4 py-2 text-sm font-medium text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
+                  className="px-4 py-2 text-sm font-medium text-teal-700 bg-teal-100 rounded-lg hover:bg-teal-800 hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105"
                 >
-                  Sign In
+                  {t("nav.signIn")}
                 </a>
                 <a
                   href="/register"
-                  className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
+                  className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg hover:bg-white hover:text-teal-700 border border-transparent hover:border-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105"
                 >
-                  Get Started
+                  {t("nav.getStarted")}
                 </a>
               </div>
             )}
+            <LanguageSwitcher className="hidden md:block" />
           </div>
 
           {/* Mobile Menu Button */}
@@ -240,13 +245,17 @@ export default function Navbar() {
           <div className="max-w-7xl mx-auto px-4 space-y-3">
             {navLinks.map((link) => (
               <a
-                key={link.name}
+                key={link.href}
                 href={link.href}
                 className="block py-2 text-gray-600 hover:text-teal-700 font-medium"
               >
-                {link.name}
+                {t(link.key)}
               </a>
             ))}
+
+            <div className="pt-2 border-t border-gray-100">
+              <LanguageSwitcher />
+            </div>
 
             {/* Mobile Auth Section */}
             {session ? (
@@ -283,18 +292,18 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <div className="group pt-4 flex flex-col gap-2">
+              <div className="pt-4 flex flex-col gap-2">
                 <a
                   href="/login"
-                  className="w-full py-2 text-center text-teal-700 bg-teal-100 rounded-lg group-hover:bg-teal-800 group-hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
+                  className="w-full py-2 text-center text-teal-700 bg-teal-100 rounded-lg hover:bg-teal-800 hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)]"
                 >
-                  Sign In
+                  {t("nav.signIn")}
                 </a>
                 <a
                   href="/register"
-                  className="w-full py-2 text-center text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
+                  className="w-full py-2 text-center text-white bg-teal-700 rounded-lg hover:bg-white hover:text-teal-700 border border-transparent hover:border-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)]"
                 >
-                  Get Started
+                  {t("nav.getStarted")}
                 </a>
               </div>
             )}

@@ -254,3 +254,61 @@ export function formatMetricForDisplay(value: number): string {
   if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
   return value.toLocaleString();
 }
+
+/* ============================================================================
+   DAILY IMPACT SNAPSHOTS
+   ----------------------------------------------------------------------------
+   The home page shows the impact figures from the most recent DAILY snapshot
+   (not a live re-aggregation on every request). A scheduled job
+   (/api/cron/impact-snapshot, run at midnight Africa/Kigali) recomputes the
+   figures with getPlatformMetrics() and stores them in the existing
+   AnalyticsDailyAggregate table (metric = "impact_snapshot"): value holds the
+   rounded kg diverted and metadata holds the full PlatformMetrics object.
+   ========================================================================== */
+
+const IMPACT_SNAPSHOT_METRIC = "impact_snapshot";
+const KIGALI_UTC_OFFSET_MS = 2 * 60 * 60 * 1000; // Africa/Kigali = UTC+2 (no DST)
+
+/** Midnight of "today" in Africa/Kigali, normalised to a UTC Date for storage. */
+function kigaliDateKey(now = new Date()): Date {
+  const shifted = new Date(now.getTime() + KIGALI_UTC_OFFSET_MS);
+  return new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()));
+}
+
+/**
+ * Recompute the platform impact figures and store today's snapshot (one row per
+ * Kigali day). Idempotent: re-running on the same day updates that day's row.
+ */
+export async function snapshotImpactMetrics(db: PrismaClient, now = new Date()): Promise<PlatformMetrics> {
+  const metrics = await getPlatformMetrics(db);
+  const date = kigaliDateKey(now);
+
+  const existing = await db.analyticsDailyAggregate.findFirst({
+    where: { date, metric: IMPACT_SNAPSHOT_METRIC },
+  });
+
+  const data = {
+    value: Math.round(metrics.kgDiverted),
+    metadata: metrics as unknown as Prisma.InputJsonValue,
+  };
+
+  if (existing) {
+    await db.analyticsDailyAggregate.update({ where: { id: existing.id }, data });
+  } else {
+    await db.analyticsDailyAggregate.create({
+      data: { date, metric: IMPACT_SNAPSHOT_METRIC, ...data },
+    });
+  }
+
+  return metrics;
+}
+
+/** Most recent stored daily impact snapshot, or null if none exists yet. */
+export async function getLatestImpactSnapshot(db: PrismaClient): Promise<PlatformMetrics | null> {
+  const row = await db.analyticsDailyAggregate.findFirst({
+    where: { metric: IMPACT_SNAPSHOT_METRIC },
+    orderBy: { date: "desc" },
+  });
+  if (!row || !row.metadata) return null;
+  return row.metadata as unknown as PlatformMetrics;
+}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import GoogleTranslate from "@/components/GoogleTranslate";
+import { I18nProvider } from "@/components/I18nProvider";
 
 export const metadata: Metadata = {
   title: "RenewCanvas Africa",
@@ -53,8 +54,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {children}
-        <GoogleTranslate />
+        <I18nProvider>
+          {children}
+          <GoogleTranslate />
+        </I18nProvider>
       </body>
     </html>
   );

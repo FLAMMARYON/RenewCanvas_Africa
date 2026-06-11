@@ -13,7 +13,6 @@ import {
   Search,
   ShoppingBag,
   Users,
-  Award,
   Package,
   ClipboardCheck,
   HandHeart,
@@ -28,7 +27,6 @@ import {
   Biohazard,
   GlassWater,
   Gift,
-  CreditCard,
 } from "lucide-react";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
@@ -93,17 +91,10 @@ function HeroSection() {
             environmental impact.
           </p>
 
-          <div className="group flex flex-wrap justify-center gap-4">
-            <a
-              href="#process"
-              className="inline-flex items-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg group-hover:bg-white group-hover:text-teal-600 border border-transparent group-hover:border-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium group-hover:scale-105"
-            >
-              See the Process
-              <ArrowRight className="w-5 h-5" />
-            </a>
+          <div className="flex flex-wrap justify-center gap-4">
             <a
               href="/marketplace"
-              className="inline-flex items-center gap-2 px-6 py-3 text-teal-700 bg-white border-2 border-teal-200 rounded-lg group-hover:bg-teal-600 group-hover:text-white group-hover:border-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium group-hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-3 text-teal-700 bg-white border-2 border-teal-200 rounded-lg hover:bg-teal-600 hover:text-white hover:border-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-105"
             >
               Browse Artwork
             </a>
@@ -141,10 +132,6 @@ function ProcessStepsSection() {
       description:
         "All collected materials go through our rigorous cleaning and sorting process. We ensure only safe, sanitized materials reach our artists.",
       details: [
-        "Quality inspection",
-        "Sanitization process",
-        "Material grading",
-        "Batch documentation",
       ],
       color: "amber",
       image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
@@ -174,7 +161,6 @@ function ProcessStepsSection() {
         "Waste weight tracking",
         "Material type logging",
         "Artist income records",
-        "Environmental certificates",
       ],
       color: "rose",
       image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
@@ -186,8 +172,6 @@ function ProcessStepsSection() {
       description:
         "Approved artworks are listed on our marketplace with full impact stories, high-quality images, and transparent pricing.",
       details: [
-        "Professional photography",
-        "Impact story creation",
         "Fair pricing guidance",
         "Category organization",
       ],
@@ -201,9 +185,6 @@ function ProcessStepsSection() {
       description:
         "Buyers discover and purchase unique, impact-verified artwork. Each sale supports artists directly and funds further waste collection.",
       details: [
-        "Secure payments",
-        "Careful packaging",
-        "Impact certificates",
         "Artist support",
       ],
       color: "teal",
@@ -339,12 +320,7 @@ function ForArtistsSection() {
     {
       icon: TrendingUp,
       title: "Fair Earnings",
-      description: "Keep 75-80% of each sale with transparent commission",
-    },
-    {
-      icon: Award,
-      title: "Training & Support",
-      description: "Access upcycling workshops and creative resources",
+      description: "We charge a 15% commission on all art pieces",
     },
   ];
 
@@ -451,11 +427,6 @@ function ForBuyersSection() {
       icon: Gift,
       title: "Give Waste, Get Discount",
       description: "Contribute recyclable materials and receive discounts on your purchase",
-    },
-    {
-      icon: CreditCard,
-      title: "Secure Checkout",
-      description: "Pay securely with card, bank transfer, or mobile payment",
     },
     {
       icon: Truck,
