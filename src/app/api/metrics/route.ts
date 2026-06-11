@@ -13,6 +13,7 @@ import { readSessionCookie } from "@/lib/backend/auth-route";
 import {
   getPlatformMetrics,
   getDetailedMetrics,
+  getLatestImpactSnapshot,
 } from "@/lib/backend/metrics";
 
 export async function GET(request: NextRequest) {
@@ -35,8 +36,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(metrics);
     }
 
-    // Public metrics
-    const metrics = await getPlatformMetrics(db);
+    // Public metrics: prefer the most recent daily snapshot; fall back to a
+    // live computation if no snapshot has been recorded yet.
+    const snapshot = await getLatestImpactSnapshot(db);
+    const metrics = snapshot ?? (await getPlatformMetrics(db));
     return NextResponse.json(metrics);
   } catch (error) {
     console.error("Error fetching metrics:", error);
