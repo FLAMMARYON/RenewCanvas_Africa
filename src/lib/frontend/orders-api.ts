@@ -12,6 +12,7 @@ export type FrontendOrder = {
   createdAt: string;
   updatedAt: string;
   buyer: { id: string; name: string; email: string } | null;
+  buyerContact: { email: string | null; phone: string | null } | null;
   items: Array<{
     id: string;
     artworkId: string;

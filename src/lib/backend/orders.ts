@@ -238,6 +238,11 @@ export function normalizeOrder(order: OrderRecord, viewerRole: AuthPublicUser["r
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
     buyer: viewerRole === "artist" ? null : order.buyer ?? null,
+    // Artists may see ONLY the buyer's email + phone (never the address).
+    buyerContact:
+      viewerRole === "artist"
+        ? { email: stringOrNull(deliveryAddress.email), phone: stringOrNull(deliveryAddress.phone) }
+        : null,
     items: (order.items ?? []).map((item) => ({
       id: item.id,
       artworkId: item.artworkId,
@@ -285,6 +290,10 @@ function cleanText(value: unknown, maxLength: number): string | null {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function stringOrNull(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function decimalNumber(value: unknown): number {

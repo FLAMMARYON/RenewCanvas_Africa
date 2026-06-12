@@ -60,7 +60,7 @@ export default function ArtistOrdersPage() {
         <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
           <Shield className="mt-0.5 h-5 w-5 text-blue-600" />
           <p className="text-sm text-blue-700">
-            Buyer identity, delivery address, and notes are visible only to admins. Artists see the order snapshot needed to prepare the artwork.
+            You can see the buyer&apos;s email and phone to coordinate. Delivery address and order notes remain visible only to admins.
           </p>
         </div>
 
@@ -130,10 +130,16 @@ export default function ArtistOrdersPage() {
                         <p>Artwork owner: {item?.ownerType === "renewcanvas" ? "RenewCanvas Africa" : "Artist"}</p>
                         <p>{item?.kgDiverted.toFixed(1) ?? "0.0"} kg diverted snapshot</p>
                       </div>
-                      <div className="space-y-2 rounded-lg border border-blue-100 bg-white p-4 text-sm text-blue-700">
-                        <p className="font-medium text-blue-900">Admin coordination</p>
-                        <p>Prepare the artwork after payment is confirmed. Admin handles buyer communication, delivery instructions, and payout release.</p>
-                        {item?.artworkSlug && <Link href={`/artwork/${item.artworkSlug}`} className="inline-flex rounded-lg bg-teal-600 px-4 py-2 text-white">View Artwork</Link>}
+                      <div className="space-y-2 rounded-lg border border-blue-100 bg-white p-4 text-sm text-gray-700">
+                        <p className="font-medium text-gray-900">Buyer contact</p>
+                        <p>Email: {order.buyerContact?.email ?? "—"}</p>
+                        <p>Phone: {order.buyerContact?.phone ?? "—"}</p>
+                        <p className="text-xs text-gray-500">Delivery address and order notes are handled by admin.</p>
+                        {item?.artworkSlug && (
+                          <Link href={`/dashboard/artist/orders/artwork/${item.artworkSlug}`} className="mt-1 inline-flex rounded-lg bg-teal-600 px-4 py-2 text-white">
+                            View Artwork
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>
