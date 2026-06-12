@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-type TabType = "preferences" | "notifications" | "payouts" | "privacy" | "account";
+type TabType = "notifications" | "payouts" | "account";
 
 interface NotificationSettings {
   emailOrderReceived: boolean;
@@ -29,19 +29,6 @@ interface NotificationSettings {
   pushOrderReceived: boolean;
   pushCommissionRequest: boolean;
   pushPayoutProcessed: boolean;
-}
-
-interface PrivacySettings {
-  profileVisibility: "public" | "private";
-  showEarnings: boolean;
-  showSalesCount: boolean;
-  allowAnalytics: boolean;
-}
-
-interface PreferenceSettings {
-  language: string;
-  currency: string;
-  measurementUnit: "metric" | "imperial";
 }
 
 interface PayoutSettings {
@@ -56,16 +43,10 @@ interface PayoutSettings {
 }
 
 export default function ArtistSettingsPage() {
-  const [activeTab, setActiveTab] = useState<TabType>("preferences");
+  const [activeTab, setActiveTab] = useState<TabType>("notifications");
   const [userName, setUserName] = useState("User");
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; message: string } | null>(null);
-
-  const [preferences, setPreferences] = useState<PreferenceSettings>({
-    language: "en",
-    currency: "RWF",
-    measurementUnit: "metric",
-  });
 
   const [notifications, setNotifications] = useState<NotificationSettings>({
     emailOrderReceived: true,
@@ -77,13 +58,6 @@ export default function ArtistSettingsPage() {
     pushOrderReceived: true,
     pushCommissionRequest: true,
     pushPayoutProcessed: true,
-  });
-
-  const [privacy, setPrivacy] = useState<PrivacySettings>({
-    profileVisibility: "public",
-    showEarnings: false,
-    showSalesCount: true,
-    allowAnalytics: true,
   });
 
   const [payouts, setPayouts] = useState<PayoutSettings>({
@@ -109,16 +83,25 @@ export default function ArtistSettingsPage() {
       })
       .catch(() => {});
 
-    // Load saved settings from localStorage
-    const savedPreferences = localStorage.getItem("artist_preferences");
+    // Load locally-cached notification settings.
     const savedNotifications = localStorage.getItem("artist_notifications");
-    const savedPrivacy = localStorage.getItem("artist_privacy");
-    const savedPayouts = localStorage.getItem("artist_payouts");
-
-    if (savedPreferences) setPreferences(JSON.parse(savedPreferences));
     if (savedNotifications) setNotifications(JSON.parse(savedNotifications));
-    if (savedPrivacy) setPrivacy(JSON.parse(savedPrivacy));
-    if (savedPayouts) setPayouts(JSON.parse(savedPayouts));
+
+    // Load payout details from the profile (source of truth).
+    fetch("/api/profile")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const p = data?.profile;
+        if (!p) return;
+        setPayouts((prev) => ({
+          ...prev,
+          payoutMethod: typeof p.payoutMethod === "string" && p.payoutMethod ? p.payoutMethod : prev.payoutMethod,
+          bankName: typeof p.payoutBankName === "string" ? p.payoutBankName : prev.bankName,
+          accountNumber: typeof p.payoutAccountNumber === "string" ? p.payoutAccountNumber : prev.accountNumber,
+          accountName: typeof p.payoutAccountName === "string" ? p.payoutAccountName : prev.accountName,
+        }));
+      })
+      .catch(() => {});
   }, []);
 
   const handleSaveSettings = async () => {
@@ -126,33 +109,36 @@ export default function ArtistSettingsPage() {
     setStatusMessage(null);
 
     try {
-      // Save to localStorage for now (can be migrated to API later)
-      localStorage.setItem("artist_preferences", JSON.stringify(preferences));
       localStorage.setItem("artist_notifications", JSON.stringify(notifications));
-      localStorage.setItem("artist_privacy", JSON.stringify(privacy));
-      localStorage.setItem("artist_payouts", JSON.stringify(payouts));
 
-      // Also save to server if notification preferences API exists
-      try {
-        await fetch("/api/notifications/preferences", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            emailOrderReceived: notifications.emailOrderReceived,
-            emailCommissionRequest: notifications.emailCommissionRequest,
-            emailArtworkApproved: notifications.emailArtworkApproved,
-            emailPayoutProcessed: notifications.emailPayoutProcessed,
-            emailNewsletter: notifications.emailNewsletter,
-            emailAuctions: notifications.emailAuctions,
-            pushOrderReceived: notifications.pushOrderReceived,
-            pushCommissionRequest: notifications.pushCommissionRequest,
-            pushPayoutProcessed: notifications.pushPayoutProcessed,
-          }),
-        });
-      } catch {
-        // API may not exist yet, ignore
+      // Persist notification preferences.
+      const notifRes = await fetch("/api/notifications/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          orderUpdates: notifications.emailOrderReceived,
+          marketing: notifications.emailNewsletter,
+          auctions: notifications.emailAuctions,
+        }),
+      });
+
+      // Persist payout details to the profile.
+      const payoutRes = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          payoutMethod: payouts.payoutMethod,
+          payoutBankName: payouts.bankName,
+          payoutAccountNumber: payouts.payoutMethod === "mobile_money" ? payouts.mobileNumber : payouts.accountNumber,
+          payoutAccountName: payouts.accountName,
+        }),
+      });
+
+      if (!notifRes.ok || !payoutRes.ok) {
+        throw new Error("save_failed");
       }
-
       setStatusMessage({ type: "success", message: "Settings saved successfully!" });
     } catch {
       setStatusMessage({ type: "error", message: "Failed to save settings. Please try again." });
@@ -162,10 +148,8 @@ export default function ArtistSettingsPage() {
   };
 
   const tabs = [
-    { id: "preferences" as const, label: "Preferences", icon: Globe },
     { id: "notifications" as const, label: "Notifications", icon: Bell },
     { id: "payouts" as const, label: "Payouts", icon: Wallet },
-    { id: "privacy" as const, label: "Privacy", icon: Shield },
     { id: "account" as const, label: "Account", icon: User },
   ];
 
@@ -212,14 +196,10 @@ export default function ArtistSettingsPage() {
 
         {/* Tab Content */}
         <div className="bg-white rounded-xl border border-gray-100 p-6">
-          {activeTab === "preferences" && (
-            <PreferencesTab preferences={preferences} setPreferences={setPreferences} />
-          )}
           {activeTab === "notifications" && (
             <NotificationsTab notifications={notifications} setNotifications={setNotifications} />
           )}
           {activeTab === "payouts" && <PayoutsTab payouts={payouts} setPayouts={setPayouts} />}
-          {activeTab === "privacy" && <PrivacyTab privacy={privacy} setPrivacy={setPrivacy} />}
           {activeTab === "account" && <AccountTab />}
         </div>
 
@@ -245,78 +225,6 @@ export default function ArtistSettingsPage() {
         )}
       </div>
     </DashboardLayout>
-  );
-}
-
-function PreferencesTab({
-  preferences,
-  setPreferences,
-}: {
-  preferences: PreferenceSettings;
-  setPreferences: React.Dispatch<React.SetStateAction<PreferenceSettings>>;
-}) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Display Preferences</h3>
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
-              Language
-            </label>
-            <select
-              id="language"
-              value={preferences.language}
-              onChange={(e) => setPreferences((prev) => ({ ...prev, language: e.target.value }))}
-              className="w-full max-w-xs rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="en">English</option>
-              <option value="fr">French</option>
-              <option value="rw">Kinyarwanda</option>
-              <option value="sw">Swahili</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-2">
-              Currency (for display)
-            </label>
-            <select
-              id="currency"
-              value={preferences.currency}
-              onChange={(e) => setPreferences((prev) => ({ ...prev, currency: e.target.value }))}
-              className="w-full max-w-xs rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="RWF">Rwandan Franc (RWF)</option>
-              <option value="USD">US Dollar (USD)</option>
-              <option value="EUR">Euro (EUR)</option>
-              <option value="KES">Kenyan Shilling (KES)</option>
-              <option value="NGN">Nigerian Naira (NGN)</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="measurement" className="block text-sm font-medium text-gray-700 mb-2">
-              Measurement Units (for artwork dimensions)
-            </label>
-            <select
-              id="measurement"
-              value={preferences.measurementUnit}
-              onChange={(e) =>
-                setPreferences((prev) => ({
-                  ...prev,
-                  measurementUnit: e.target.value as "metric" | "imperial",
-                }))
-              }
-              className="w-full max-w-xs rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="metric">Metric (cm, kg)</option>
-              <option value="imperial">Imperial (in, lb)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -582,57 +490,6 @@ function PayoutsTab({
         )}
       </div>
 
-      <div className="pt-6 border-t border-gray-200">
-        <div className="flex items-center gap-2 mb-4">
-          <CreditCard className="w-5 h-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Payout Schedule</h3>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="payoutSchedule" className="block text-sm font-medium text-gray-700 mb-2">
-              When should we send your earnings?
-            </label>
-            <select
-              id="payoutSchedule"
-              value={payouts.payoutSchedule}
-              onChange={(e) =>
-                setPayouts((prev) => ({
-                  ...prev,
-                  payoutSchedule: e.target.value as PayoutSettings["payoutSchedule"],
-                }))
-              }
-              className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="weekly">Weekly (Every Monday)</option>
-              <option value="biweekly">Bi-weekly (Every other Monday)</option>
-              <option value="monthly">Monthly (1st of month)</option>
-              <option value="on_demand">On Demand (Manual request)</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="minimumPayout" className="block text-sm font-medium text-gray-700 mb-2">
-              Minimum Payout Amount (RWF)
-            </label>
-            <select
-              id="minimumPayout"
-              value={payouts.minimumPayout}
-              onChange={(e) =>
-                setPayouts((prev) => ({ ...prev, minimumPayout: Number(e.target.value) }))
-              }
-              className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value={10000}>10,000 RWF</option>
-              <option value={25000}>25,000 RWF</option>
-              <option value={50000}>50,000 RWF</option>
-              <option value={100000}>100,000 RWF</option>
-            </select>
-            <p className="mt-1 text-sm text-gray-500">Payouts below this amount will be held until the threshold is met</p>
-          </div>
-        </div>
-      </div>
-
       <div className="p-4 rounded-lg border border-blue-200 bg-blue-50">
         <p className="text-sm text-blue-800">
           <strong>Note:</strong> RenewCanvas takes a 20% platform commission. You receive 80% of each sale. Commission is automatically deducted before payout.
@@ -642,112 +499,58 @@ function PayoutsTab({
   );
 }
 
-function PrivacyTab({
-  privacy,
-  setPrivacy,
-}: {
-  privacy: PrivacySettings;
-  setPrivacy: React.Dispatch<React.SetStateAction<PrivacySettings>>;
-}) {
-  const Toggle = ({
-    checked,
-    onChange,
-    label,
-    description,
-  }: {
-    checked: boolean;
-    onChange: (checked: boolean) => void;
-    label: string;
-    description: string;
-  }) => (
-    <div className="flex items-start justify-between py-3">
-      <div>
-        <p className="font-medium text-gray-900">{label}</p>
-        <p className="text-sm text-gray-500">{description}</p>
-      </div>
-      <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          checked ? "bg-teal-600" : "bg-gray-200"
-        }`}
-      >
-        <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-            checked ? "translate-x-6" : "translate-x-1"
-          }`}
-        />
-      </button>
-    </div>
-  );
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <div className="flex items-center gap-2 mb-4">
-          <Lock className="w-5 h-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Profile Privacy</h3>
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="profileVisibility" className="block text-sm font-medium text-gray-700 mb-2">
-            Profile Visibility
-          </label>
-          <select
-            id="profileVisibility"
-            value={privacy.profileVisibility}
-            onChange={(e) =>
-              setPrivacy((prev) => ({
-                ...prev,
-                profileVisibility: e.target.value as "public" | "private",
-              }))
-            }
-            className="w-full max-w-xs rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
-          >
-            <option value="public">Public - Buyers can find and view your profile</option>
-            <option value="private">Private - Only visible to logged-in users</option>
-          </select>
-          <p className="mt-1 text-sm text-gray-500">We recommend keeping your profile public to attract buyers</p>
-        </div>
-
-        <div className="divide-y divide-gray-100">
-          <Toggle
-            checked={privacy.showEarnings}
-            onChange={(checked) => setPrivacy((prev) => ({ ...prev, showEarnings: checked }))}
-            label="Show Earnings"
-            description="Display your total earnings on your public profile"
-          />
-          <Toggle
-            checked={privacy.showSalesCount}
-            onChange={(checked) =>
-              setPrivacy((prev) => ({ ...prev, showSalesCount: checked }))
-            }
-            label="Show Sales Count"
-            description="Display how many artworks you've sold on your profile"
-          />
-        </div>
-      </div>
-
-      <div className="pt-4 border-t border-gray-200">
-        <div className="flex items-center gap-2 mb-4">
-          <Shield className="w-5 h-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Data & Analytics</h3>
-        </div>
-        <div className="divide-y divide-gray-100">
-          <Toggle
-            checked={privacy.allowAnalytics}
-            onChange={(checked) => setPrivacy((prev) => ({ ...prev, allowAnalytics: checked }))}
-            label="Usage Analytics"
-            description="Help us improve the platform by sharing anonymous usage data"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function AccountTab() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [currentEmail, setCurrentEmail] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailMsg, setEmailMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user?.email) setCurrentEmail(data.user.email);
+      })
+      .catch(() => {});
+  }, []);
+
+  const updateEmail = async () => {
+    setEmailSaving(true);
+    setEmailMsg(null);
+    try {
+      const res = await fetch("/api/auth/email", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email: newEmail }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.ok) throw new Error(body.message || "Could not update email.");
+      setCurrentEmail(body.email);
+      setNewEmail("");
+      setEmailMsg({ type: "success", text: "Email updated." });
+    } catch (err) {
+      setEmailMsg({ type: "error", text: err instanceof Error ? err.message : "Could not update email." });
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
+  const deleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch("/api/account/delete", { method: "POST", credentials: "include" });
+      if (!res.ok) throw new Error("Could not delete account.");
+      window.location.href = "/";
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Could not delete account.");
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -761,58 +564,36 @@ function AccountTab() {
                 <p className="font-medium text-gray-900">Change Password</p>
                 <p className="text-sm text-gray-500">Update your password for security</p>
               </div>
-              <a
-                href="/forgot-password"
-                className="px-4 py-2 text-sm font-medium text-teal-600 hover:text-teal-700"
-              >
+              <a href="/forgot-password" className="px-4 py-2 text-sm font-medium text-teal-600 hover:text-teal-700">
                 Change Password
               </a>
             </div>
           </div>
 
           <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Email Address</p>
-                <p className="text-sm text-gray-500">Change your account email address</p>
-              </div>
-              <a
-                href="/dashboard/artist/profile"
-                className="px-4 py-2 text-sm font-medium text-teal-600 hover:text-teal-700"
-              >
-                Update Email
-              </a>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Download Your Data</p>
-                <p className="text-sm text-gray-500">Get a copy of all your account data including artwork</p>
-              </div>
+            <p className="font-medium text-gray-900">Email Address</p>
+            <p className="text-sm text-gray-500 mb-3">Current: {currentEmail || "—"}</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="new@email.com"
+                aria-label="New email address"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
               <button
                 type="button"
-                className="px-4 py-2 text-sm font-medium text-teal-600 hover:text-teal-700"
+                onClick={updateEmail}
+                disabled={emailSaving || !newEmail.trim()}
+                className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
               >
-                Request Download
+                {emailSaving ? "Updating…" : "Update Email"}
               </button>
             </div>
-          </div>
-
-          <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Export Artwork Catalog</p>
-                <p className="text-sm text-gray-500">Download a spreadsheet of all your listed artworks</p>
-              </div>
-              <button
-                type="button"
-                className="px-4 py-2 text-sm font-medium text-teal-600 hover:text-teal-700"
-              >
-                Export CSV
-              </button>
-            </div>
+            {emailMsg && (
+              <p className={`mt-2 text-sm ${emailMsg.type === "success" ? "text-green-600" : "text-red-600"}`}>{emailMsg.text}</p>
+            )}
           </div>
         </div>
       </div>
@@ -824,12 +605,10 @@ function AccountTab() {
         </div>
 
         <div className="p-4 rounded-lg border border-red-200 bg-red-50">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-4">
             <div>
               <p className="font-medium text-red-900">Delete Account</p>
-              <p className="text-sm text-red-700">
-                Permanently delete your artist account, all artworks, and earnings data. Pending payouts will still be processed. This action cannot be undone.
-              </p>
+              <p className="text-sm text-red-700">Permanently delete your artist data. This action cannot be undone.</p>
             </div>
             <button
               type="button"
@@ -842,27 +621,35 @@ function AccountTab() {
         </div>
 
         {showDeleteConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-white rounded-xl p-6 max-w-md mx-4">
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">Delete Artist Account?</h4>
-              <p className="text-gray-600 mb-4">
-                Are you sure you want to delete your artist account? All your artworks, orders,
-                analytics, and profile information will be permanently removed. Any pending payouts
-                will still be processed before deletion. This action cannot be undone.
-              </p>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-xl p-6 max-w-md w-full">
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Are you sure?</h4>
+              <p className="text-gray-600 mb-3">This permanently deletes:</p>
+              <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-gray-700">
+                <li>Your account (you will be signed out and cannot sign back in)</li>
+                <li>Your artist profile</li>
+                <li>Your artworks</li>
+                <li>Your orders history</li>
+                <li>Your payout information</li>
+              </ul>
+              <p className="mb-4 text-sm text-gray-500">This action cannot be undone.</p>
+              {deleteError && <p className="mb-3 text-sm text-red-600">{deleteError}</p>}
               <div className="flex gap-3 justify-end">
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
                   className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                  onClick={deleteAccount}
+                  disabled={deleting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
                 >
-                  Yes, Delete Account
+                  {deleting ? "Deleting…" : "Yes, Delete Account"}
                 </button>
               </div>
             </div>
