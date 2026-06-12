@@ -252,6 +252,7 @@ function normalizeProfile(
     user,
     profile: baseProfile,
     address: defaultAddress,
+    avatarUrl: typeof baseProfile.avatarUrl === "string" ? baseProfile.avatarUrl : null,
     displayName:
       fullName(String(baseProfile.firstName ?? ""), String(baseProfile.lastName ?? "")) || user.name,
   };

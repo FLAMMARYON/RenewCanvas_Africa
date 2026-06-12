@@ -122,6 +122,27 @@ export default function ArtistProfilePage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [userName, setUserName] = useState("Artist");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  const uploadAvatar = async (file: File) => {
+    setAvatarUploading(true);
+    setStatusMessage("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/profile/avatar", { method: "POST", body: fd, credentials: "include" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.ok) throw new Error(body.message || "Could not upload photo.");
+      setAvatarUrl(body.avatarUrl);
+      setStatusMessage("Profile photo updated.");
+    } catch (err) {
+      setStatusMessage(err instanceof Error ? err.message : "Could not upload photo.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   useEffect(() => {
     let isCurrent = true;
@@ -131,6 +152,7 @@ export default function ArtistProfilePage() {
         const payload = await readProfile();
         if (!isCurrent) return;
         const profileData = payload.profile;
+        setAvatarUrl(typeof profileData.avatarUrl === "string" ? profileData.avatarUrl : null);
         const nextProfile = {
           firstName: stringValue(profileData.firstName),
           lastName: stringValue(profileData.lastName),
@@ -328,25 +350,49 @@ export default function ArtistProfilePage() {
                 {/* Profile Photo */}
                 <div className="flex flex-col sm:flex-row items-start gap-6">
                   <div className="relative">
-                    <div className="w-32 h-32 bg-gradient-to-br from-teal-100 to-amber-100 rounded-full flex items-center justify-center">
-                      <User className="w-16 h-16 text-teal-400" />
+                    <div className="w-32 h-32 overflow-hidden bg-gradient-to-br from-teal-100 to-amber-100 rounded-full flex items-center justify-center">
+                      {avatarPreview || avatarUrl ? (
+                        <img src={avatarPreview ?? avatarUrl ?? ""} alt="Profile photo" className="h-full w-full object-cover" />
+                      ) : (
+                        <User className="w-16 h-16 text-teal-400" />
+                      )}
                     </div>
-                    <button className="absolute bottom-0 right-0 w-10 h-10 bg-teal-600 text-white rounded-full flex items-center justify-center hover:bg-teal-700 transition-colors shadow-lg">
+                    <label className="absolute bottom-0 right-0 w-10 h-10 bg-teal-600 text-white rounded-full flex items-center justify-center hover:bg-teal-700 transition-colors shadow-lg cursor-pointer">
                       <Camera className="w-5 h-5" />
-                    </button>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp" aria-label="Upload profile photo"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.currentTarget.files?.[0];
+                          if (!f) return;
+                          setAvatarPreview(URL.createObjectURL(f));
+                          uploadAvatar(f);
+                        }}
+                      />
+                    </label>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900 mb-2">
-                      Profile Photo
-                    </h3>
+                    <h3 className="font-medium text-gray-900 mb-2">Profile Photo</h3>
                     <p className="text-sm text-gray-500 mb-4">
-                      Upload a professional photo. This helps build trust with
-                      buyers.
+                      Upload a professional photo (square, ~400×400). This helps build trust with buyers.
                     </p>
-                    <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                    <label className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
                       <Upload className="w-4 h-4" />
-                      Upload Photo
-                    </button>
+                      {avatarUploading ? "Uploading…" : "Upload Photo"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp" aria-label="Upload profile photo"
+                        className="hidden"
+                        disabled={avatarUploading}
+                        onChange={(e) => {
+                          const f = e.currentTarget.files?.[0];
+                          if (!f) return;
+                          setAvatarPreview(URL.createObjectURL(f));
+                          uploadAvatar(f);
+                        }}
+                      />
+                    </label>
                   </div>
                 </div>
 
