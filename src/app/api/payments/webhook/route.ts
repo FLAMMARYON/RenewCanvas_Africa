@@ -4,6 +4,7 @@ import { authErrorResponse } from "@/lib/backend/auth-route";
 import { getDatabaseClient } from "@/lib/backend/db";
 import { createPaymentProviderClient, type ProviderWebhookEvent } from "@/lib/backend/payment-providers";
 import { reconcileProviderWebhook, verifyWebhookSignature, type PaymentDatabase, type PaymentProvider, type PaymentStatus } from "@/lib/backend/payments";
+import { recordConfirmedOrderEarnings } from "@/lib/backend/earnings";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,10 @@ export async function POST(request: NextRequest) {
         }
       : createPaymentProviderClient(provider).parseWebhook(body);
     const result = await reconcileProviderWebhook(db as unknown as PaymentDatabase, event as ProviderWebhookEvent);
+    // On confirmed payment, add the order's earnings to artist running totals (idempotent).
+    if (result.payment?.status === "paid" && result.payment.orderId) {
+      await recordConfirmedOrderEarnings(db, result.payment.orderId);
+    }
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     if (error instanceof SyntaxError) return authErrorResponse(new AuthError("invalid_json", "Request body must be valid JSON.", 400));

@@ -37,6 +37,7 @@ export default function ArtistDashboard() {
   const [userName, setUserName] = useState("Artist");
   const [artworks, setArtworks] = useState<FrontendArtwork[]>([]);
   const [orders, setOrders] = useState<FrontendOrder[]>([]);
+  const [earnings, setEarnings] = useState<{ earningsRwf: number; kgDiverted: number }>({ earningsRwf: 0, kgDiverted: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -46,15 +47,19 @@ export default function ArtistDashboard() {
       setLoading(true);
       setError("");
       try {
-        const [profile, artworkResult, orderResult] = await Promise.all([
+        const [profile, artworkResult, orderResult, earningsResult] = await Promise.all([
           readProfile().catch(() => null),
           listArtworks({ scope: "artist" }),
           listOrders(),
+          fetch("/api/artist/earnings").then((r) => (r.ok ? r.json() : null)).catch(() => null),
         ]);
         if (!active) return;
         setUserName(profile?.displayName || "Artist");
         setArtworks(artworkResult.artworks);
         setOrders(orderResult);
+        if (earningsResult?.ok) {
+          setEarnings({ earningsRwf: earningsResult.earningsRwf ?? 0, kgDiverted: earningsResult.kgDiverted ?? 0 });
+        }
       } catch (loadError) {
         if (!active) return;
         setError(loadError instanceof Error ? loadError.message : "Could not load dashboard data.");
@@ -78,20 +83,9 @@ export default function ArtistDashboard() {
     [artworks, orders]
   );
 
-  const totalEarnings = useMemo(
-    () =>
-      orders.reduce(
-        (sum, order) =>
-          sum +
-          order.items.reduce((itemSum, item) => {
-            if (item.ownerType === "renewcanvas") return itemSum;
-            return itemSum + item.unitAmount * item.quantity * 0.8;
-          }, 0),
-        0
-      ),
-    [orders]
-  );
-  const totalImpact = artworks.reduce((sum, artwork) => sum + artwork.kgDiverted, 0);
+  // Earnings & impact come from confirmed-payment running totals stored in the DB.
+  const totalEarnings = earnings.earningsRwf;
+  const totalImpact = earnings.kgDiverted;
   const recentArtworks = [...artworks].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 4);
   const recentOrders = [...orders].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 3);
   const firstName = userName.split(" ")[0];
@@ -137,7 +131,7 @@ export default function ArtistDashboard() {
                 <p className="text-2xl font-bold text-gray-900">{loading ? "-" : Math.round(totalEarnings).toLocaleString()} RWF</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600">Estimated artist payout from live order records.</p>
+            <p className="text-sm text-gray-600">Your 80% share of confirmed (paid) orders.</p>
           </div>
           <div className="bg-gradient-to-br from-teal-50 to-amber-50 rounded-xl p-6 border border-teal-100">
             <div className="flex items-center gap-3 mb-4">

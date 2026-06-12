@@ -5,7 +5,6 @@ import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api"
 import { listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
 import { readProfile } from "@/lib/frontend/profile-api";
 import {
-  TrendingUp,
   Eye,
   Heart,
   ShoppingBag,
@@ -13,7 +12,6 @@ import {
   Recycle,
   Calendar,
   Palette,
-  Globe,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -24,6 +22,7 @@ export default function ArtistAnalyticsPage() {
   const [userName, setUserName] = useState("Artist");
   const [artworks, setArtworks] = useState<FrontendArtwork[]>([]);
   const [orders, setOrders] = useState<FrontendOrder[]>([]);
+  const [earnings, setEarnings] = useState<{ earningsRwf: number; kgDiverted: number }>({ earningsRwf: 0, kgDiverted: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -31,12 +30,20 @@ export default function ArtistAnalyticsPage() {
     let active = true;
     setLoading(true);
     setError("");
-    Promise.all([readProfile().catch(() => null), listArtworks({ scope: "artist" }), listOrders()])
-      .then(([profile, artworkResult, orderResult]) => {
+    Promise.all([
+      readProfile().catch(() => null),
+      listArtworks({ scope: "artist" }),
+      listOrders(),
+      fetch("/api/artist/earnings").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ])
+      .then(([profile, artworkResult, orderResult, earningsResult]) => {
         if (!active) return;
         setUserName(profile?.displayName || "Artist");
         setArtworks(artworkResult.artworks);
         setOrders(orderResult);
+        if (earningsResult?.ok) {
+          setEarnings({ earningsRwf: earningsResult.earningsRwf ?? 0, kgDiverted: earningsResult.kgDiverted ?? 0 });
+        }
       })
       .catch((loadError) => {
         if (active) setError(loadError instanceof Error ? loadError.message : "Could not load analytics data.");
@@ -63,10 +70,9 @@ export default function ArtistAnalyticsPage() {
   }, [artworks, orders]);
 
   const overviewStats = [
-    { label: "Total Revenue", value: analytics.revenue.toLocaleString(), unit: "RWF", icon: DollarSign, color: "text-green-600", bgColor: "bg-green-50" },
+    { label: "Confirmed Earnings", value: earnings.earningsRwf.toLocaleString(), unit: "RWF", icon: DollarSign, color: "text-green-600", bgColor: "bg-green-50" },
     { label: "Total Views", value: analytics.views.toLocaleString(), icon: Eye, color: "text-blue-600", bgColor: "bg-blue-50" },
     { label: "Total Favourites", value: analytics.favourites.toLocaleString(), icon: Heart, color: "text-rose-600", bgColor: "bg-rose-50" },
-    { label: "Conversion Rate", value: `${analytics.conversionRate.toFixed(1)}%`, icon: TrendingUp, color: "text-purple-600", bgColor: "bg-purple-50" },
   ];
 
   const monthlyData = useMemo<MonthlyData[]>(() => {
@@ -131,7 +137,7 @@ export default function ArtistAnalyticsPage() {
 
         {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {overviewStats.map((stat) => (
             <div key={stat.label} className="bg-white rounded-xl p-5 border border-gray-100">
               <div className={`w-10 h-10 ${stat.bgColor} rounded-lg flex items-center justify-center mb-3`}>
@@ -146,8 +152,7 @@ export default function ArtistAnalyticsPage() {
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-6">
             <h2 className="font-semibold text-gray-900 mb-6">Monthly Trends</h2>
             <div className="space-y-4">
               {monthlyData.map((month) => (
@@ -170,15 +175,6 @@ export default function ArtistAnalyticsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h2 className="font-semibold text-gray-900 mb-6">Traffic Sources</h2>
-            {/* TODO: Replace this empty state when an existing traffic-source analytics endpoint is added. */}
-            <div className="rounded-lg border border-dashed border-gray-200 p-8 text-center">
-              <Globe className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-              <p className="text-sm text-gray-500">Traffic source data is not available from the existing API routes.</p>
-            </div>
-          </div>
-        </div>
 
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">

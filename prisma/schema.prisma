@@ -208,6 +208,7 @@ model User {
   termsAcceptedAt DateTime?
   privacyAcceptedAt DateTime?
   deletedAt    DateTime?
+  languagePreference String @default("en")
 }
 
 model AuthSession {
@@ -277,6 +278,10 @@ model ArtistProfile {
   payoutAccountNumber String?
   payoutBankName     String?
   avatarUrl          String?
+  // Running totals from admin-confirmed (paid) orders only. Incremented once
+  // per order when payment is confirmed; read directly (not recomputed).
+  confirmedEarningsCents Int     @default(0)
+  confirmedKgDiverted    Decimal @default(0)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -522,6 +527,9 @@ model Order {
   totalCents           Int
   deliveryAddress      Json
   notes                String?
+  // Set true once the order's confirmed earnings have been added to artist
+  // running totals, so the increment happens exactly once.
+  earningsRecorded     Boolean     @default(false)
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @updatedAt
 

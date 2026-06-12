@@ -5,6 +5,7 @@ import { getDatabaseClient } from "@/lib/backend/db";
 import { getMoMoPaymentStatus } from "@/lib/backend/payment-providers";
 import { requireBackendConfig } from "@/lib/backend/config";
 import type { PaymentDatabase, PaymentStatus } from "@/lib/backend/payments";
+import { recordConfirmedOrderEarnings } from "@/lib/backend/earnings";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +133,9 @@ export async function GET(request: NextRequest) {
           where: { orderItems: { some: { orderId: payment.orderId } }, status: "reserved" },
           data: { status: "sold" },
         });
+
+        // Add confirmed earnings to artist running totals (idempotent).
+        await recordConfirmedOrderEarnings(db, payment.orderId);
       } else if (internalStatus === "failed") {
         await (db as unknown as PaymentDatabase).order.update({
           where: { id: payment.orderId },
