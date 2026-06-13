@@ -209,6 +209,11 @@ model User {
   privacyAcceptedAt DateTime?
   deletedAt    DateTime?
   languagePreference String @default("en")
+  // Per-user notification toggles (all default on). One JSON blob keyed by
+  // event, e.g. { emailNewOrders, emailCommissionRequests, emailArtworkStatus,
+  // emailPayoutUpdates, emailAuctionBids, emailNewsletter, pushNewOrders,
+  // pushCommissionRequests, pushPayoutProcessed }. See lib/backend/notification-prefs.
+  notificationPrefs Json?
 }
 
 model AuthSession {

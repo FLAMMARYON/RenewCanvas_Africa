@@ -6,7 +6,7 @@ import { Globe, Check } from "lucide-react";
 import {
   SUPPORTED_LOCALES,
   LOCALE_LABELS,
-  LOCALE_STORAGE_KEY,
+  applyLocale,
   type AppLocale,
 } from "@/i18n/config";
 
@@ -22,13 +22,7 @@ export function LanguageSwitcher({ className = "" }: { className?: string }) {
     : "en";
 
   const choose = (locale: AppLocale) => {
-    i18n.changeLanguage(locale);
-    try {
-      window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
-    } catch {
-      /* ignore storage errors */
-    }
-    document.cookie = `${LOCALE_STORAGE_KEY}=${locale}; path=/; max-age=31536000; SameSite=Lax`;
+    applyLocale(locale);
     setOpen(false);
   };
 

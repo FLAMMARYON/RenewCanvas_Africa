@@ -23,17 +23,19 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const statusConfig = {
-  submitted: { label: "Pending Review", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  under_review: { label: "Under Review", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  approved: { label: "Approved", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  listed: { label: "Listed", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  rejected: { label: "Rejected", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-  sold: { label: "Sold", color: "text-purple-600", bgColor: "bg-purple-50", icon: ShoppingBag },
+  submitted: { labelKey: "artistDashboard.statusPendingReview", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
+  under_review: { labelKey: "artistDashboard.statusUnderReview", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
+  approved: { labelKey: "artistDashboard.statusApproved", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
+  listed: { labelKey: "artistDashboard.statusListed", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
+  rejected: { labelKey: "artistDashboard.statusRejected", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
+  sold: { labelKey: "artistDashboard.statusSold", color: "text-purple-600", bgColor: "bg-purple-50", icon: ShoppingBag },
 };
 
 export default function ArtistDashboard() {
+  const { t } = useTranslation();
   const [userName, setUserName] = useState("Artist");
   const [artworks, setArtworks] = useState<FrontendArtwork[]>([]);
   const [orders, setOrders] = useState<FrontendOrder[]>([]);
@@ -62,7 +64,7 @@ export default function ArtistDashboard() {
         }
       } catch (loadError) {
         if (!active) return;
-        setError(loadError instanceof Error ? loadError.message : "Could not load dashboard data.");
+        setError(loadError instanceof Error ? loadError.message : t("artistDashboard.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -75,12 +77,12 @@ export default function ArtistDashboard() {
 
   const stats = useMemo(
     () => [
-      { label: "Total Artworks", value: artworks.length.toLocaleString(), icon: Palette, color: "text-teal-600", bgColor: "bg-teal-50" },
-      { label: "Total Views", value: artworks.reduce((sum, artwork) => sum + artwork.viewCount, 0).toLocaleString(), icon: Eye, color: "text-blue-600", bgColor: "bg-blue-50" },
-      { label: "Total Favourites", value: artworks.reduce((sum, artwork) => sum + artwork.favouriteCount, 0).toLocaleString(), icon: Heart, color: "text-rose-600", bgColor: "bg-rose-50" },
-      { label: "Total Orders", value: orders.length.toLocaleString(), icon: ShoppingBag, color: "text-green-600", bgColor: "bg-green-50" },
+      { label: t("artistDashboard.totalArtworks"), value: artworks.length.toLocaleString(), icon: Palette, color: "text-teal-600", bgColor: "bg-teal-50" },
+      { label: t("artistDashboard.totalViews"), value: artworks.reduce((sum, artwork) => sum + artwork.viewCount, 0).toLocaleString(), icon: Eye, color: "text-blue-600", bgColor: "bg-blue-50" },
+      { label: t("artistDashboard.totalFavourites"), value: artworks.reduce((sum, artwork) => sum + artwork.favouriteCount, 0).toLocaleString(), icon: Heart, color: "text-rose-600", bgColor: "bg-rose-50" },
+      { label: t("artistDashboard.totalOrders"), value: orders.length.toLocaleString(), icon: ShoppingBag, color: "text-green-600", bgColor: "bg-green-50" },
     ],
-    [artworks, orders]
+    [artworks, orders, t]
   );
 
   // Earnings & impact come from confirmed-payment running totals stored in the DB.
@@ -96,12 +98,12 @@ export default function ArtistDashboard() {
         <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-xl p-6 text-white">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold mb-2">Welcome back, {firstName}!</h1>
-              <p className="text-teal-100">Manage your artworks, track orders, and grow your creative business.</p>
+              <h1 className="text-2xl font-bold mb-2">{t("artistDashboard.welcome", { name: firstName })}</h1>
+              <p className="text-teal-100">{t("artistDashboard.welcomeSub")}</p>
             </div>
             <Link href="/dashboard/artist/artworks/create" className="inline-flex items-center gap-2 px-5 py-3 bg-white text-teal-700 rounded-lg font-medium hover:bg-teal-50 transition-colors">
               <Plus className="w-5 h-5" />
-              Create New Artwork
+              {t("artistDashboard.createNew")}
             </Link>
           </div>
         </div>
@@ -127,11 +129,11 @@ export default function ArtistDashboard() {
                 <DollarSign className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Estimated Earnings</p>
+                <p className="text-sm text-gray-600">{t("artistDashboard.estimatedEarnings")}</p>
                 <p className="text-2xl font-bold text-gray-900">{loading ? "-" : Math.round(totalEarnings).toLocaleString()} RWF</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600">Your 80% share of confirmed (paid) orders.</p>
+            <p className="text-sm text-gray-600">{t("artistDashboard.estimatedEarningsDesc")}</p>
           </div>
           <div className="bg-gradient-to-br from-teal-50 to-amber-50 rounded-xl p-6 border border-teal-100">
             <div className="flex items-center gap-3 mb-4">
@@ -139,26 +141,27 @@ export default function ArtistDashboard() {
                 <Recycle className="w-6 h-6 text-teal-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Environmental Impact</p>
+                <p className="text-sm text-gray-600">{t("artistDashboard.environmentalImpact")}</p>
                 <p className="text-2xl font-bold text-gray-900">{loading ? "-" : totalImpact.toFixed(1)} kg</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600">Total waste diverted through your artworks.</p>
+            <p className="text-sm text-gray-600">{t("artistDashboard.environmentalImpactDesc")}</p>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
           <div className="bg-white rounded-xl border border-gray-100">
             <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Your Artworks</h2>
+              <h2 className="font-semibold text-gray-900">{t("artistDashboard.yourArtworks")}</h2>
               <Link href="/dashboard/artist/artworks" className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1">
-                View All
+                {t("common.viewAll")}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
             <div className="divide-y divide-gray-100">
               {recentArtworks.map((artwork) => {
                 const status = statusConfig[artwork.status as keyof typeof statusConfig] ?? statusConfig.submitted;
+                const statusLabel = t(status.labelKey);
                 return (
                   <div key={artwork.id} className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-center gap-4">
@@ -176,7 +179,7 @@ export default function ArtistDashboard() {
                         <p className="font-semibold text-gray-900">{artwork.priceAmount.toLocaleString()} RWF</p>
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.bgColor} ${status.color}`}>
                           <status.icon className="w-3 h-3" />
-                          {status.label}
+                          {statusLabel}
                         </span>
                       </div>
                     </div>
@@ -189,15 +192,15 @@ export default function ArtistDashboard() {
                   </div>
                 );
               })}
-              {!loading && recentArtworks.length === 0 && <p className="p-6 text-sm text-gray-500">No artworks yet.</p>}
+              {!loading && recentArtworks.length === 0 && <p className="p-6 text-sm text-gray-500">{t("artistDashboard.noArtworks")}</p>}
             </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100">
             <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Recent Orders</h2>
+              <h2 className="font-semibold text-gray-900">{t("artistDashboard.recentOrders")}</h2>
               <Link href="/dashboard/artist/orders" className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1">
-                View All
+                {t("common.viewAll")}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -212,8 +215,8 @@ export default function ArtistDashboard() {
                           <ShoppingBag className="w-5 h-5 text-green-600" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900">{item?.title ?? "Artwork order"}</p>
-                          <p className="text-sm text-gray-500">Status: {order.status.replaceAll("_", " ")}</p>
+                          <p className="font-medium text-gray-900">{item?.title ?? t("artistDashboard.artworkOrder")}</p>
+                          <p className="text-sm text-gray-500">{t("artistDashboard.statusPrefix", { status: order.status.replaceAll("_", " ") })}</p>
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-gray-900">{order.totalAmount.toLocaleString()} RWF</p>
@@ -227,7 +230,7 @@ export default function ArtistDashboard() {
             ) : (
               <div className="p-8 text-center">
                 <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">{loading ? "Loading orders..." : "No orders yet"}</p>
+                <p className="text-gray-500">{loading ? t("artistDashboard.loadingOrders") : t("artistDashboard.noOrders")}</p>
               </div>
             )}
           </div>
@@ -236,19 +239,19 @@ export default function ArtistDashboard() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link href="/dashboard/artist/artworks/create" className="group flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-teal-200 hover:shadow-md transition-all">
             <div className="w-12 h-12 bg-teal-50 rounded-lg flex items-center justify-center group-hover:bg-teal-100 transition-colors"><Plus className="w-6 h-6 text-teal-600" /></div>
-            <div><p className="font-medium text-gray-900">New Artwork</p><p className="text-sm text-gray-500">Create a listing</p></div>
+            <div><p className="font-medium text-gray-900">{t("artistDashboard.quickNewArtwork")}</p><p className="text-sm text-gray-500">{t("artistDashboard.quickNewArtworkDesc")}</p></div>
           </Link>
           <Link href="/dashboard/artist/artworks/create?ai=true" className="group flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-md transition-all">
             <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors"><Sparkles className="w-6 h-6 text-purple-600" /></div>
-            <div><p className="font-medium text-gray-900">AI Pricing</p><p className="text-sm text-gray-500">Get price suggestions</p></div>
+            <div><p className="font-medium text-gray-900">{t("artistDashboard.quickAiPricing")}</p><p className="text-sm text-gray-500">{t("artistDashboard.quickAiPricingDesc")}</p></div>
           </Link>
           <Link href="/dashboard/artist/analytics" className="group flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all">
             <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors"><BarChart3 className="w-6 h-6 text-blue-600" /></div>
-            <div><p className="font-medium text-gray-900">Analytics</p><p className="text-sm text-gray-500">View performance</p></div>
+            <div><p className="font-medium text-gray-900">{t("artistDashboard.quickAnalytics")}</p><p className="text-sm text-gray-500">{t("artistDashboard.quickAnalyticsDesc")}</p></div>
           </Link>
           <Link href="/dashboard/artist/profile" className="group flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-amber-200 hover:shadow-md transition-all">
             <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center group-hover:bg-amber-100 transition-colors"><TrendingUp className="w-6 h-6 text-amber-600" /></div>
-            <div><p className="font-medium text-gray-900">Profile</p><p className="text-sm text-gray-500">Complete your profile</p></div>
+            <div><p className="font-medium text-gray-900">{t("artistDashboard.quickProfile")}</p><p className="text-sm text-gray-500">{t("artistDashboard.quickProfileDesc")}</p></div>
           </Link>
         </div>
       </div>

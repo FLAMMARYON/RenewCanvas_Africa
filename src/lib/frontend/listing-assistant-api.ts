@@ -21,6 +21,10 @@ export type ListingAssistantResponse = {
     currency: "RWF";
     reasoning: string;
   };
+  dimensionSuggestions: {
+    twoD: string;
+    threeD: string;
+  };
   titleSuggestion?: string;
   marketingTips: string[];
   version: string;

@@ -18,9 +18,11 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
 
 export default function ArtworkDetailPage() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const [artwork, setArtwork] = useState<FrontendArtwork | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -32,8 +34,8 @@ export default function ArtworkDetailPage() {
         setArtwork(loaded);
         recordArtworkView(loaded.id);
       })
-      .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load artwork."));
-  }, [params.id]);
+      .catch((error) => setStatusMessage(error instanceof Error ? error.message : t("artwork.couldNotLoad")));
+  }, [params.id, t]);
 
   if (statusMessage) {
     return (
@@ -42,7 +44,7 @@ export default function ArtworkDetailPage() {
         <main className="px-4 py-24">
           <div className="mx-auto max-w-2xl rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">
             {statusMessage}
-            <Link href="/marketplace" className="mt-4 block font-medium text-teal-700">Back to marketplace</Link>
+            <Link href="/marketplace" className="mt-4 block font-medium text-teal-700">{t("artwork.backToMarketplace")}</Link>
           </div>
         </main>
       </div>
@@ -56,7 +58,7 @@ export default function ArtworkDetailPage() {
         <main className="flex min-h-screen items-center justify-center">
           <div className="flex items-center gap-3 text-sm text-gray-600">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
-            Loading artwork...
+            {t("artwork.loading")}
           </div>
         </main>
       </div>
@@ -74,7 +76,7 @@ export default function ArtworkDetailPage() {
       <main>
         <div className="bg-gray-50">
           <div className="mx-auto max-w-7xl px-4 py-4 text-sm sm:px-6 lg:px-8">
-            <Link href="/marketplace" className="text-gray-500 hover:text-teal-700">Marketplace</Link>
+            <Link href="/marketplace" className="text-gray-500 hover:text-teal-700">{t("artwork.marketplaceCrumb")}</Link>
             <span className="px-2 text-gray-300">/</span>
             <span className="font-medium text-gray-900">{artwork.title}</span>
           </div>
@@ -130,20 +132,20 @@ export default function ArtworkDetailPage() {
               <div className="mb-4 flex flex-wrap gap-2">
                 <span className="rounded-full bg-teal-100 px-3 py-1 text-sm font-medium text-teal-700">{artwork.category}</span>
                 <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700">
-                  {artwork.ownerType === "renewcanvas" ? "RenewCanvas-owned" : "Artist artwork"}
+                  {artwork.ownerType === "renewcanvas" ? t("artwork.ownerRenew") : t("artwork.ownerArtist")}
                 </span>
               </div>
               <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">{artwork.title}</h1>
-              <p className="mt-2 text-gray-600">By <span className="font-medium text-teal-700">{artwork.artist?.name ?? "RenewCanvas Africa"}</span></p>
+              <p className="mt-2 text-gray-600">{t("artwork.by")} <span className="font-medium text-teal-700">{artwork.artist?.name ?? "RenewCanvas Africa"}</span></p>
               <p className="mt-6 text-3xl font-bold text-gray-900">{artwork.priceAmount.toLocaleString()} RWF</p>
 
               <div className="mt-8">
-                <h2 className="font-semibold text-gray-900">Description</h2>
+                <h2 className="font-semibold text-gray-900">{t("artwork.description")}</h2>
                 <p className="mt-2 text-gray-600">{artwork.description}</p>
               </div>
 
               <div className="mt-6">
-                <h2 className="font-semibold text-gray-900">Materials Used</h2>
+                <h2 className="font-semibold text-gray-900">{t("artwork.materialsUsed")}</h2>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {artwork.materials.map((material) => (
                     <span key={material.id} className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
@@ -155,7 +157,7 @@ export default function ArtworkDetailPage() {
 
               {artwork.dimensions && (
                 <div className="mt-6">
-                  <h2 className="font-semibold text-gray-900">Dimensions</h2>
+                  <h2 className="font-semibold text-gray-900">{t("artwork.dimensions")}</h2>
                   <p className="mt-2 text-gray-600">{artwork.dimensions}</p>
                 </div>
               )}
@@ -163,22 +165,22 @@ export default function ArtworkDetailPage() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link href={`/checkout?artworkId=${encodeURIComponent(artwork.id)}`} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-teal-700 px-6 py-4 font-medium text-white hover:bg-teal-800">
                   <ShoppingCart className="h-5 w-5" />
-                  Buy Now
+                  {t("artwork.buyNow")}
                 </Link>
                 <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 px-6 py-4 text-gray-700">
                   <Heart className="h-5 w-5" />
-                  Save
+                  {t("artwork.save")}
                 </button>
                 <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 px-6 py-4 text-gray-700">
                   <Share2 className="h-5 w-5" />
-                  Share
+                  {t("artwork.share")}
                 </button>
               </div>
 
               <div className="mt-6 grid grid-cols-3 gap-4 rounded-xl bg-white p-4">
-                <TrustBadge icon={Truck} label="Secure Shipping" />
-                <TrustBadge icon={Shield} label="Verified Impact" />
-                <TrustBadge icon={Leaf} label={`${artwork.viewCount.toLocaleString()} views`} />
+                <TrustBadge icon={Truck} label={t("artwork.secureShipping")} />
+                <TrustBadge icon={Shield} label={t("artwork.verifiedImpact")} />
+                <TrustBadge icon={Leaf} label={t("artwork.viewsLabel", { count: artwork.viewCount })} />
               </div>
             </div>
           </div>
@@ -199,8 +201,8 @@ export default function ArtworkDetailPage() {
                   </div>
                   <p className="mt-3 text-gray-600">
                     {artwork.ownerType === "renewcanvas"
-                      ? "This is platform-owned inventory. Revenue belongs to RenewCanvas after payment and delivery costs."
-                      : "Artist-owned artwork. RenewCanvas mediates payment, delivery, and post-delivery payout release."}
+                      ? t("artwork.renewOwnedDesc")
+                      : t("artwork.artistOwnedDesc")}
                   </p>
                 </div>
               </div>

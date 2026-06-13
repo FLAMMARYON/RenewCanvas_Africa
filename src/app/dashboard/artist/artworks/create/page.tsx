@@ -17,8 +17,7 @@ import {
   AlertCircle,
   Lightbulb,
   Tag,
-  TrendingUp,
-  RefreshCw,
+  Ruler,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -54,6 +53,15 @@ const complexityLevels = [
   { id: "very_complex", label: "Very Complex", hours: "30+ hours" },
 ];
 
+// Per-complexity hour ceilings. Hours above the cap are rejected (e.g. Simple
+// caps at 5, so 6+ hours is invalid for a "Simple" piece).
+const complexityHourCaps: Record<string, number> = {
+  simple: 5,
+  moderate: 15,
+  complex: 30,
+  very_complex: 500,
+};
+
 export default function CreateArtworkPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -76,6 +84,7 @@ export default function CreateArtworkPage() {
   } | null>(null);
   const [aiListingSuggestions, setAiListingSuggestions] = useState<ListingAssistantResponse | null>(null);
   const [formError, setFormError] = useState("");
+  const [toast, setToast] = useState<string | null>(null);
   const [userName, setUserName] = useState("Artist");
   const [formData, setFormData] = useState({
     title: "",
@@ -90,6 +99,15 @@ export default function CreateArtworkPage() {
     hoursWorked: "",
     notes: "",
   });
+
+  // Toast lives ~4s, then clears itself.
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(id);
+  }, [toast]);
+
+  const showToast = (message: string) => setToast(message);
 
   // Load user profile on mount
   useEffect(() => {
@@ -116,6 +134,71 @@ export default function CreateArtworkPage() {
         ? prev.filter((m) => m !== material)
         : [...prev, material]
     );
+  };
+
+  // ---- Per-step validation (returns the list of unfilled fields) ----
+  const hasUploadedImage = images.some((img) => img.uploaded);
+
+  const hoursCap = formData.complexity ? complexityHourCaps[formData.complexity] : undefined;
+  const hoursError =
+    formData.hoursWorked && hoursCap && Number(formData.hoursWorked) > hoursCap
+      ? `${complexityLevels.find((c) => c.id === formData.complexity)?.label ?? "This"} artworks are capped at ${hoursCap} hours. Lower the hours or pick a higher complexity.`
+      : "";
+
+  const missingStep1 = () => {
+    const missing: string[] = [];
+    if (!hasUploadedImage) missing.push("at least one uploaded image");
+    if (!formData.title.trim()) missing.push("title");
+    if (!formData.description.trim()) missing.push("description");
+    if (!formData.category) missing.push("category");
+    if (!formData.dimensions.trim()) missing.push("dimensions");
+    return missing;
+  };
+
+  const missingStep2 = () => {
+    const missing: string[] = [];
+    if (selectedMaterials.length === 0) missing.push("at least one material");
+    if (!formData.materialWeight || Number(formData.materialWeight) <= 0) missing.push("material weight");
+    if (!formData.materialSource) missing.push("material source");
+    return missing;
+  };
+
+  const missingStep3 = () => {
+    const missing: string[] = [];
+    if (!formData.experienceLevel) missing.push("experience level");
+    if (!formData.complexity) missing.push("complexity");
+    if (!formData.price || Number(formData.price) <= 0) missing.push("price");
+    return missing;
+  };
+
+  // AI listing agent needs image + title + dimensions + description + category together.
+  const listingMissing = () => {
+    const missing: string[] = [];
+    if (!hasUploadedImage) missing.push("an image");
+    if (!formData.title.trim()) missing.push("title");
+    if (!formData.dimensions.trim()) missing.push("dimensions");
+    if (!formData.description.trim()) missing.push("description");
+    if (!formData.category) missing.push("category");
+    return missing;
+  };
+  const listingReady = listingMissing().length === 0;
+
+  const goToStep2 = () => {
+    const missing = missingStep1();
+    if (missing.length > 0) {
+      showToast(`Complete every field to continue: ${missing.join(", ")}.`);
+      return;
+    }
+    setStep(2);
+  };
+
+  const goToStep3 = () => {
+    const missing = missingStep2();
+    if (missing.length > 0) {
+      showToast(`Complete every field to continue: ${missing.join(", ")}.`);
+      return;
+    }
+    setStep(3);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,6 +262,18 @@ export default function CreateArtworkPage() {
   };
 
   const getAiPriceSuggestion = async () => {
+    const missing = missingStep3();
+    // The price itself isn't required to ask for a suggestion, but the factors are.
+    const factorsMissing = missing.filter((m) => m !== "price");
+    if (factorsMissing.length > 0 || selectedMaterials.length === 0 || !formData.materialWeight) {
+      showToast("Add materials, weight, complexity, and experience before requesting a price.");
+      return;
+    }
+    if (hoursError) {
+      showToast(hoursError);
+      return;
+    }
+
     setIsLoadingPrice(true);
     setFormError("");
 
@@ -205,23 +300,22 @@ export default function CreateArtworkPage() {
       const body = await response.json();
 
       if (!response.ok) {
-        setFormError("Complete category, materials, weight, complexity, and experience before requesting a price.");
+        showToast("Complete category, materials, weight, complexity, and experience before requesting a price.");
         return;
       }
 
+      // NOTE: We intentionally do NOT set formData.price here. The price field
+      // stays empty until the artist clicks "Use Suggested Price".
       setAiPriceSuggestion(body);
-      setFormData((current) => ({
-        ...current,
-        price: String(body.suggested),
-      }));
     } finally {
       setIsLoadingPrice(false);
     }
   };
 
   const getAiListingSuggestions = async () => {
-    if (!formData.title && !formData.description && selectedMaterials.length === 0) {
-      setFormError("Enter at least a title, description, or select materials to get AI suggestions.");
+    const missing = listingMissing();
+    if (missing.length > 0) {
+      showToast(`The AI listing assistant needs: ${missing.join(", ")}.`);
       return;
     }
 
@@ -230,8 +324,8 @@ export default function CreateArtworkPage() {
 
     try {
       const result = await getListingSuggestions({
-        title: formData.title || "Untitled Artwork",
-        description: formData.description || "",
+        title: formData.title,
+        description: formData.description,
         materials: selectedMaterials.length > 0 ? selectedMaterials : ["Recycled materials"],
         price: Number(formData.price) || 25000,
         category: formData.category || undefined,
@@ -240,7 +334,7 @@ export default function CreateArtworkPage() {
 
       setAiListingSuggestions(result);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Could not get AI suggestions. Please try again.");
+      showToast(error instanceof Error ? error.message : "Could not get AI suggestions. Please try again.");
     } finally {
       setIsLoadingAiSuggestions(false);
     }
@@ -264,19 +358,30 @@ export default function CreateArtworkPage() {
     }
   };
 
+  const applyDimensionSuggestion = (value: string) => {
+    setFormData((current) => ({ ...current, dimensions: value }));
+    showToast("Dimensions updated.");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
 
-    if (!formData.title || !formData.category || selectedMaterials.length === 0 || !formData.price) {
-      setFormError("Complete the required artwork details before submitting.");
+    // Final submit must require every field across all three steps.
+    const missing = [...missingStep1(), ...missingStep2(), ...missingStep3()];
+    if (missing.length > 0) {
+      showToast(`Complete every field before submitting: ${Array.from(new Set(missing)).join(", ")}.`);
+      return;
+    }
+    if (hoursError) {
+      showToast(hoursError);
       return;
     }
 
     // Check all images are uploaded
     const pendingUploads = images.filter((img) => img.uploading);
     if (pendingUploads.length > 0) {
-      setFormError("Please wait for all images to finish uploading.");
+      showToast("Please wait for all images to finish uploading.");
       return;
     }
 
@@ -288,7 +393,7 @@ export default function CreateArtworkPage() {
       }));
 
     if (uploadedImages.length === 0) {
-      setFormError("Please upload at least one image of your artwork.");
+      showToast("Please upload at least one image of your artwork.");
       return;
     }
 
@@ -313,12 +418,32 @@ export default function CreateArtworkPage() {
       });
       router.push("/dashboard/artist/artworks");
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Could not submit artwork.");
+      const message = error instanceof Error ? error.message : "Could not submit artwork.";
+      setFormError(message);
+      showToast(message);
     }
   };
 
   return (
     <DashboardLayout role="artist" userName={userName}>
+      {/* Validation / status toast */}
+      {toast && (
+        <div className="fixed right-4 top-4 z-50 max-w-sm">
+          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-white px-4 py-3 shadow-lg">
+            <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
+            <p className="text-sm text-gray-800">{toast}</p>
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              className="ml-2 text-gray-400 hover:text-gray-600"
+              aria-label="Dismiss notification"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -389,157 +514,10 @@ export default function CreateArtworkPage() {
           {/* Step 1: Basic Information */}
           {step === 1 && (
             <div className="space-y-6">
-              {/* AI Listing Assistant Card */}
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-100 p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Lightbulb className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h2 className="font-semibold text-gray-900">
-                      AI Listing Assistant
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      Get AI-powered suggestions to improve your listing
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={getAiListingSuggestions}
-                  disabled={isLoadingAiSuggestions}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
-                >
-                  {isLoadingAiSuggestions ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Getting AI Suggestions...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5" />
-                      Get AI Suggestions
-                    </>
-                  )}
-                </button>
-
-                {/* AI Suggestions Results */}
-                {aiListingSuggestions && (
-                  <div className="mt-6 space-y-4">
-                    {/* Title Suggestion */}
-                    {aiListingSuggestions.titleSuggestion && (
-                      <div className="p-4 bg-white rounded-lg border border-blue-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                            <Lightbulb className="w-4 h-4 text-blue-600" />
-                            Suggested Title
-                          </span>
-                          <button
-                            type="button"
-                            onClick={applyTitleSuggestion}
-                            className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
-                          >
-                            Use This
-                          </button>
-                        </div>
-                        <p className="text-gray-900 font-medium">{aiListingSuggestions.titleSuggestion}</p>
-                      </div>
-                    )}
-
-                    {/* Improved Description */}
-                    <div className="p-4 bg-white rounded-lg border border-blue-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-blue-600" />
-                          Improved Description
-                        </span>
-                        <button
-                          type="button"
-                          onClick={applyImprovedDescription}
-                          className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
-                        >
-                          Use This
-                        </button>
-                      </div>
-                      <p className="text-gray-700 text-sm whitespace-pre-wrap">
-                        {aiListingSuggestions.improvedDescription.slice(0, 500)}
-                        {aiListingSuggestions.improvedDescription.length > 500 && "..."}
-                      </p>
-                    </div>
-
-                    {/* Suggested Tags */}
-                    <div className="p-4 bg-white rounded-lg border border-blue-200">
-                      <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
-                        <Tag className="w-4 h-4 text-blue-600" />
-                        Suggested Tags
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {aiListingSuggestions.suggestedTags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Price Range Suggestion */}
-                    <div className="p-4 bg-white rounded-lg border border-blue-200">
-                      <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
-                        <TrendingUp className="w-4 h-4 text-blue-600" />
-                        AI Price Suggestion
-                      </span>
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1 text-center p-2 bg-gray-50 rounded-lg">
-                          <p className="text-xs text-gray-500">Min</p>
-                          <p className="font-semibold text-gray-700">
-                            {aiListingSuggestions.priceRange.min.toLocaleString()} RWF
-                          </p>
-                        </div>
-                        <div className="flex-1 text-center p-2 bg-blue-50 rounded-lg border border-blue-200">
-                          <p className="text-xs text-blue-600">Suggested Range</p>
-                          <p className="font-bold text-blue-700">
-                            {aiListingSuggestions.priceRange.min.toLocaleString()} - {aiListingSuggestions.priceRange.max.toLocaleString()} RWF
-                          </p>
-                        </div>
-                        <div className="flex-1 text-center p-2 bg-gray-50 rounded-lg">
-                          <p className="text-xs text-gray-500">Max</p>
-                          <p className="font-semibold text-gray-700">
-                            {aiListingSuggestions.priceRange.max.toLocaleString()} RWF
-                          </p>
-                        </div>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">{aiListingSuggestions.priceRange.reasoning}</p>
-                    </div>
-
-                    {/* Marketing Tips */}
-                    {aiListingSuggestions.marketingTips.length > 0 && (
-                      <div className="p-4 bg-white rounded-lg border border-blue-200">
-                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
-                          <Lightbulb className="w-4 h-4 text-blue-600" />
-                          Marketing Tips
-                        </span>
-                        <ul className="space-y-2">
-                          {aiListingSuggestions.marketingTips.map((tip, index) => (
-                            <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
-                              <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                              {tip}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
               {/* Image Upload */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="font-semibold text-gray-900 mb-4">
-                  Artwork Images
+                  Artwork Images *
                 </h2>
                 <p className="text-sm text-gray-500 mb-4">
                   Upload up to 5 high-quality photos of your artwork. The first
@@ -678,7 +656,7 @@ export default function CreateArtworkPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Dimensions
+                        Dimensions *
                       </label>
                       <input
                         type="text"
@@ -687,16 +665,176 @@ export default function CreateArtworkPage() {
                         onChange={handleChange}
                         placeholder="e.g., 60cm x 80cm"
                         className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                        required
                       />
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* AI Listing Assistant Card — placed BELOW the form (item 6) */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-100 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Lightbulb className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-gray-900">
+                      AI Listing Assistant
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      Add an image, title, dimensions, description, and category, then get suggestions to improve your listing.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={getAiListingSuggestions}
+                  disabled={isLoadingAiSuggestions || !listingReady}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoadingAiSuggestions ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Getting AI Suggestions...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      Get AI Suggestions
+                    </>
+                  )}
+                </button>
+                {!listingReady && (
+                  <p className="mt-2 text-xs text-blue-700">
+                    Still needed: {listingMissing().join(", ")}.
+                  </p>
+                )}
+
+                {/* AI Suggestions Results */}
+                {aiListingSuggestions && (
+                  <div className="mt-6 space-y-4">
+                    {/* Title Suggestion */}
+                    {aiListingSuggestions.titleSuggestion && (
+                      <div className="p-4 bg-white rounded-lg border border-blue-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                            <Lightbulb className="w-4 h-4 text-blue-600" />
+                            Suggested Title
+                          </span>
+                          <button
+                            type="button"
+                            onClick={applyTitleSuggestion}
+                            className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                          >
+                            Use This
+                          </button>
+                        </div>
+                        <p className="text-gray-900 font-medium">{aiListingSuggestions.titleSuggestion}</p>
+                      </div>
+                    )}
+
+                    {/* Improved Description */}
+                    <div className="p-4 bg-white rounded-lg border border-blue-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-blue-600" />
+                          Improved Description
+                        </span>
+                        <button
+                          type="button"
+                          onClick={applyImprovedDescription}
+                          className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                        >
+                          Use This
+                        </button>
+                      </div>
+                      <p className="text-gray-700 text-sm whitespace-pre-wrap">
+                        {aiListingSuggestions.improvedDescription.slice(0, 500)}
+                        {aiListingSuggestions.improvedDescription.length > 500 && "..."}
+                      </p>
+                    </div>
+
+                    {/* Dimension Suggestions — 2D + 3D options (item 7) */}
+                    <div className="p-4 bg-white rounded-lg border border-blue-200">
+                      <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-3">
+                        <Ruler className="w-4 h-4 text-blue-600" />
+                        Suggested Dimensions
+                      </span>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        <div className="rounded-lg border border-gray-200 p-3">
+                          <p className="text-xs font-medium text-gray-500">2D / Wall-mounted</p>
+                          <p className="mt-1 font-medium text-gray-900">{aiListingSuggestions.dimensionSuggestions.twoD}</p>
+                          <button
+                            type="button"
+                            onClick={() => applyDimensionSuggestion(aiListingSuggestions.dimensionSuggestions.twoD)}
+                            className="mt-2 w-full rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200"
+                          >
+                            Use 2D
+                          </button>
+                        </div>
+                        <div className="rounded-lg border border-gray-200 p-3">
+                          <p className="text-xs font-medium text-gray-500">3D / Free-standing</p>
+                          <p className="mt-1 font-medium text-gray-900">{aiListingSuggestions.dimensionSuggestions.threeD}</p>
+                          <button
+                            type="button"
+                            onClick={() => applyDimensionSuggestion(aiListingSuggestions.dimensionSuggestions.threeD)}
+                            className="mt-2 w-full rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200"
+                          >
+                            Use 3D
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Suggested Tags */}
+                    <div className="p-4 bg-white rounded-lg border border-blue-200">
+                      <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
+                        <Tag className="w-4 h-4 text-blue-600" />
+                        Suggested Tags
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {aiListingSuggestions.suggestedTags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Marketing Tips */}
+                    {aiListingSuggestions.marketingTips.length > 0 && (
+                      <div className="p-4 bg-white rounded-lg border border-blue-200">
+                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
+                          <Lightbulb className="w-4 h-4 text-blue-600" />
+                          Marketing Tips
+                        </span>
+                        <ul className="space-y-2">
+                          {aiListingSuggestions.marketingTips.map((tip, index) => (
+                            <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                              <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                              {tip}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-500">
+                      Pricing suggestions are available on the Pricing step.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setStep(2)}
+                  onClick={goToStep2}
                   className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
                 >
                   Continue to Materials
@@ -710,7 +848,7 @@ export default function CreateArtworkPage() {
             <div className="space-y-6">
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="font-semibold text-gray-900 mb-2">
-                  Recycled Materials Used
+                  Recycled Materials Used *
                 </h2>
                 <p className="text-sm text-gray-500 mb-4">
                   Select all materials used in this artwork. This helps track
@@ -825,7 +963,7 @@ export default function CreateArtworkPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setStep(3)}
+                  onClick={goToStep3}
                   className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
                 >
                   Continue to Pricing
@@ -857,7 +995,7 @@ export default function CreateArtworkPage() {
                 <div className="grid sm:grid-cols-2 gap-4 mb-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Your Experience Level
+                      Your Experience Level *
                     </label>
                     <div className="space-y-2">
                       {experienceLevels.map((level) => (
@@ -889,7 +1027,7 @@ export default function CreateArtworkPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Artwork Complexity
+                      Artwork Complexity *
                     </label>
                     <div className="space-y-2">
                       {complexityLevels.map((level) => (
@@ -935,12 +1073,25 @@ export default function CreateArtworkPage() {
                       placeholder="e.g., 12"
                       min="0"
                       max="500"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg outline-none focus:ring-2 ${
+                        hoursError
+                          ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                          : "border-gray-200 focus:ring-purple-500 focus:border-purple-500"
+                      }`}
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Helps calculate fair labor compensation
-                  </p>
+                  {hoursError ? (
+                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {hoursError}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formData.complexity
+                        ? `Capped at ${hoursCap} hours for ${complexityLevels.find((c) => c.id === formData.complexity)?.label} complexity.`
+                        : "Helps calculate fair labor compensation"}
+                    </p>
+                  )}
                 </div>
 
                 <button
@@ -997,10 +1148,10 @@ export default function CreateArtworkPage() {
                     <button
                       type="button"
                       onClick={() =>
-                        setFormData({
-                          ...formData,
+                        setFormData((current) => ({
+                          ...current,
                           price: aiPriceSuggestion.suggested.toString(),
-                        })
+                        }))
                       }
                       className="mt-3 w-full px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium"
                     >
@@ -1048,9 +1199,8 @@ export default function CreateArtworkPage() {
                     <div className="text-sm text-blue-700">
                       <p className="font-medium">Artist Earnings</p>
                       <p>
-                        You will receive 75-80% of the sale price. The remaining
-                        percentage covers platform fees, payment processing, and
-                        operations.
+                        You will receive 80% of the sale price. The remaining
+                        covers platform fees, payment processing, and operations.
                       </p>
                     </div>
                   </div>

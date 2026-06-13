@@ -162,7 +162,7 @@ export default function Navbar() {
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50">
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="font-medium text-gray-900 truncate">
-                        {session.name || "User"}
+                        {session.name || t("nav.user")}
                       </p>
                       <p className="text-sm text-gray-500 truncate">{session.email}</p>
                       <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700 rounded capitalize">
@@ -174,21 +174,21 @@ export default function Navbar() {
                       className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
                     >
                       <LayoutDashboard className="w-4 h-4" />
-                      Dashboard
+                      {t("nav.dashboard")}
                     </a>
                     <a
                       href={`${getDashboardUrl()}/profile`}
                       className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
                     >
                       <User className="w-4 h-4" />
-                      Profile
+                      {t("nav.profile")}
                     </a>
                     <a
                       href={`${getDashboardUrl()}/settings`}
                       className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
                     >
                       <Settings className="w-4 h-4" />
-                      Settings
+                      {t("nav.settings")}
                     </a>
                     <div className="border-t border-gray-100 mt-1 pt-1">
                       <button
@@ -196,7 +196,7 @@ export default function Navbar() {
                         className="flex items-center gap-3 w-full px-4 py-2 text-red-600 hover:bg-red-50 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
-                        Sign Out
+                        {t("nav.signOut")}
                       </button>
                     </div>
                   </div>
@@ -265,7 +265,7 @@ export default function Navbar() {
                     {getInitials(session.name, session.email)}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{session.name || "User"}</p>
+                    <p className="font-medium text-gray-900">{session.name || t("nav.user")}</p>
                     <p className="text-sm text-gray-500">{session.email}</p>
                   </div>
                 </div>
@@ -274,21 +274,21 @@ export default function Navbar() {
                   className="flex items-center gap-3 py-2 text-gray-700"
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  Dashboard
+                  {t("nav.dashboard")}
                 </a>
                 <a
                   href={`${getDashboardUrl()}/profile`}
                   className="flex items-center gap-3 py-2 text-gray-700"
                 >
                   <User className="w-4 h-4" />
-                  Profile
+                  {t("nav.profile")}
                 </a>
                 <button
                   onClick={handleSignOut}
                   className="flex items-center gap-3 w-full py-2 text-red-600"
                 >
                   <LogOut className="w-4 h-4" />
-                  Sign Out
+                  {t("nav.signOut")}
                 </button>
               </div>
             ) : (

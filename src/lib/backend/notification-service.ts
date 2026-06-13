@@ -5,6 +5,11 @@
 
 import { queueNotification, dispatchQueuedNotifications, type NotificationDatabase } from "./notifications";
 import {
+  isNotificationEnabled,
+  sendPushNotification,
+  type NotificationPrefsDatabase,
+} from "./notification-prefs";
+import {
   orderConfirmationEmail,
   newOrderAlertEmail,
   artworkDecisionEmail,
@@ -55,6 +60,19 @@ export async function sendNewOrderAlertEmail(
   artistId: string,
   input: NewOrderAlertInput
 ) {
+  const prefsDb = db as unknown as NotificationPrefsDatabase;
+
+  // Push alert (gated by `pushNewOrders`; stubbed until a push provider exists).
+  await sendPushNotification(prefsDb, artistId, "pushNewOrders", {
+    title: "New order received",
+    body: `You have a new order for ${input.artworkTitle}.`,
+  }).catch(() => {});
+
+  // Email alert (gated by `emailNewOrders`).
+  if (!(await isNotificationEnabled(prefsDb, artistId, "emailNewOrders"))) {
+    return { status: "skipped" as const, templateKey: "new_order_alert" };
+  }
+
   const config = requireBackendConfig();
   const emailInput = { ...input, siteUrl: config.siteUrl };
   const template = newOrderAlertEmail(emailInput);
@@ -84,6 +102,11 @@ export async function sendArtworkDecisionEmail(
   artistId: string,
   input: ArtworkDecisionInput
 ) {
+  // Email alert (gated by `emailArtworkStatus` — approved / changes requested).
+  if (!(await isNotificationEnabled(db as unknown as NotificationPrefsDatabase, artistId, "emailArtworkStatus"))) {
+    return { status: "skipped" as const, templateKey: `artwork_${input.decision}` };
+  }
+
   const config = requireBackendConfig();
   const emailInput = { ...input, siteUrl: config.siteUrl };
   const template = artworkDecisionEmail(emailInput);

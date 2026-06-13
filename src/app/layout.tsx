@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import GoogleTranslate from "@/components/GoogleTranslate";
 import { I18nProvider } from "@/components/I18nProvider";
 
 export const metadata: Metadata = {
@@ -56,7 +55,6 @@ export default function RootLayout({
       <body className="antialiased">
         <I18nProvider>
           {children}
-          <GoogleTranslate />
         </I18nProvider>
       </body>
     </html>

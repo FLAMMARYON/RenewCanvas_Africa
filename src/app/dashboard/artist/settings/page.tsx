@@ -16,20 +16,26 @@ import {
   Wallet,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { applyLocale, SUPPORTED_LOCALES, LOCALE_LABELS, isSupportedLocale, type AppLocale } from "@/i18n/config";
 
 type TabType = "notifications" | "payouts" | "account";
 
+// Keys mirror the server (lib/backend/notification-prefs). Each toggle persists
+// immediately to /api/notifications/preferences.
 interface NotificationSettings {
-  emailOrderReceived: boolean;
-  emailCommissionRequest: boolean;
-  emailArtworkApproved: boolean;
-  emailPayoutProcessed: boolean;
+  emailNewOrders: boolean;
+  emailCommissionRequests: boolean;
+  emailArtworkStatus: boolean;
+  emailPayoutUpdates: boolean;
+  emailAuctionBids: boolean;
   emailNewsletter: boolean;
-  emailAuctions: boolean;
-  pushOrderReceived: boolean;
-  pushCommissionRequest: boolean;
+  pushNewOrders: boolean;
+  pushCommissionRequests: boolean;
   pushPayoutProcessed: boolean;
 }
+
+type NotificationKey = keyof NotificationSettings;
 
 interface PayoutSettings {
   payoutMethod: "bank" | "mobile_money";
@@ -38,8 +44,6 @@ interface PayoutSettings {
   accountName: string;
   mobileProvider: string;
   mobileNumber: string;
-  payoutSchedule: "weekly" | "biweekly" | "monthly" | "on_demand";
-  minimumPayout: number;
 }
 
 export default function ArtistSettingsPage() {
@@ -49,16 +53,33 @@ export default function ArtistSettingsPage() {
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const [notifications, setNotifications] = useState<NotificationSettings>({
-    emailOrderReceived: true,
-    emailCommissionRequest: true,
-    emailArtworkApproved: true,
-    emailPayoutProcessed: true,
+    emailNewOrders: true,
+    emailCommissionRequests: true,
+    emailArtworkStatus: true,
+    emailPayoutUpdates: true,
+    emailAuctionBids: true,
     emailNewsletter: true,
-    emailAuctions: true,
-    pushOrderReceived: true,
-    pushCommissionRequest: true,
+    pushNewOrders: true,
+    pushCommissionRequests: true,
     pushPayoutProcessed: true,
   });
+
+  // Persist a single toggle immediately (optimistic, then PATCH). Reverts on failure.
+  const saveNotificationPref = async (key: NotificationKey, value: boolean) => {
+    setNotifications((prev) => ({ ...prev, [key]: value }));
+    try {
+      const res = await fetch("/api/notifications/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ [key]: value }),
+      });
+      if (!res.ok) throw new Error("save_failed");
+    } catch {
+      setNotifications((prev) => ({ ...prev, [key]: !value }));
+      setStatusMessage({ type: "error", message: "Could not save that preference. Please try again." });
+    }
+  };
 
   const [payouts, setPayouts] = useState<PayoutSettings>({
     payoutMethod: "mobile_money",
@@ -67,8 +88,6 @@ export default function ArtistSettingsPage() {
     accountName: "",
     mobileProvider: "mtn",
     mobileNumber: "",
-    payoutSchedule: "biweekly",
-    minimumPayout: 50000,
   });
 
   useEffect(() => {
@@ -83,9 +102,15 @@ export default function ArtistSettingsPage() {
       })
       .catch(() => {});
 
-    // Load locally-cached notification settings.
-    const savedNotifications = localStorage.getItem("artist_notifications");
-    if (savedNotifications) setNotifications(JSON.parse(savedNotifications));
+    // Load notification preferences from the database (source of truth).
+    fetch("/api/notifications/preferences", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.ok && data.preferences) {
+          setNotifications((prev) => ({ ...prev, ...data.preferences }));
+        }
+      })
+      .catch(() => {});
 
     // Load payout details from the profile (source of truth).
     fetch("/api/profile")
@@ -109,21 +134,8 @@ export default function ArtistSettingsPage() {
     setStatusMessage(null);
 
     try {
-      localStorage.setItem("artist_notifications", JSON.stringify(notifications));
-
-      // Persist notification preferences.
-      const notifRes = await fetch("/api/notifications/preferences", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          orderUpdates: notifications.emailOrderReceived,
-          marketing: notifications.emailNewsletter,
-          auctions: notifications.emailAuctions,
-        }),
-      });
-
-      // Persist payout details to the profile.
+      // Notification toggles persist immediately on change; this button saves
+      // payout details to the profile (source of truth).
       const payoutRes = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -136,7 +148,7 @@ export default function ArtistSettingsPage() {
         }),
       });
 
-      if (!notifRes.ok || !payoutRes.ok) {
+      if (!payoutRes.ok) {
         throw new Error("save_failed");
       }
       setStatusMessage({ type: "success", message: "Settings saved successfully!" });
@@ -197,7 +209,7 @@ export default function ArtistSettingsPage() {
         {/* Tab Content */}
         <div className="bg-white rounded-xl border border-gray-100 p-6">
           {activeTab === "notifications" && (
-            <NotificationsTab notifications={notifications} setNotifications={setNotifications} />
+            <NotificationsTab notifications={notifications} onToggle={saveNotificationPref} />
           )}
           {activeTab === "payouts" && <PayoutsTab payouts={payouts} setPayouts={setPayouts} />}
           {activeTab === "account" && <AccountTab />}
@@ -230,10 +242,10 @@ export default function ArtistSettingsPage() {
 
 function NotificationsTab({
   notifications,
-  setNotifications,
+  onToggle,
 }: {
   notifications: NotificationSettings;
-  setNotifications: React.Dispatch<React.SetStateAction<NotificationSettings>>;
+  onToggle: (key: NotificationKey, value: boolean) => void;
 }) {
   const Toggle = ({
     checked,
@@ -276,50 +288,38 @@ function NotificationsTab({
         </div>
         <div className="divide-y divide-gray-100">
           <Toggle
-            checked={notifications.emailOrderReceived}
-            onChange={(checked) =>
-              setNotifications((prev) => ({ ...prev, emailOrderReceived: checked }))
-            }
+            checked={notifications.emailNewOrders}
+            onChange={(checked) => onToggle("emailNewOrders", checked)}
             label="New Orders"
             description="Get notified when someone purchases your artwork"
           />
           <Toggle
-            checked={notifications.emailCommissionRequest}
-            onChange={(checked) =>
-              setNotifications((prev) => ({ ...prev, emailCommissionRequest: checked }))
-            }
+            checked={notifications.emailCommissionRequests}
+            onChange={(checked) => onToggle("emailCommissionRequests", checked)}
             label="Commission Requests"
             description="Receive alerts for new custom artwork requests"
           />
           <Toggle
-            checked={notifications.emailArtworkApproved}
-            onChange={(checked) =>
-              setNotifications((prev) => ({ ...prev, emailArtworkApproved: checked }))
-            }
+            checked={notifications.emailArtworkStatus}
+            onChange={(checked) => onToggle("emailArtworkStatus", checked)}
             label="Artwork Status"
             description="Get notified when your artwork is approved or needs changes"
           />
           <Toggle
-            checked={notifications.emailPayoutProcessed}
-            onChange={(checked) =>
-              setNotifications((prev) => ({ ...prev, emailPayoutProcessed: checked }))
-            }
+            checked={notifications.emailPayoutUpdates}
+            onChange={(checked) => onToggle("emailPayoutUpdates", checked)}
             label="Payout Updates"
             description="Receive notifications when payouts are processed"
           />
           <Toggle
-            checked={notifications.emailAuctions}
-            onChange={(checked) =>
-              setNotifications((prev) => ({ ...prev, emailAuctions: checked }))
-            }
+            checked={notifications.emailAuctionBids}
+            onChange={(checked) => onToggle("emailAuctionBids", checked)}
             label="Auction Updates"
             description="Get notified about bids on your auctioned artworks"
           />
           <Toggle
             checked={notifications.emailNewsletter}
-            onChange={(checked) =>
-              setNotifications((prev) => ({ ...prev, emailNewsletter: checked }))
-            }
+            onChange={(checked) => onToggle("emailNewsletter", checked)}
             label="Newsletter"
             description="Receive platform updates, tips, and community news"
           />
@@ -333,26 +333,20 @@ function NotificationsTab({
         </div>
         <div className="divide-y divide-gray-100">
           <Toggle
-            checked={notifications.pushOrderReceived}
-            onChange={(checked) =>
-              setNotifications((prev) => ({ ...prev, pushOrderReceived: checked }))
-            }
+            checked={notifications.pushNewOrders}
+            onChange={(checked) => onToggle("pushNewOrders", checked)}
             label="New Orders"
             description="Receive real-time alerts for new orders"
           />
           <Toggle
-            checked={notifications.pushCommissionRequest}
-            onChange={(checked) =>
-              setNotifications((prev) => ({ ...prev, pushCommissionRequest: checked }))
-            }
+            checked={notifications.pushCommissionRequests}
+            onChange={(checked) => onToggle("pushCommissionRequests", checked)}
             label="Commission Requests"
             description="Get instant alerts for new commission requests"
           />
           <Toggle
             checked={notifications.pushPayoutProcessed}
-            onChange={(checked) =>
-              setNotifications((prev) => ({ ...prev, pushPayoutProcessed: checked }))
-            }
+            onChange={(checked) => onToggle("pushPayoutProcessed", checked)}
             label="Payout Processed"
             description="Get notified when your payout is sent"
           />
@@ -554,7 +548,9 @@ function AccountTab() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <LanguageSection />
+
+      <div className="pt-6 border-t border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Management</h3>
 
         <div className="space-y-4">
@@ -655,6 +651,52 @@ function AccountTab() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Language preference. Translates the whole site in place (JSON locale files via
+ * react-i18next) and persists the choice to the database through the shared
+ * applyLocale helper. English, French, Kinyarwanda, Swahili only.
+ */
+function LanguageSection() {
+  const { i18n } = useTranslation();
+  const [saved, setSaved] = useState(false);
+  const current: AppLocale = isSupportedLocale(i18n.language) ? i18n.language : "en";
+
+  const onChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const next = e.target.value;
+    if (!isSupportedLocale(next)) return;
+    applyLocale(next);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <Globe className="w-5 h-5 text-gray-600" />
+        <h3 className="text-lg font-semibold text-gray-900">Language</h3>
+      </div>
+      <p className="text-sm text-gray-500 mb-3">
+        Choose your language. The site is translated instantly and your choice is saved to your account.
+      </p>
+      <div className="flex items-center gap-3">
+        <select
+          value={current}
+          onChange={onChange}
+          aria-label="Site language"
+          className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
+        >
+          {SUPPORTED_LOCALES.map((locale) => (
+            <option key={locale} value={locale}>
+              {LOCALE_LABELS[locale]}
+            </option>
+          ))}
+        </select>
+        {saved && <span className="text-sm text-green-600">Saved</span>}
       </div>
     </div>
   );

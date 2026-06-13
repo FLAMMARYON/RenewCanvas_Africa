@@ -21,6 +21,7 @@ import {
   Lock,
   Info,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { readArtwork, type FrontendArtwork } from "@/lib/frontend/artworks-api";
 import { createOrder } from "@/lib/frontend/orders-api";
 import { createPaymentSession } from "@/lib/frontend/payments-api";
@@ -105,6 +106,7 @@ function validateField(
 }
 
 function CheckoutContent() {
+  const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [artwork, setArtwork] = useState<FrontendArtwork | null>(null);
@@ -261,25 +263,24 @@ function CheckoutContent() {
   const paymentMethods = [
     {
       id: "momo" as PaymentMethod,
-      name: "MTN MoMo Phone Approval",
-      description:
-        "Pay RenewCanvas Africa by approving the MoMo prompt on your phone",
+      name: t("checkout.momoName"),
+      description: t("checkout.momoDesc"),
       icon: Smartphone,
       instructions:
         "After submitting your order, RenewCanvas Africa will send a MoMo approval prompt to your phone. Confirm it with your PIN to complete payment. If the prompt is unavailable, support will provide USSD fallback details tied to your order reference.",
     },
     {
       id: "bank" as PaymentMethod,
-      name: "Bank Transfer",
-      description: "Transfer to the RenewCanvas Africa holding account",
+      name: t("checkout.bankName"),
+      description: t("checkout.bankDesc"),
       icon: Building2,
       instructions:
         "RenewCanvas Africa bank details will be provided after order submission. Payment must be completed within 48 hours.",
     },
     {
       id: "card" as PaymentMethod,
-      name: "Card Payment",
-      description: "Pay RenewCanvas Africa with Visa or Mastercard",
+      name: t("checkout.cardName"),
+      description: t("checkout.cardDesc"),
       icon: CreditCard,
       instructions:
         "You will be redirected to a secure RenewCanvas Africa payment page to complete your transaction.",
@@ -308,7 +309,7 @@ function CheckoutContent() {
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="hidden sm:inline">Back to Marketplace</span>
+            <span className="hidden sm:inline">{t("checkout.backToMarketplace")}</span>
           </Link>
           <div className="flex items-center gap-2">
             <img src="/brand/renewcanvas-icon-full-color.png" alt="RenewCanvas Africa logo" className="w-8 h-8" />
@@ -319,7 +320,7 @@ function CheckoutContent() {
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Lock className="w-4 h-4" />
-            <span className="hidden sm:inline">Secure Checkout</span>
+            <span className="hidden sm:inline">{t("checkout.secureCheckout")}</span>
           </div>
         </div>
       </header>
@@ -329,9 +330,9 @@ function CheckoutContent() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-center gap-4">
             {[
-              { num: 1, label: "Details" },
-              { num: 2, label: "Payment" },
-              { num: 3, label: "Confirm" },
+              { num: 1, label: t("checkout.stepDetails") },
+              { num: 2, label: t("checkout.stepPayment") },
+              { num: 3, label: t("checkout.stepConfirm") },
             ].map((s, i) => (
               <div key={s.num} className="flex items-center">
                 <div
@@ -378,13 +379,13 @@ function CheckoutContent() {
               {step === 1 && (
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                    Contact & Delivery Details
+                    {t("checkout.contactDelivery")}
                   </h2>
 
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
-                        Full Name
+                        {t("checkout.fullName")}
                       </label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -398,7 +399,7 @@ function CheckoutContent() {
                           value={formData.fullName}
                           onChange={handleChange}
                           onBlur={() => handleBlur("fullName")}
-                          placeholder="Enter your full name"
+                          placeholder={t("checkout.fullNamePlaceholder")}
                           className={fieldClass("fullName", "w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none")}
                         />
                       </div>
@@ -408,7 +409,7 @@ function CheckoutContent() {
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                          Email Address
+                          {t("checkout.email")}
                         </label>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -422,7 +423,7 @@ function CheckoutContent() {
                           value={formData.email}
                           onChange={handleChange}
                           onBlur={() => handleBlur("email")}
-                          placeholder="you@example.com"
+                          placeholder={t("checkout.emailPlaceholder")}
                           className={fieldClass("email", "w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none")}
                         />
                       </div>
@@ -430,7 +431,7 @@ function CheckoutContent() {
                       </div>
                       <div>
                         <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                          Phone / WhatsApp
+                          {t("checkout.phone")}
                         </label>
                         <div className="relative">
                           <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -444,7 +445,7 @@ function CheckoutContent() {
                           value={formData.phone}
                           onChange={handleChange}
                           onBlur={() => handleBlur("phone")}
-                          placeholder="+250 xxx xxx xxx"
+                          placeholder={t("checkout.phonePlaceholder")}
                           className={fieldClass("phone", "w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none")}
                         />
                       </div>
@@ -454,7 +455,7 @@ function CheckoutContent() {
 
                     <div>
                       <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                        Delivery Address
+                        {t("checkout.deliveryAddress")}
                       </label>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -468,7 +469,7 @@ function CheckoutContent() {
                           value={formData.address}
                           onChange={handleChange}
                           onBlur={() => handleBlur("address")}
-                          placeholder="Street address, building, etc."
+                          placeholder={t("checkout.addressPlaceholder")}
                           className={fieldClass("address", "w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none")}
                         />
                       </div>
@@ -477,7 +478,7 @@ function CheckoutContent() {
 
                     <div>
                       <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
-                        City
+                        {t("checkout.city")}
                       </label>
                       <input
                         type="text"
@@ -489,7 +490,7 @@ function CheckoutContent() {
                         value={formData.city}
                         onChange={handleChange}
                         onBlur={() => handleBlur("city")}
-                        placeholder="e.g., Kigali"
+                        placeholder={t("checkout.cityPlaceholder")}
                         className={fieldClass("city", "w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none")}
                       />
                       {errorText("city")}
@@ -497,15 +498,15 @@ function CheckoutContent() {
 
                     <div>
                       <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                        Order Notes{" "}
-                        <span className="text-gray-400">(Optional)</span>
+                        {t("checkout.orderNotes")}{" "}
+                        <span className="text-gray-400">{t("checkout.optional")}</span>
                       </label>
                       <textarea
                         id="notes"
                         name="notes"
                         value={formData.notes}
                         onChange={handleChange}
-                        placeholder="Any special instructions for delivery..."
+                        placeholder={t("checkout.notesPlaceholder")}
                         rows={3}
                         className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none resize-none"
                       />
@@ -520,7 +521,7 @@ function CheckoutContent() {
                     disabled={!stepOneValid}
                     className="mt-6 w-full flex items-center justify-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Continue to Payment
+                    {t("checkout.continueToPayment")}
                     <ChevronRight className="w-5 h-5" />
                   </button>
                 </div>
@@ -530,7 +531,7 @@ function CheckoutContent() {
               {step === 2 && (
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                    Select Payment Method
+                    {t("checkout.selectPayment")}
                   </h2>
 
                   <div className="space-y-3">
@@ -596,16 +597,13 @@ function CheckoutContent() {
                       <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-medium text-blue-900">
-                          RenewCanvas managed payment
+                          {t("checkout.managedPayment")}
                         </p>
                         <p className="text-sm text-blue-700 mt-1">
                           {selectedPaymentMethod?.instructions}
                         </p>
                         <p className="text-sm text-blue-700 mt-2">
-                          Buyers pay RenewCanvas Africa directly. We confirm the
-                          order, coordinate delivery, and release the artist
-                          payout only after the 48-hour return request window
-                          closes without an approved return.
+                          {t("checkout.managedPaymentNote")}
                         </p>
                       </div>
                     </div>
@@ -617,7 +615,7 @@ function CheckoutContent() {
                       onClick={() => setStep(1)}
                       className="flex-1 px-6 py-3 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                     >
-                      Back
+                      {t("checkout.back")}
                     </button>
                     <button
                       type="button"
@@ -627,7 +625,7 @@ function CheckoutContent() {
                       disabled={!paymentValid}
                       className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Review Order
+                      {t("checkout.reviewOrder")}
                       <ChevronRight className="w-5 h-5" />
                     </button>
                   </div>
@@ -640,21 +638,21 @@ function CheckoutContent() {
                   {/* Order Review */}
                   <div className="bg-white rounded-xl border border-gray-200 p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                      Review Your Order
+                      {t("checkout.reviewYourOrder")}
                     </h2>
 
                     {/* Delivery Details */}
                     <div className="mb-6 pb-6 border-b border-gray-100">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-medium text-gray-900">
-                          Delivery Details
+                          {t("checkout.deliveryDetailsHeading")}
                         </h3>
                         <button
                           type="button"
                           onClick={() => setStep(1)}
                           className="text-sm text-teal-600 hover:text-teal-700"
                         >
-                          Edit
+                          {t("common.edit")}
                         </button>
                       </div>
                       <div className="text-sm text-gray-600 space-y-1">
@@ -668,7 +666,7 @@ function CheckoutContent() {
                         </p>
                         {formData.notes && (
                           <p className="text-gray-500 italic">
-                            Note: {formData.notes}
+                            {t("checkout.noteLabel")}: {formData.notes}
                           </p>
                         )}
                       </div>
@@ -678,14 +676,14 @@ function CheckoutContent() {
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-medium text-gray-900">
-                          Payment Method
+                          {t("checkout.paymentMethodHeading")}
                         </h3>
                         <button
                           type="button"
                           onClick={() => setStep(2)}
                           className="text-sm text-teal-600 hover:text-teal-700"
                         >
-                          Change
+                          {t("checkout.change")}
                         </button>
                       </div>
                       <div className="flex items-center gap-3">
@@ -710,7 +708,7 @@ function CheckoutContent() {
 
                   {/* Pre-payment disclosure */}
                   <div className="bg-amber-50 rounded-xl border border-amber-200 p-6 space-y-3">
-                    <h3 className="text-sm font-semibold text-amber-800">Before you confirm</h3>
+                    <h3 className="text-sm font-semibold text-amber-800">{t("checkout.beforeConfirm")}</h3>
                     <ul className="text-sm text-amber-900/80 space-y-2 list-disc pl-5">
                       <li>
                         <strong>Recycled-art materials:</strong> each piece is handmade from cleaned,
@@ -781,7 +779,7 @@ function CheckoutContent() {
                       onClick={() => setStep(2)}
                       className="flex-1 px-6 py-3 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                     >
-                      Back
+                      {t("checkout.back")}
                     </button>
                     <button
                       type="submit"
@@ -791,12 +789,12 @@ function CheckoutContent() {
                       {isSubmitting ? (
                         <>
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Processing...
+                          {t("checkout.processing")}
                         </>
                       ) : (
                         <>
                           <Shield className="w-5 h-5" />
-                          Place Order
+                          {t("checkout.placeOrder")}
                         </>
                       )}
                     </button>
@@ -810,7 +808,7 @@ function CheckoutContent() {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-24">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Order Summary
+                {t("checkout.orderSummary")}
               </h2>
 
               {/* Artwork */}
@@ -822,14 +820,14 @@ function CheckoutContent() {
                   <h3 className="font-medium text-gray-900 truncate">
                     {artwork.title}
                   </h3>
-                  <p className="text-sm text-gray-500">by {artwork.artist?.name ?? "RenewCanvas Africa"}</p>
+                  <p className="text-sm text-gray-500">{t("checkout.by")} {artwork.artist?.name ?? "RenewCanvas Africa"}</p>
                   <p className="text-sm text-gray-400">{artwork.dimensions}</p>
                 </div>
               </div>
 
               {/* Materials */}
               <div className="py-4 border-b border-gray-100">
-                <p className="text-sm text-gray-500 mb-2">Materials Used</p>
+                <p className="text-sm text-gray-500 mb-2">{t("checkout.materialsUsed")}</p>
                 <div className="flex flex-wrap gap-1">
                   {artwork.materials.map((material) => (
                     <span
@@ -847,7 +845,7 @@ function CheckoutContent() {
                 <div className="flex items-center gap-2 text-green-600">
                   <Recycle className="w-4 h-4" />
                   <span className="text-sm font-medium">
-                    {artwork.kgDiverted.toFixed(1)} kg waste diverted
+                    {t("checkout.wasteDiverted", { kg: artwork.kgDiverted.toFixed(1) })}
                   </span>
                 </div>
               </div>
@@ -855,27 +853,27 @@ function CheckoutContent() {
               {/* Pricing */}
               <div className="py-4 space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Artwork Price</span>
+                  <span className="text-gray-500">{t("checkout.artworkPrice")}</span>
                   <span className="text-gray-900">
                     {artwork.priceAmount.toLocaleString()} RWF
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Delivery</span>
-                  <span className="text-gray-900">To be calculated</span>
+                  <span className="text-gray-500">{t("checkout.delivery")}</span>
+                  <span className="text-gray-900">{t("checkout.toBeCalculated")}</span>
                 </div>
               </div>
 
               {/* Total */}
               <div className="pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-gray-900">Total</span>
+                  <span className="font-semibold text-gray-900">{t("checkout.total")}</span>
                   <span className="text-xl font-bold text-gray-900">
                     {artwork.priceAmount.toLocaleString()} RWF
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  + delivery (calculated at confirmation)
+                  {t("checkout.plusDelivery")}
                 </p>
               </div>
 
@@ -883,15 +881,15 @@ function CheckoutContent() {
               <div className="mt-6 pt-4 border-t border-gray-100 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Shield className="w-4 h-4 text-green-500" />
-                  <span>RenewCanvas receives and holds buyer payment</span>
+                  <span>{t("checkout.trustHoldsPayment")}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Truck className="w-4 h-4 text-green-500" />
-                  <span>Admin-mediated delivery communication</span>
+                  <span>{t("checkout.trustAdminDelivery")}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Recycle className="w-4 h-4 text-green-500" />
-                  <span>Artist payout after 48-hour return window</span>
+                  <span>{t("checkout.trustPayout")}</span>
                 </div>
               </div>
             </div>

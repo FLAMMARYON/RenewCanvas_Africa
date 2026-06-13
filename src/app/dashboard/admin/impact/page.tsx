@@ -19,10 +19,12 @@ import {
   Droplets,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const materialColors = ["#0EA5E9", "#EC4899", "#8B5CF6", "#6B7280", "#10B981", "#F59E0B", "#EF4444", "#14B8A6", "#6366F1", "#84CC16"];
 
 export default function AdminImpactPage() {
+  const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState("6m");
   const [metrics, setMetrics] = useState<DetailedMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +39,7 @@ export default function AdminImpactPage() {
         if (active) setMetrics(result);
       })
       .catch((loadError) => {
-        if (active) setError(loadError instanceof Error ? loadError.message : "Could not load impact metrics.");
+        if (active) setError(loadError instanceof Error ? loadError.message : t("adminImpact.loadError"));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -54,10 +56,10 @@ export default function AdminImpactPage() {
   const avgKgPerArtwork = metrics && metrics.artworkCount > 0 ? metrics.kgDiverted / metrics.artworkCount : 0;
   const impactGoals = metrics
     ? [
-        { title: "Annual Target", current: metrics.kgDiverted, target: 2500, unit: "kg", icon: Target },
-        { title: "Monthly Average", current: monthlyTrend.length ? monthlyTrend.reduce((sum, item) => sum + item.kg, 0) / monthlyTrend.length : 0, target: 200, unit: "kg/month", icon: Activity },
-        { title: "Active Artists", current: metrics.artistCount, target: 200, unit: "artists", icon: Users },
-        { title: "Artworks with Impact", current: metrics.artworkCount, target: 500, unit: "artworks", icon: Palette },
+        { title: t("adminImpact.annualTarget"), current: metrics.kgDiverted, target: 2500, unit: "kg", icon: Target },
+        { title: t("adminImpact.monthlyAverage"), current: monthlyTrend.length ? monthlyTrend.reduce((sum, item) => sum + item.kg, 0) / monthlyTrend.length : 0, target: 200, unit: "kg/month", icon: Activity },
+        { title: t("adminImpact.activeArtists"), current: metrics.artistCount, target: 200, unit: "artists", icon: Users },
+        { title: t("adminImpact.artworksWithImpact"), current: metrics.artworkCount, target: 500, unit: "artworks", icon: Palette },
       ]
     : [];
 
@@ -66,22 +68,22 @@ export default function AdminImpactPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Impact Dashboard</h1>
-            <p className="text-gray-500">Track and manage environmental impact metrics</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("adminImpact.title")}</h1>
+            <p className="text-gray-500">{t("adminImpact.subtitle")}</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-gray-400" />
-              <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white">
-                <option value="30d">Last 30 days</option>
-                <option value="3m">Last 3 months</option>
-                <option value="6m">Last 6 months</option>
-                <option value="1y">Last year</option>
+              <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} aria-label={t("adminImpact.title")} className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white">
+                <option value="30d">{t("adminImpact.range30d")}</option>
+                <option value="3m">{t("adminImpact.range3m")}</option>
+                <option value="6m">{t("adminImpact.range6m")}</option>
+                <option value="1y">{t("adminImpact.range1y")}</option>
               </select>
             </div>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
+            <button type="button" className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
               <Download className="w-4 h-4" />
-              Export Report
+              {t("adminImpact.exportReport")}
             </button>
           </div>
         </div>
@@ -95,15 +97,15 @@ export default function AdminImpactPage() {
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/20 rounded-full text-sm"><ArrowUp className="w-3 h-3" />Live</span>
             </div>
             <p className="text-3xl font-bold">{loading ? "-" : metrics?.kgDiverted.toLocaleString()}</p>
-            <p className="text-green-100">Total kg Diverted</p>
+            <p className="text-green-100">{t("adminImpact.totalKgDiverted")}</p>
           </div>
-          <MetricCard icon={Leaf} value={metrics?.co2SavedKg.toLocaleString() ?? "-"} label="kg CO2 Saved" iconClass="text-blue-600" bgClass="bg-blue-50" />
-          <MetricCard icon={TreePine} value={metrics?.treesEquivalent.toLocaleString() ?? "-"} label="Trees Equivalent" iconClass="text-green-600" bgClass="bg-green-50" />
-          <MetricCard icon={Droplets} value={metrics ? `${(metrics.waterSavedLitres / 1000).toFixed(1)}k` : "-"} label="Liters Water Saved" iconClass="text-cyan-600" bgClass="bg-cyan-50" />
+          <MetricCard icon={Leaf} value={metrics?.co2SavedKg.toLocaleString() ?? "-"} label={t("adminImpact.co2Saved")} iconClass="text-blue-600" bgClass="bg-blue-50" />
+          <MetricCard icon={TreePine} value={metrics?.treesEquivalent.toLocaleString() ?? "-"} label={t("adminImpact.treesEquivalent")} iconClass="text-green-600" bgClass="bg-green-50" />
+          <MetricCard icon={Droplets} value={metrics ? `${(metrics.waterSavedLitres / 1000).toFixed(1)}k` : "-"} label={t("adminImpact.waterSaved")} iconClass="text-cyan-600" bgClass="bg-cyan-50" />
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <h2 className="font-semibold text-gray-900 mb-6">Impact Goals Progress</h2>
+          <h2 className="font-semibold text-gray-900 mb-6">{t("adminImpact.goalsTitle")}</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {impactGoals.map((goal) => {
               const progress = goal.target > 0 ? (goal.current / goal.target) * 100 : 0;
@@ -125,13 +127,13 @@ export default function AdminImpactPage() {
                 </div>
               );
             })}
-            {!loading && impactGoals.length === 0 && <p className="text-sm text-gray-500">No impact goal data available.</p>}
+            {!loading && impactGoals.length === 0 && <p className="text-sm text-gray-500">{t("adminImpact.noGoals")}</p>}
           </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h2 className="font-semibold text-gray-900 mb-6">Monthly Trend</h2>
+            <h2 className="font-semibold text-gray-900 mb-6">{t("adminImpact.monthlyTrend")}</h2>
             <div className="space-y-4">
               {monthlyTrend.map((month) => (
                 <div key={month.month}>
@@ -144,12 +146,12 @@ export default function AdminImpactPage() {
                   </div>
                 </div>
               ))}
-              {!loading && monthlyTrend.length === 0 && <p className="text-sm text-gray-500">No monthly trend records yet.</p>}
+              {!loading && monthlyTrend.length === 0 && <p className="text-sm text-gray-500">{t("adminImpact.noTrend")}</p>}
             </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h2 className="font-semibold text-gray-900 mb-6">Material Breakdown</h2>
+            <h2 className="font-semibold text-gray-900 mb-6">{t("adminImpact.materialBreakdown")}</h2>
             <div className="space-y-4">
               {materialBreakdown.map((material, index) => (
                 <div key={material.material}>
@@ -165,14 +167,14 @@ export default function AdminImpactPage() {
                   </div>
                 </div>
               ))}
-              {!loading && materialBreakdown.length === 0 && <p className="text-sm text-gray-500">No material records yet.</p>}
+              {!loading && materialBreakdown.length === 0 && <p className="text-sm text-gray-500">{t("adminImpact.noMaterials")}</p>}
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="font-semibold text-gray-900">Top Contributing Artists</h2>
+            <h2 className="font-semibold text-gray-900">{t("adminImpact.topArtists")}</h2>
             <Award className="w-5 h-5 text-amber-500" />
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -188,15 +190,15 @@ export default function AdminImpactPage() {
                 </div>
               </div>
             ))}
-            {!loading && topArtists.length === 0 && <p className="text-sm text-gray-500">No artist impact records yet.</p>}
+            {!loading && topArtists.length === 0 && <p className="text-sm text-gray-500">{t("adminImpact.noArtists")}</p>}
           </div>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <SummaryStat icon={Palette} value={metrics?.artworkCount.toLocaleString() ?? "-"} label="Artworks with Impact" color="teal" />
-          <SummaryStat icon={Users} value={metrics?.artistCount.toLocaleString() ?? "-"} label="Contributing Artists" color="blue" />
-          <SummaryStat icon={Scale} value={avgKgPerArtwork.toFixed(1)} label="Avg kg per Artwork" color="amber" />
-          <SummaryStat icon={Globe} value={metrics ? (metrics.kgDiverted / 1000).toFixed(2) : "-"} label="Tonnes Diverted" color="green" />
+          <SummaryStat icon={Palette} value={metrics?.artworkCount.toLocaleString() ?? "-"} label={t("adminImpact.artworksWithImpact")} color="teal" />
+          <SummaryStat icon={Users} value={metrics?.artistCount.toLocaleString() ?? "-"} label={t("adminImpact.contributingArtists")} color="blue" />
+          <SummaryStat icon={Scale} value={avgKgPerArtwork.toFixed(1)} label={t("adminImpact.avgKgPerArtwork")} color="amber" />
+          <SummaryStat icon={Globe} value={metrics ? (metrics.kgDiverted / 1000).toFixed(2) : "-"} label={t("adminImpact.tonnesDiverted")} color="green" />
         </div>
       </div>
     </DashboardLayout>

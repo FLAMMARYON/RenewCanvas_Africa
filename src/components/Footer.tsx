@@ -21,27 +21,22 @@ export default function Footer() {
 
   const footerLinks = {
     platform: [
-      { name: "How It Works", href: "/how-it-works" },
-      { name: "Marketplace", href: "/marketplace" },
-      { name: "Artists", href: "/artists" },
-      { name: "Impact", href: "/impact" },
+      { key: "nav.howItWorks", href: "/how-it-works" },
+      { key: "nav.marketplace", href: "/marketplace" },
+      { key: "nav.artists", href: "/artists" },
+      { key: "nav.impact", href: "/impact" },
     ],
     company: [
-      { name: "Contact", href: "/contact" },
-      // { name: "Careers", href: "/careers" },
-      // { name: "Press", href: "/press" },
+      { key: "nav.contact", href: "/contact" },
     ],
     support: [
-      { name: "FAQ", href: "/contact#faq" },
-      { name: "Email Us", href: "mailto:hello.renewcanvas@gmail.com", external: true },
-      // { name: "Help Center", href: "/help" },
-      // { name: "Shipping", href: "/shipping" },
-      // { name: "Returns", href: "/returns" },
+      { key: "footer.faq", href: "/contact#faq" },
+      { key: "footer.emailUs", href: "mailto:hello.renewcanvas@gmail.com", external: true },
     ],
     legal: [
-      { name: "Privacy Policy", href: "/privacy" },
-      { name: "Terms of Service", href: "/terms" },
-      { name: "Refund Policy", href: "/refund-policy" },
+      { key: "footer.privacy", href: "/privacy" },
+      { key: "footer.terms", href: "/terms" },
+      { key: "footer.refund", href: "/refund-policy" },
     ],
   };
 
@@ -66,7 +61,7 @@ export default function Footer() {
             <p className="text-sm text-gray-400 mb-4">
               {t("footer.tagline")}
             </p>
-            <p className="text-sm text-gray-400 mb-4">Kigali, Rwanda</p>
+            <p className="text-sm text-gray-400 mb-4">{t("footer.location")}</p>
 
             {/* Contact Info */}
             <div className="space-y-2 mb-4">
@@ -109,15 +104,15 @@ export default function Footer() {
 
           {/* Platform Links */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Platform</h4>
+            <h4 className="font-semibold text-white mb-4">{t("footer.platform")}</h4>
             <ul className="space-y-2">
               {footerLinks.platform.map((link) => (
-                <li key={link.name}>
+                <li key={link.href}>
                   <a
                     href={link.href}
                     className="text-sm hover:text-teal-400 transition-colors"
                   >
-                    {link.name}
+                    {t(link.key)}
                   </a>
                 </li>
               ))}
@@ -126,15 +121,15 @@ export default function Footer() {
 
           {/* Company Links */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Company</h4>
+            <h4 className="font-semibold text-white mb-4">{t("footer.company")}</h4>
             <ul className="space-y-2">
               {footerLinks.company.map((link) => (
-                <li key={link.name}>
+                <li key={link.href}>
                   <a
                     href={link.href}
                     className="text-sm hover:text-teal-400 transition-colors"
                   >
-                    {link.name}
+                    {t(link.key)}
                   </a>
                 </li>
               ))}
@@ -143,15 +138,15 @@ export default function Footer() {
 
           {/* Support Links */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Support</h4>
+            <h4 className="font-semibold text-white mb-4">{t("footer.support")}</h4>
             <ul className="space-y-2">
               {footerLinks.support.map((link) => (
-                <li key={link.name}>
+                <li key={link.href}>
                   <a
                     href={link.href}
                     className="text-sm hover:text-teal-400 transition-colors"
                   >
-                    {link.name}
+                    {t(link.key)}
                   </a>
                 </li>
               ))}
@@ -160,15 +155,15 @@ export default function Footer() {
 
           {/* Legal Links */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Legal</h4>
+            <h4 className="font-semibold text-white mb-4">{t("footer.legal")}</h4>
             <ul className="space-y-2">
               {footerLinks.legal.map((link) => (
-                <li key={link.name}>
+                <li key={link.href}>
                   <a
                     href={link.href}
                     className="text-sm hover:text-teal-400 transition-colors"
                   >
-                    {link.name}
+                    {t(link.key)}
                   </a>
                 </li>
               ))}

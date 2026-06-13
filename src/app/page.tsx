@@ -156,10 +156,10 @@ function HeroSection() {
                 <div className="text-center p-8">
                   <Palette className="w-16 h-16 text-teal-700 mx-auto mb-4" />
                   <p className="text-teal-700 font-medium">
-                    Featured Artwork
+                    {t("home.featuredArtwork")}
                   </p>
                   <p className="text-sm text-teal-700 mt-2">
-                    Made from recycled materials
+                    {t("home.featuredArtworkSub")}
                   </p>
                 </div>
               </div>
@@ -169,7 +169,7 @@ function HeroSection() {
                 <div className="text-center p-6">
                   <Recycle className="w-12 h-12 text-amber-600 mx-auto mb-3" />
                   <p className="text-amber-700 font-medium text-sm">
-                    Upcycled Creation
+                    {t("home.upcycledCreation")}
                   </p>
                 </div>
               </div>
@@ -195,6 +195,7 @@ function HeroSection() {
    ABOUT SECTION
    ============================================ */
 function AboutSection() {
+  const { t } = useTranslation();
   return (
     <section id="about" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -212,33 +213,16 @@ function AboutSection() {
           {/* Right - Content */}
           <div>
             <span className="text-teal-700 font-semibold text-sm uppercase tracking-wider">
-              About Us
+              {t("home.aboutLabel")}
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2 mb-6">
-              A Platform Where Waste Becomes{" "}
-              <span className="text-teal-700">Masterpiece</span>
+              <Trans i18nKey="home.aboutTitle" components={{ teal: <span className="text-teal-700" /> }} />
             </h2>
 
             <div className="space-y-4 text-gray-600">
-              <p>
-                RenewCanvas Africa is a technology-driven circular arts platform
-                that transforms the waste crisis into creative opportunity. We
-                collect specific recyclable materials, distribute them to
-                curated artists, and connect their unique creations with buyers
-                who value sustainability and impact.
-              </p>
-              <p>
-                Every artwork on our platform comes with a verified
-                environmental impact story, so you will know exactly how much waste was
-                diverted, which artist created it, and the journey from
-                discarded material to treasured art piece.
-              </p>
-              <p>
-                We are not just a marketplace. We are a movement to prove that
-                waste can be beautiful, that African artists deserve global
-                recognition, and that conscious consumers can make a real
-                difference.
-              </p>
+              <p>{t("home.aboutP1")}</p>
+              <p>{t("home.aboutP2")}</p>
+              <p>{t("home.aboutP3")}</p>
             </div>
 
             {/* Mission Cards */}
@@ -246,19 +230,19 @@ function AboutSection() {
               <div className="p-4 bg-teal-50 rounded-xl">
                 <Recycle className="w-8 h-8 text-teal-700 mb-2" />
                 <h4 className="font-semibold text-gray-900">
-                  Circular Economy
+                  {t("home.circularEconomy")}
                 </h4>
                 <p className="text-sm text-gray-600 mt-1">
-                  Turning waste into valuable resources
+                  {t("home.circularEconomyDesc")}
                 </p>
               </div>
               <div className="p-4 bg-amber-50 rounded-xl">
                 <Users className="w-8 h-8 text-amber-600 mb-2" />
                 <h4 className="font-semibold text-gray-900">
-                  Artist Empowerment
+                  {t("home.artistEmpowerment")}
                 </h4>
                 <p className="text-sm text-gray-600 mt-1">
-                  Creating sustainable income for creatives
+                  {t("home.artistEmpowermentDesc")}
                 </p>
               </div>
             </div>
@@ -273,37 +257,34 @@ function AboutSection() {
    HOW IT WORKS SECTION
    ============================================ */
 function HowItWorksSection() {
+  const { t } = useTranslation();
   const steps = [
     {
       number: "01",
       icon: Recycle,
-      title: "We Collect & Clean",
-      description:
-        "We source recyclable materials (plastics, fabrics, metals) from verified partners, clean and sort them for artistic use.",
+      title: t("home.step1Title"),
+      description: t("home.step1Desc"),
       color: "teal",
     },
     {
       number: "02",
       icon: Palette,
-      title: "Artists Create",
-      description:
-        "Our curated artists transform these materials into stunning paintings, sculptures, jewelry, and home décor.",
+      title: t("home.step2Title"),
+      description: t("home.step2Desc"),
       color: "amber",
     },
     {
       number: "03",
       icon: TrendingUp,
-      title: "Impact Tracked",
-      description:
-        "Every artwork is logged with its environmental impact: kg of waste diverted, materials used, and artist earnings.",
+      title: t("home.step3Title"),
+      description: t("home.step3Desc"),
       color: "purple",
     },
     {
       number: "04",
       icon: Heart,
-      title: "You Support",
-      description:
-        "Purchase unique art, commission custom pieces, or sponsor donations to schools. Every action creates real impact.",
+      title: t("home.step4Title"),
+      description: t("home.step4Desc"),
       color: "rose",
     },
   ];
@@ -337,14 +318,13 @@ function HowItWorksSection() {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-teal-700 font-semibold text-sm uppercase tracking-wider">
-            How It Works
+            {t("home.howLabel")}
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2 mb-4">
-            From Waste to Wonder in Four Steps
+            {t("home.howTitle")}
           </h2>
           <p className="text-gray-600">
-            Our platform creates a transparent, traceable journey from discarded
-            materials to cherished artwork.
+            {t("home.howSubtitle")}
           </p>
         </div>
 
@@ -385,7 +365,7 @@ function HowItWorksSection() {
             href="/how-it-works"
             className="inline-flex items-center gap-2 text-teal-700 font-medium hover:text-teal-700 transition-colors"
           >
-            Learn more about our process
+            {t("home.learnMore")}
             <ArrowRight className="w-4 h-4" />
           </a>
         </div>
@@ -433,26 +413,26 @@ function ImpactSection() {
   const stats = [
     {
       value: loading ? "..." : formatValue(metrics.kgDiverted),
-      label: "Kg Waste Diverted",
-      description: "Recyclable materials transformed into art",
+      label: t("home.statKgLabel"),
+      description: t("home.statKgDesc"),
       icon: Recycle,
     },
     {
       value: loading ? "..." : formatValue(metrics.artistCount),
-      label: "Artists Onboarded",
-      description: "Talented creators joining our platform",
+      label: t("home.statArtistsLabel"),
+      description: t("home.statArtistsDesc"),
       icon: Users,
     },
     {
       value: loading ? "..." : formatValue(metrics.artworkCount),
-      label: "Artworks Created",
-      description: "Unique pieces with verified impact stories",
+      label: t("home.statArtworksLabel"),
+      description: t("home.statArtworksDesc"),
       icon: Palette,
     },
     {
       value: "75-80%",
-      label: "To Artists",
-      description: "Released after the 48-hour return window",
+      label: t("home.statToArtistsLabel"),
+      description: t("home.statToArtistsDesc"),
       icon: TrendingUp,
     },
   ];
@@ -463,14 +443,13 @@ function ImpactSection() {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-teal-200 font-semibold text-sm uppercase tracking-wider">
-            Our Impact
+            {t("home.impactLabel")}
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold mt-2 mb-4">
-            Real Numbers, Real Change
+            {t("home.impactTitle")}
           </h2>
           <p className="text-teal-100">
-            Every purchase on RenewCanvas Africa contributes to measurable
-            environmental and social impact.
+            {t("home.impactSubtitle")}
           </p>
         </div>
 
@@ -510,30 +489,27 @@ function ImpactSection() {
    WHY RENEWCANVAS SECTION
    ============================================ */
 function WhySection() {
+  const { t } = useTranslation();
   const reasons = [
     {
       icon: Award,
-      title: "Verified Impact",
-      description:
-        "Every artwork comes with documented environmental impact: kg of waste diverted and materials traced.",
+      title: t("home.why1Title"),
+      description: t("home.why1Desc"),
     },
     {
       icon: Users,
-      title: "Curated Artists",
-      description:
-        "Our artists are vetted for skill and commitment. You are buying from talented, verified creators.",
+      title: t("home.why2Title"),
+      description: t("home.why2Desc"),
     },
     {
       icon: Globe,
-      title: "African Excellence",
-      description:
-        "Celebrating African creativity and craftsmanship while solving a local environmental challenge.",
+      title: t("home.why3Title"),
+      description: t("home.why3Desc"),
     },
     {
       icon: Heart,
-      title: "Community Impact",
-      description:
-        "Support school donations, artist training, and community clean-up initiatives through your purchase.",
+      title: t("home.why4Title"),
+      description: t("home.why4Desc"),
     },
   ];
 
@@ -543,14 +519,13 @@ function WhySection() {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-teal-700 font-semibold text-sm uppercase tracking-wider">
-            Why Choose Us
+            {t("home.whyLabel")}
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2 mb-4">
-            Art With Purpose, Impact With Proof
+            {t("home.whyTitle")}
           </h2>
           <p className="text-gray-600">
-            RenewCanvas Africa is not just another art marketplace. We are building a
-            transparent, traceable circular economy for creative expression.
+            {t("home.whySubtitle")}
           </p>
         </div>
 
@@ -584,16 +559,15 @@ function WhySection() {
    CTA SECTION
    ============================================ */
 function CTASection() {
+  const { t } = useTranslation();
   return (
     <section className="py-20 bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-          Ready to Make an Impact?
+          {t("home.ctaTitle")}
         </h2>
         <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-          Whether you want to buy unique art, join as an artist, or partner with
-          us for corporate impact, and there is a place for you in the RenewCanvas
-          community.
+          {t("home.ctaSubtitle")}
         </p>
 
         <div className="group flex flex-col sm:flex-row gap-4 justify-center">
@@ -601,14 +575,14 @@ function CTASection() {
             href="/marketplace"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white bg-teal-700 rounded-lg group-hover:bg-white group-hover:text-teal-700 border border-transparent group-hover:border-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium shadow-lg shadow-teal-700/30 text-lg group-hover:scale-105"
           >
-            Browse Artwork
+            {t("home.browseArtwork")}
             <ArrowRight className="w-5 h-5" />
           </a>
           <a
             href="/register?role=artist"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-white border-2 border-teal-200 rounded-lg group-hover:bg-teal-800 group-hover:text-white group-hover:border-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium text-lg group-hover:scale-105"
           >
-            Apply as Artist
+            {t("home.applyAsArtist")}
             <Palette className="w-5 h-5" />
           </a>
         </div>

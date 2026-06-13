@@ -8,10 +8,12 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { ArtworkCard } from "@/components/ArtworkCard";
 import { useEffect, useState } from "react";
+import { useTranslation, Trans } from "react-i18next";
 
 const categories = ["All", ...artworkCategories];
 
 export default function MarketplacePage() {
+  const { t } = useTranslation();
   const [artworks, setArtworks] = useState<FrontendArtwork[]>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
@@ -31,7 +33,7 @@ export default function MarketplacePage() {
           setArtworks(result.artworks);
           setPagination(result.pagination);
         })
-        .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load artworks."))
+        .catch((error) => setStatusMessage(error instanceof Error ? error.message : t("marketplace.couldNotLoad")))
         .finally(() => setIsLoading(false));
     }, 200);
 
@@ -53,12 +55,13 @@ export default function MarketplacePage() {
         <section className="bg-white pb-6 pt-12">
           <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
             <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Discover <span className="text-amber-500">Unique</span> Upcycled <span className="text-teal-600">Artwork</span>
+              <Trans
+                i18nKey="marketplace.heroTitle"
+                components={{ amber: <span className="text-amber-500" />, teal: <span className="text-teal-600" /> }}
+              />
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-base text-gray-600">
-              Browse our collection of stunning artwork created from recycled materials and discover unique
-              pieces by independent and professional artists. Each piece comes with verified environmental
-              impact.
+              {t("marketplace.heroSubtitle")}
             </p>
 
             {/* Search Bar */}
@@ -69,7 +72,7 @@ export default function MarketplacePage() {
                   <input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search artwork, artists, or categories..."
+                    placeholder={t("marketplace.searchPlaceholder")}
                     className="w-full border-0 bg-transparent py-3 pl-3 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-0"
                   />
                 </div>
@@ -77,7 +80,7 @@ export default function MarketplacePage() {
                   type="submit"
                   className="m-1.5 rounded-lg bg-teal-600 px-5 py-2 text-sm font-medium text-white hover:bg-teal-700"
                 >
-                  Search
+                  {t("marketplace.search")}
                 </button>
               </div>
             </form>
@@ -92,8 +95,8 @@ export default function MarketplacePage() {
                   <Sparkles className="h-4 w-4 text-teal-600" />
                 </div>
                 <div className="text-left">
-                  <div className="text-sm font-semibold text-gray-900">Virtual Gallery</div>
-                  <div className="text-xs text-gray-500">Walk through our 3D museum</div>
+                  <div className="text-sm font-semibold text-gray-900">{t("marketplace.virtualGallery")}</div>
+                  <div className="text-xs text-gray-500">{t("marketplace.virtualGalleryDesc")}</div>
                 </div>
                 <ArrowRight className="ml-1 h-4 w-4 text-gray-400" />
               </Link>
@@ -120,7 +123,7 @@ export default function MarketplacePage() {
                         : "border border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                     }`}
                   >
-                    {item}
+                    {item === "All" ? t("marketplace.all") : item}
                   </button>
                 ))}
               </div>
@@ -139,11 +142,10 @@ export default function MarketplacePage() {
                     }}
                     className="border-0 bg-transparent pr-6 text-sm text-gray-600 focus:outline-none focus:ring-0"
                   >
-                    <option value="newest">Sort by</option>
-                    <option value="newest">Recently Added</option>
-                    <option value="popular">Most saved</option>
-                    <option value="price_low">Price: low to high</option>
-                    <option value="price_high">Price: high to low</option>
+                    <option value="newest">{t("marketplace.sortNewest")}</option>
+                    <option value="popular">{t("marketplace.sortPopular")}</option>
+                    <option value="price_low">{t("marketplace.sortPriceLow")}</option>
+                    <option value="price_high">{t("marketplace.sortPriceHigh")}</option>
                   </select>
                 </div>
                 <button
@@ -151,7 +153,7 @@ export default function MarketplacePage() {
                   className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
                 >
                   <Filter className="h-4 w-4" />
-                  Filters
+                  {t("marketplace.filters")}
                 </button>
                 <div className="flex overflow-hidden rounded-lg border border-gray-200 bg-white">
                   <button
@@ -214,7 +216,7 @@ export default function MarketplacePage() {
                     href="/artworks"
                     className="inline-flex items-center gap-2 rounded-lg border border-teal-200 bg-white px-6 py-3 text-sm font-medium text-teal-700 hover:bg-teal-600 hover:text-white hover:border-teal-600 [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                   >
-                    See all Artworks
+                    {t("marketplace.seeAll")}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -225,23 +227,23 @@ export default function MarketplacePage() {
                 <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-teal-50">
                   <Recycle className="h-8 w-8 text-teal-600" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">Artwork Coming Soon</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t("marketplace.comingSoonTitle")}</h2>
                 <p className="mx-auto mt-3 max-w-md text-sm text-gray-500">
-                  We are currently onboarding talented artists and curating our first collection of unique upcycled artwork. Be the first to know when we launch!
+                  {t("marketplace.comingSoonDesc")}
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
                   <Link
                     href="/contact"
                     className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-teal-700"
                   >
-                    Get Notified
+                    {t("marketplace.getNotified")}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                   <Link
                     href="/register?role=artist"
                     className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
                   >
-                    Join as Artist
+                    {t("marketplace.joinAsArtist")}
                   </Link>
                 </div>
               </div>
@@ -255,10 +257,10 @@ export default function MarketplacePage() {
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
                   className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm disabled:opacity-50"
                 >
-                  Previous
+                  {t("marketplace.previous")}
                 </button>
                 <span className="text-sm text-gray-600">
-                  Page {pagination.page} of {pagination.pageCount} ({pagination.total} artworks)
+                  {t("marketplace.pageOf", { page: pagination.page, pageCount: pagination.pageCount, total: pagination.total })}
                 </span>
                 <button
                   type="button"
@@ -266,7 +268,7 @@ export default function MarketplacePage() {
                   onClick={() => setPage((current) => Math.min(pagination.pageCount, current + 1))}
                   className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm disabled:opacity-50"
                 >
-                  Next
+                  {t("marketplace.next")}
                 </button>
               </div>
             )}
@@ -283,15 +285,15 @@ export default function MarketplacePage() {
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-teal-100">
                     <Recycle className="h-5 w-5 text-teal-600" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">Looking for Unique Art?</h3>
+                  <h3 className="text-lg font-bold text-gray-900">{t("marketplace.lookingTitle")}</h3>
                   <p className="mt-2 text-sm text-gray-600">
-                    Sign up to be notified when our marketplace launches. Get early access to exclusive upcycled artwork with verified impact stories.
+                    {t("marketplace.lookingDesc")}
                   </p>
                   <Link
                     href="/contact"
                     className="mt-5 inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
                   >
-                    Join Waitlist
+                    {t("marketplace.joinWaitlist")}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -299,20 +301,20 @@ export default function MarketplacePage() {
                 {/* Are You an Artist Card */}
                 <div className="relative rounded-xl bg-amber-50 p-8">
                   <span className="absolute right-6 top-6 rounded-lg bg-teal-600 px-2.5 py-1 text-xs font-medium text-white">
-                    Coming Soon
+                    {t("marketplace.comingSoonBadge")}
                   </span>
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-amber-100">
                     <Sparkles className="h-5 w-5 text-amber-600" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900">Are You an Artist?</h3>
+                  <h3 className="text-lg font-bold text-gray-900">{t("marketplace.areYouArtistTitle")}</h3>
                   <p className="mt-2 text-sm text-gray-600">
-                    Join our platform and showcase your upcycled creations to buyers who value sustainability. We provide materials and support.
+                    {t("marketplace.areYouArtistDesc")}
                   </p>
                   <Link
                     href="/register?role=artist"
                     className="mt-5 inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
                   >
-                    Apply as Artist
+                    {t("marketplace.applyAsArtist")}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>

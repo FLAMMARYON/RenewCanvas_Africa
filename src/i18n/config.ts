@@ -43,4 +43,31 @@ export function isSupportedLocale(value: string | null | undefined): value is Ap
   return Boolean(value) && (SUPPORTED_LOCALES as readonly string[]).includes(value as string);
 }
 
+/**
+ * Apply a locale everywhere, from one place (shared by the navbar switcher and
+ * the settings page so the logic isn't duplicated):
+ *  1. switch the live i18next language (translates the whole site from the JSON
+ *     locale files),
+ *  2. remember it locally (localStorage + cookie) for anonymous users / reloads,
+ *  3. persist it to the database for the signed-in user (fire-and-forget; a
+ *     logged-out user simply gets a 401 which we ignore).
+ */
+export function applyLocale(locale: AppLocale): void {
+  i18n.changeLanguage(locale);
+  try {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+  } catch {
+    /* ignore storage errors */
+  }
+  document.cookie = `${LOCALE_STORAGE_KEY}=${locale}; path=/; max-age=31536000; SameSite=Lax`;
+  void fetch("/api/profile/language", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ language: locale }),
+  }).catch(() => {
+    /* anonymous users have no DB row to update; ignore */
+  });
+}
+
 export default i18n;

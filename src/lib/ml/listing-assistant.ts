@@ -25,6 +25,15 @@ export type ListingAssistantOutput = {
     currency: "RWF";
     reasoning: string;
   };
+  /**
+   * Suggested dimension formats for the piece. The assistant always offers BOTH
+   * a flat/wall (2D) phrasing and a sculptural (3D) phrasing so the artist can
+   * pick whichever matches their work.
+   */
+  dimensionSuggestions: {
+    twoD: string;
+    threeD: string;
+  };
   titleSuggestion?: string;
   marketingTips: string[];
   version: string;
@@ -150,6 +159,11 @@ ${input.description || "(No description provided)"}
 
 5. **Marketing Tips**: Provide 2-3 actionable tips to help the artist sell this piece.
 
+6. **Dimension Suggestions**: Based on the artwork (and the artist's stated dimensions${input.dimensions ? `: "${input.dimensions}"` : ""}), suggest a clear, well-formatted dimension string in BOTH:
+   - a flat / wall-mounted "2D" format, e.g. "60cm x 80cm (W x H)"
+   - a sculptural / free-standing "3D" format, e.g. "30cm x 30cm x 45cm (W x D x H)"
+   Keep units in centimetres.
+
 Respond in this exact JSON format:
 {
   "improvedDescription": "...",
@@ -158,6 +172,10 @@ Respond in this exact JSON format:
     "min": number,
     "max": number,
     "reasoning": "..."
+  },
+  "dimensionSuggestions": {
+    "twoD": "60cm x 80cm (W x H)",
+    "threeD": "30cm x 30cm x 45cm (W x D x H)"
   },
   "titleSuggestion": "..." or null,
   "marketingTips": ["tip1", "tip2", ...]
@@ -229,10 +247,22 @@ export function parseListingAssistantResponse(
           .slice(0, 5)
       : ["Take high-quality photos in natural light.", "Share your artwork's story on social media."];
 
+    const dimensionSuggestions = {
+      twoD:
+        typeof parsed.dimensionSuggestions?.twoD === "string" && parsed.dimensionSuggestions.twoD.trim()
+          ? parsed.dimensionSuggestions.twoD.slice(0, 100)
+          : "60cm x 80cm (W x H)",
+      threeD:
+        typeof parsed.dimensionSuggestions?.threeD === "string" && parsed.dimensionSuggestions.threeD.trim()
+          ? parsed.dimensionSuggestions.threeD.slice(0, 100)
+          : "30cm x 30cm x 45cm (W x D x H)",
+    };
+
     return {
       improvedDescription,
       suggestedTags,
       priceRange,
+      dimensionSuggestions,
       titleSuggestion,
       marketingTips,
       version: LISTING_ASSISTANT_VERSION,
@@ -247,6 +277,10 @@ export function parseListingAssistantResponse(
         max: Math.round(originalPrice * 1.5 / 1000) * 1000,
         currency: "RWF",
         reasoning: "Price range estimated based on typical upcycled art pricing.",
+      },
+      dimensionSuggestions: {
+        twoD: "60cm x 80cm (W x H)",
+        threeD: "30cm x 30cm x 45cm (W x D x H)",
       },
       marketingTips: [
         "Take high-quality photos in natural light.",
@@ -265,9 +299,6 @@ export async function callListingAssistant(
   input: ListingAssistantInput,
   apiKey: string
 ): Promise<ListingAssistantOutput> {
-  // Debug logging to confirm API key is passed
-  console.log("[listing-assistant] DEBUG: callListingAssistant received apiKey =", apiKey ? `sk-...${apiKey.slice(-8)}` : "undefined");
-
   const prompt = buildListingAssistantPrompt(input);
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
