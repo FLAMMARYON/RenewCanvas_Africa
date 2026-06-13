@@ -72,3 +72,22 @@ export async function getArtistEarnings(db: PrismaClient, artistId: string): Pro
     kgDiverted: Number(profile?.confirmedKgDiverted ?? 0),
   };
 }
+
+export type PlatformConfirmedTotals = { kgDiverted: number; artistEarningsRwf: number };
+
+/**
+ * Platform-wide confirmed totals — the SUM of the per-artist running totals.
+ * Same admin-confirmed-orders source of truth the artist dashboard and analytics
+ * page read, so the public + admin impact dashboards reconcile exactly with the
+ * sum of what every artist sees. (Waste/earnings are counted only once a
+ * payment is admin-confirmed; never from the unsold catalog.)
+ */
+export async function getPlatformConfirmedTotals(db: PrismaClient): Promise<PlatformConfirmedTotals> {
+  const agg = await db.artistProfile.aggregate({
+    _sum: { confirmedEarningsCents: true, confirmedKgDiverted: true },
+  });
+  return {
+    kgDiverted: Number(agg._sum.confirmedKgDiverted ?? 0),
+    artistEarningsRwf: Math.round((agg._sum.confirmedEarningsCents ?? 0) / 100),
+  };
+}

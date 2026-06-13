@@ -63,8 +63,12 @@ export default function ArtistAnalyticsPage() {
     const materialWeights = new Map<string, number>();
     artworks.forEach((artwork) => artwork.materials.forEach((material) => materialWeights.set(material.material, (materialWeights.get(material.material) ?? 0) + material.weightKg)));
     const topMaterial = Array.from(materialWeights.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "-";
+    // Waste diverted is a CATALOG metric — the sum of every artwork's kgDiverted
+    // (waste is diverted when the piece is created, regardless of sale). Same
+    // source the dashboard and the public impact page use.
+    const totalKgDiverted = artworks.reduce((sum, artwork) => sum + artwork.kgDiverted, 0);
     const artworksWithImpact = artworks.filter((artwork) => artwork.kgDiverted > 0).length;
-    return { revenue, views, favourites, artworksWithImpact, topMaterial };
+    return { revenue, views, favourites, totalKgDiverted, artworksWithImpact, topMaterial };
   }, [artworks, orders]);
 
   const overviewStats = [
@@ -219,12 +223,12 @@ export default function ArtistAnalyticsPage() {
             <div><h2 className="font-semibold text-gray-900">Your Environmental Impact</h2><p className="text-sm text-gray-600">Waste diverted through your artworks</p></div>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Total kg diverted is the single source of truth: the artist's
-                confirmed-order running total (same value the dashboard shows),
-                NOT a re-sum of every catalog artwork. */}
-            <ImpactStat value={earnings.kgDiverted.toFixed(1)} label="Total kg Diverted" tone="green" />
+            {/* Waste diverted = catalog sum of every artwork's kgDiverted (the
+                same source the dashboard and public impact page use). Earnings,
+                separately, stay on confirmed (paid) orders. */}
+            <ImpactStat value={analytics.totalKgDiverted.toFixed(1)} label="Total kg Diverted" tone="green" />
             <ImpactStat value={String(analytics.artworksWithImpact)} label="Artworks with Impact" tone="teal" />
-            <ImpactStat value={analytics.artworksWithImpact > 0 ? (earnings.kgDiverted / analytics.artworksWithImpact).toFixed(1) : "0.0"} label="Avg kg per Artwork" tone="amber" />
+            <ImpactStat value={analytics.artworksWithImpact > 0 ? (analytics.totalKgDiverted / analytics.artworksWithImpact).toFixed(1) : "0.0"} label="Avg kg per Artwork" tone="amber" />
             <ImpactStat value={analytics.topMaterial} label="Most Used Material" tone="purple" small />
           </div>
         </div>

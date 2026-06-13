@@ -85,9 +85,12 @@ export default function ArtistDashboard() {
     [artworks, orders, t]
   );
 
-  // Earnings & impact come from confirmed-payment running totals stored in the DB.
+  // Earnings come from confirmed-payment running totals (you earn on a sale).
   const totalEarnings = earnings.earningsRwf;
-  const totalImpact = earnings.kgDiverted;
+  // Waste diverted is a CATALOG metric — summed across every artwork created
+  // (waste is diverted at creation, not at sale). Same source as the analytics
+  // page and the public impact dashboard.
+  const totalImpact = artworks.reduce((sum, artwork) => sum + artwork.kgDiverted, 0);
   const recentArtworks = [...artworks].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 4);
   const recentOrders = [...orders].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 3);
   const firstName = userName.split(" ")[0];

@@ -4,6 +4,7 @@
  */
 
 import { PrismaClient, Prisma } from "@prisma/client";
+import { getPlatformConfirmedTotals } from "./earnings";
 
 export interface PlatformMetrics {
   kgDiverted: number;
@@ -60,33 +61,25 @@ const IMPACT_FACTORS = {
 export async function getPlatformMetrics(
   db: PrismaClient
 ): Promise<PlatformMetrics> {
-  // Get total kg diverted from artworks that are listed or sold
+  // Waste diverted + artworks created are CATALOG metrics: waste is diverted the
+  // moment an artwork is CREATED from reclaimed material (not when it sells).
+  // These mirror the artist dashboard/analytics, which sum the artist's own
+  // artworks' kgDiverted across all statuses (listArtworks scope:"artist" has no
+  // status filter). Summed platform-wide here.
   const kgResult = await db.artwork.aggregate({
-    _sum: {
-      kgDiverted: true,
-    },
-    where: {
-      status: {
-        in: ["listed", "sold"],
-      },
-    },
+    _sum: { kgDiverted: true },
   });
-
   const kgDiverted = Number(kgResult._sum.kgDiverted || 0);
 
-  // Get CO2 saved from impact estimates
-  const co2Result = await db.impactEstimate.aggregate({
-    _sum: {
-      co2eAvoidedKg: true,
-    },
-  });
+  const artworkCount = await db.artwork.count();
 
-  // Use calculated CO2 if available, otherwise estimate from kg diverted
-  const co2SavedKg =
-    Number(co2Result._sum.co2eAvoidedKg || 0) ||
-    kgDiverted * IMPACT_FACTORS.defaultCo2PerKg;
+  // Artist income, by contrast, is earned only on an admin-confirmed (paid)
+  // order — so it stays on the confirmed running-totals source of truth.
+  const confirmed = await getPlatformConfirmedTotals(db);
+  const artistIncomeRwf = confirmed.artistEarningsRwf;
 
-  // Calculate environmental equivalents
+  // Environmental equivalents derive from the catalog kg above.
+  const co2SavedKg = kgDiverted * IMPACT_FACTORS.defaultCo2PerKg;
   const treesEquivalent = Math.round(kgDiverted * IMPACT_FACTORS.treesPerKg);
   const waterSavedLitres = Math.round(
     kgDiverted * IMPACT_FACTORS.waterLitresPerKg
@@ -99,29 +92,6 @@ export async function getPlatformMetrics(
       status: "active",
     },
   });
-
-  // Count artworks (listed or sold)
-  const artworkCount = await db.artwork.count({
-    where: {
-      status: {
-        in: ["listed", "sold"],
-      },
-    },
-  });
-
-  // Calculate total artist income from paid payouts
-  const payoutResult = await db.payoutLedger.aggregate({
-    _sum: {
-      payoutCents: true,
-    },
-    where: {
-      status: "paid",
-    },
-  });
-
-  const artistIncomeRwf = Math.round(
-    (Number(payoutResult._sum.payoutCents || 0)) / 100
-  );
 
   return {
     kgDiverted: Math.round(kgDiverted * 10) / 10, // Round to 1 decimal

@@ -3,18 +3,20 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 import {
   getArtistEarnings,
+  getPlatformConfirmedTotals,
   recordConfirmedOrderEarnings,
 } from "@/lib/backend/earnings";
 
 /**
- * Source-of-truth regression test (Prompt A).
+ * Source-of-truth tests for EARNINGS.
  *
- * The artist dashboard ("impact report") and the artist analytics page must
- * show the SAME waste-diverted + earnings for an artist. Both now read the
- * confirmed-order running totals via getArtistEarnings(). The analytics page
- * used to re-sum every catalog artwork's kgDiverted instead — this test pins
- * that the catalog sum is a DIFFERENT (wrong) number, and that both pages now
- * agree on the confirmed figure.
+ * Money figures (artist dashboard "Estimated Earnings", analytics "Confirmed
+ * Earnings", and the public impact page "Artist Earnings") all derive from the
+ * confirmed-order running totals via getArtistEarnings / getPlatformConfirmedTotals
+ * — an artist earns only when a payment is admin-confirmed (paid).
+ *
+ * (Waste-diverted is a SEPARATE, catalog metric — summed across every artwork
+ * created, regardless of sale — so it is intentionally not tied to these.)
  */
 
 type ProfileRow = { confirmedEarningsCents: number; confirmedKgDiverted: number };
@@ -61,6 +63,15 @@ function createDb(seed: {
       async findUnique({ where }: { where: { userId: string } }) {
         return artistProfiles.get(where.userId) ?? null;
       },
+      async aggregate() {
+        let cents = 0;
+        let kg = 0;
+        for (const p of artistProfiles.values()) {
+          cents += p.confirmedEarningsCents;
+          kg += p.confirmedKgDiverted;
+        }
+        return { _sum: { confirmedEarningsCents: cents, confirmedKgDiverted: kg } };
+      },
       async update({ where, data }: { where: { userId: string }; data: Record<string, unknown> }) {
         const row = artistProfiles.get(where.userId);
         if (!row) throw new Error("profile not found");
@@ -78,40 +89,38 @@ function createDb(seed: {
   };
 }
 
-test("impact report and analytics page show identical confirmed kg + earnings (one source)", async () => {
-  // Artist has a large catalog (15 kg across unsold artworks) but only ONE
-  // admin-confirmed (paid) order line worth 2.5 kg / 50,000 cents.
-  const catalogArtworksKg = [3, 3, 3, 3, 3]; // 15 kg in the catalog, mostly unsold
-  const staleCatalogKg = catalogArtworksKg.reduce((s, kg) => s + kg, 0);
-
+test("artist + platform earnings come from confirmed (paid) orders only", async () => {
   const db = createDb({
-    artistProfiles: { artist_1: { confirmedEarningsCents: 0, confirmedKgDiverted: 0 } },
-    orders: [{ id: "order_1", status: "paid", earningsRecorded: false }],
+    artistProfiles: {
+      artist_1: { confirmedEarningsCents: 0, confirmedKgDiverted: 0 },
+      artist_2: { confirmedEarningsCents: 0, confirmedKgDiverted: 0 },
+    },
+    orders: [
+      { id: "order_paid", status: "paid", earningsRecorded: false },
+      { id: "order_pending", status: "pending_payment", earningsRecorded: false },
+    ],
     orderItems: [
-      { orderId: "order_1", artistId: "artist_1", ownerType: "artist", unitCents: 50000, quantity: 1, kgDiverted: 2.5 },
+      { orderId: "order_paid", artistId: "artist_1", ownerType: "artist", unitCents: 50000, quantity: 1, kgDiverted: 2.5 },
+      // A pending order must NOT contribute to earnings.
+      { orderId: "order_pending", artistId: "artist_2", ownerType: "artist", unitCents: 80000, quantity: 1, kgDiverted: 4 },
     ],
   }) as unknown as PrismaClient;
 
-  // Payment confirmed -> running totals incremented exactly once.
-  await recordConfirmedOrderEarnings(db, "order_1");
+  // Only the paid order is recorded; the pending one is ignored.
+  await recordConfirmedOrderEarnings(db, "order_paid");
+  await recordConfirmedOrderEarnings(db, "order_pending");
 
-  // Both pages read the SAME function.
-  const impactReport = await getArtistEarnings(db, "artist_1"); // artist dashboard overview
-  const analyticsPage = await getArtistEarnings(db, "artist_1"); // artist analytics page (after fix)
+  // Per-artist earnings (dashboard + analytics read this exact function).
+  const a1 = await getArtistEarnings(db, "artist_1");
+  assert.equal(a1.earningsRwf, 400); // 80% of 50,000 cents = 40,000 cents = 400 RWF
+  const a2 = await getArtistEarnings(db, "artist_2");
+  assert.equal(a2.earningsRwf, 0); // pending order earns nothing
 
-  // 1. Identical on both pages.
-  assert.deepEqual(impactReport, analyticsPage);
+  // Platform earnings (public impact page) = sum of the same confirmed totals.
+  const platform = await getPlatformConfirmedTotals(db);
+  assert.equal(platform.artistEarningsRwf, 400);
 
-  // 2. The confirmed figures: 80% of 50,000 cents = 400 RWF; 2.5 kg.
-  assert.equal(analyticsPage.earningsRwf, 400);
-  assert.equal(analyticsPage.kgDiverted, 2.5);
-
-  // 3. The deleted stale calculation (sum of every catalog artwork) would have
-  //    produced a DIFFERENT number — proving the two sources really diverged.
-  assert.notEqual(staleCatalogKg, analyticsPage.kgDiverted);
-
-  // 4. Idempotency: re-confirming does not double-count.
-  await recordConfirmedOrderEarnings(db, "order_1");
-  const afterReplay = await getArtistEarnings(db, "artist_1");
-  assert.deepEqual(afterReplay, impactReport);
+  // Idempotent: re-confirming the paid order does not double-count.
+  await recordConfirmedOrderEarnings(db, "order_paid");
+  assert.equal((await getArtistEarnings(db, "artist_1")).earningsRwf, 400);
 });
