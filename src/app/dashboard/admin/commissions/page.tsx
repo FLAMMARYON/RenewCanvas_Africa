@@ -3,6 +3,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { useEffect, useState } from "react";
 import { ClipboardList, Send, UserCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type UserOption = { id: string; name: string; email: string };
 type CommissionRequest = {
@@ -22,6 +23,7 @@ type CommissionRequest = {
 };
 
 export default function AdminCommissionsPage() {
+  const { t } = useTranslation();
   const [requests, setRequests] = useState<CommissionRequest[]>([]);
   const [artists, setArtists] = useState<UserOption[]>([]);
   const [assignments, setAssignments] = useState<Record<string, { artistId: string; adminNotes: string }>>({});
@@ -45,7 +47,7 @@ export default function AdminCommissionsPage() {
     setMessage("");
     const assignment = assignments[requestId];
     if (!assignment?.artistId) {
-      setError("Choose an artist before assigning the commission.");
+      setError(t("admin.commissions.errorChooseArtist"));
       return;
     }
 
@@ -57,11 +59,11 @@ export default function AdminCommissionsPage() {
         body: JSON.stringify(assignment),
       });
       const body = await response.json();
-      if (!response.ok || !body.ok) throw new Error(body.message ?? "Unable to assign commission.");
-      setMessage("Commission assigned to artist.");
+      if (!response.ok || !body.ok) throw new Error(body.message ?? t("admin.commissions.errorAssign"));
+      setMessage(t("admin.commissions.successAssigned"));
       await loadRequests();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Unable to assign commission.");
+      setError(error instanceof Error ? error.message : t("admin.commissions.errorAssign"));
     }
   }
 
@@ -69,8 +71,8 @@ export default function AdminCommissionsPage() {
     <DashboardLayout role="admin" userName="Admin User">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Commission Requests</h1>
-          <p className="text-gray-500">Review buyer custom-work requests and assign them to artists.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("admin.commissions.title")}</h1>
+          <p className="text-gray-500">{t("admin.commissions.subtitle")}</p>
         </div>
 
         {error && <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -79,15 +81,15 @@ export default function AdminCommissionsPage() {
         <div className="grid md:grid-cols-3 gap-4">
           <div className="bg-white border border-gray-100 rounded-xl p-4">
             <p className="text-2xl font-bold text-gray-900">{requests.length}</p>
-            <p className="text-sm text-gray-500">Total requests</p>
+            <p className="text-sm text-gray-500">{t("admin.commissions.totalRequests")}</p>
           </div>
           <div className="bg-white border border-gray-100 rounded-xl p-4">
             <p className="text-2xl font-bold text-amber-600">{requests.filter((item) => item.status === "submitted").length}</p>
-            <p className="text-sm text-gray-500">Needs assignment</p>
+            <p className="text-sm text-gray-500">{t("admin.commissions.needsAssignment")}</p>
           </div>
           <div className="bg-white border border-gray-100 rounded-xl p-4">
             <p className="text-2xl font-bold text-teal-600">{requests.filter((item) => item.status === "accepted").length}</p>
-            <p className="text-sm text-gray-500">Accepted by artists</p>
+            <p className="text-sm text-gray-500">{t("admin.commissions.acceptedByArtists")}</p>
           </div>
         </div>
 
@@ -102,13 +104,13 @@ export default function AdminCommissionsPage() {
                   </div>
                   <p className="mt-2 text-sm text-gray-600">{request.description}</p>
                   <p className="mt-2 text-sm text-gray-500">
-                    Buyer: {request.buyer.name} / Budget: {request.budgetAmount.toLocaleString()} {request.currency} / Size: {request.dimensions ?? request.sizeCategory}
+                    {t("admin.commissions.buyerLabel", { name: request.buyer.name })} / {t("admin.commissions.budgetLabel", { amount: request.budgetAmount.toLocaleString(), currency: request.currency })} / {t("admin.commissions.sizeLabel", { size: request.dimensions ?? request.sizeCategory })}
                   </p>
-                  {request.preferredMaterials && <p className="text-sm text-gray-500">Preferred materials: {request.preferredMaterials}</p>}
-                  {request.assignedArtist && <p className="text-sm text-teal-700">Assigned artist: {request.assignedArtist.name}</p>}
-                  {request.artistResponseNote && <p className="text-sm text-gray-500">Artist note: {request.artistResponseNote}</p>}
+                  {request.preferredMaterials && <p className="text-sm text-gray-500">{t("admin.commissions.preferredMaterialsLabel", { materials: request.preferredMaterials })}</p>}
+                  {request.assignedArtist && <p className="text-sm text-teal-700">{t("admin.commissions.assignedArtistLabel", { name: request.assignedArtist.name })}</p>}
+                  {request.artistResponseNote && <p className="text-sm text-gray-500">{t("admin.commissions.artistNoteLabel", { note: request.artistResponseNote })}</p>}
                 </div>
-                <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{request.status}</span>
+                <span className="w-fit rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{t(`admin.commissions.status.${request.status}`, request.status)}</span>
               </div>
 
               <div className="grid lg:grid-cols-[1fr_2fr_auto] gap-3">
@@ -122,7 +124,7 @@ export default function AdminCommissionsPage() {
                   }
                   className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
                 >
-                  <option value="">Choose artist</option>
+                  <option value="">{t("admin.commissions.chooseArtist")}</option>
                   {artists.map((artist) => (
                     <option key={artist.id} value={artist.id}>{artist.name}</option>
                   ))}
@@ -135,12 +137,12 @@ export default function AdminCommissionsPage() {
                       [request.id]: { artistId: assignments[request.id]?.artistId ?? request.assignedArtist?.id ?? "", adminNotes: e.target.value },
                     })
                   }
-                  placeholder="Admin notes for the artist"
+                  placeholder={t("admin.commissions.adminNotesPlaceholder")}
                   className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
                 <button onClick={() => assignRequest(request.id)} className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
                   <UserCheck className="w-4 h-4" />
-                  Assign
+                  {t("admin.commissions.assign")}
                 </button>
               </div>
             </div>
@@ -148,7 +150,7 @@ export default function AdminCommissionsPage() {
           {requests.length === 0 && (
             <div className="bg-white border border-gray-100 rounded-xl p-8 text-center text-gray-500">
               <Send className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-              No commission requests yet.
+              {t("admin.commissions.emptyState")}
             </div>
           )}
         </div>

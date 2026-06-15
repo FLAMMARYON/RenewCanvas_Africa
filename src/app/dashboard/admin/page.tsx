@@ -21,22 +21,24 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const statusConfig = {
-  submitted: { label: "Pending", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  under_review: { label: "Under Review", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  approved: { label: "Approved", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  listed: { label: "Listed", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  rejected: { label: "Rejected", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-  pending_payment: { label: "Pending Payment", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  paid: { label: "Paid", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
-  processing: { label: "Processing", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
-  shipped: { label: "Shipped", color: "text-purple-600", bgColor: "bg-purple-50", icon: Package },
-  delivered: { label: "Delivered", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  cancelled: { label: "Cancelled", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
+  submitted: { labelKey: "statusSubmitted", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
+  under_review: { labelKey: "statusUnderReview", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
+  approved: { labelKey: "statusApproved", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
+  listed: { labelKey: "statusListed", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
+  rejected: { labelKey: "statusRejected", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
+  pending_payment: { labelKey: "statusPendingPayment", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
+  paid: { labelKey: "statusPaid", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
+  processing: { labelKey: "statusProcessing", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
+  shipped: { labelKey: "statusShipped", color: "text-purple-600", bgColor: "bg-purple-50", icon: Package },
+  delivered: { labelKey: "statusDelivered", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
+  cancelled: { labelKey: "statusCancelled", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
 };
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const [artworks, setArtworks] = useState<FrontendArtwork[]>([]);
   const [orders, setOrders] = useState<FrontendOrder[]>([]);
   const [metrics, setMetrics] = useState<DetailedMetrics | null>(null);
@@ -63,7 +65,7 @@ export default function AdminDashboard() {
         setVerificationItems(verificationResult);
       } catch (loadError) {
         if (!active) return;
-        setError(loadError instanceof Error ? loadError.message : "Could not load admin dashboard data.");
+        setError(loadError instanceof Error ? loadError.message : t("admin.overview.loadError"));
       } finally {
         if (active) setLoading(false);
       }
@@ -81,18 +83,18 @@ export default function AdminDashboard() {
 
   const stats = useMemo(
     () => [
-      { label: "Active Artists", value: metrics ? formatMetric(metrics.artistCount) : "-", icon: Users, color: "text-blue-600", bgColor: "bg-blue-50", href: "/dashboard/admin/artists" },
-      { label: "Artworks", value: metrics ? formatMetric(metrics.artworkCount) : "-", icon: Palette, color: "text-purple-600", bgColor: "bg-purple-50", href: "/dashboard/admin/artworks" },
-      { label: "Total Orders", value: orders.length.toLocaleString(), icon: ShoppingBag, color: "text-green-600", bgColor: "bg-green-50", href: "/dashboard/admin/orders" },
-      { label: "Revenue", value: revenue.toLocaleString(), unit: "RWF", icon: DollarSign, color: "text-teal-600", bgColor: "bg-teal-50", href: "/dashboard/admin/orders" },
+      { label: t("admin.overview.statActiveArtists"), value: metrics ? formatMetric(metrics.artistCount) : "-", icon: Users, color: "text-blue-600", bgColor: "bg-blue-50", href: "/dashboard/admin/artists" },
+      { label: t("admin.overview.statArtworks"), value: metrics ? formatMetric(metrics.artworkCount) : "-", icon: Palette, color: "text-purple-600", bgColor: "bg-purple-50", href: "/dashboard/admin/artworks" },
+      { label: t("admin.overview.statTotalOrders"), value: orders.length.toLocaleString(), icon: ShoppingBag, color: "text-green-600", bgColor: "bg-green-50", href: "/dashboard/admin/orders" },
+      { label: t("admin.overview.statRevenue"), value: revenue.toLocaleString(), unit: "RWF", icon: DollarSign, color: "text-teal-600", bgColor: "bg-teal-50", href: "/dashboard/admin/orders" },
     ],
-    [metrics, orders.length, revenue]
+    [metrics, orders.length, revenue, t]
   );
 
   const pendingActions = [
-    { type: "artwork", title: "Artworks Pending Review", count: pendingArtworkCount, icon: Palette, color: "text-amber-600", bgColor: "bg-amber-50", href: "/dashboard/admin/artworks?status=submitted" },
-    { type: "artist", title: "Artists Pending Verification", count: pendingArtistCount, icon: UserCheck, color: "text-blue-600", bgColor: "bg-blue-50", href: "/dashboard/admin/artists?status=pending" },
-    { type: "order", title: "Orders Pending Payment", count: pendingOrderCount, icon: Package, color: "text-purple-600", bgColor: "bg-purple-50", href: "/dashboard/admin/orders?status=pending_payment" },
+    { type: "artwork", title: t("admin.overview.pendingArtworksReview"), count: pendingArtworkCount, icon: Palette, color: "text-amber-600", bgColor: "bg-amber-50", href: "/dashboard/admin/artworks?status=submitted" },
+    { type: "artist", title: t("admin.overview.pendingArtistsVerification"), count: pendingArtistCount, icon: UserCheck, color: "text-blue-600", bgColor: "bg-blue-50", href: "/dashboard/admin/artists?status=pending" },
+    { type: "order", title: t("admin.overview.pendingOrdersPayment"), count: pendingOrderCount, icon: Package, color: "text-purple-600", bgColor: "bg-purple-50", href: "/dashboard/admin/orders?status=pending_payment" },
   ];
 
   const recentArtworks = [...artworks].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 4);
@@ -101,11 +103,11 @@ export default function AdminDashboard() {
   const avgKgPerArtwork = metrics && metrics.artworkCount > 0 ? metrics.kgDiverted / metrics.artworkCount : 0;
 
   return (
-    <DashboardLayout role="admin" userName="Admin User">
+    <DashboardLayout role="admin" userName={t("admin.overview.adminUser")}>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-500">Overview of RenewCanvas Africa platform</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("admin.overview.title")}</h1>
+          <p className="text-gray-500">{t("admin.overview.subtitle")}</p>
         </div>
 
         {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -145,9 +147,9 @@ export default function AdminDashboard() {
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl border border-gray-100">
             <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Recent Artwork Submissions</h2>
+              <h2 className="font-semibold text-gray-900">{t("admin.overview.recentArtworkSubmissions")}</h2>
               <Link href="/dashboard/admin/artworks" className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1">
-                View All
+                {t("admin.overview.viewAll")}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -164,13 +166,13 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <p className="font-medium text-gray-900">{artwork.title}</p>
-                          <p className="text-sm text-gray-500">by {artwork.artist?.name ?? "RenewCanvas Africa"}</p>
+                          <p className="text-sm text-gray-500">{t("admin.overview.byArtist", { name: artwork.artist?.name ?? "RenewCanvas Africa" })}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.bgColor} ${status.color}`}>
                           <StatusIcon className="w-3 h-3" />
-                          {status.label}
+                          {t(`admin.overview.${status.labelKey}`)}
                         </span>
                         <p className="text-xs text-gray-400 mt-1">{new Date(artwork.createdAt).toLocaleDateString()}</p>
                       </div>
@@ -178,15 +180,15 @@ export default function AdminDashboard() {
                   </div>
                 );
               })}
-              {!loading && recentArtworks.length === 0 && <p className="p-6 text-sm text-gray-500">No artwork records found.</p>}
+              {!loading && recentArtworks.length === 0 && <p className="p-6 text-sm text-gray-500">{t("admin.overview.noArtworkRecords")}</p>}
             </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100">
             <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Recent Orders</h2>
+              <h2 className="font-semibold text-gray-900">{t("admin.overview.recentOrders")}</h2>
               <Link href="/dashboard/admin/orders" className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1">
-                View All
+                {t("admin.overview.viewAll")}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -203,22 +205,22 @@ export default function AdminDashboard() {
                           <ShoppingBag className="w-5 h-5 text-green-500" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{item?.title ?? "Artwork order"}</p>
-                          <p className="text-sm text-gray-500">{order.id} - {order.buyer?.name ?? "Buyer"}</p>
+                          <p className="font-medium text-gray-900">{item?.title ?? t("admin.overview.artworkOrder")}</p>
+                          <p className="text-sm text-gray-500">{order.id} - {order.buyer?.name ?? t("admin.overview.buyer")}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-gray-900">{order.totalAmount.toLocaleString()} RWF</p>
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.bgColor} ${status.color}`}>
                           <StatusIcon className="w-3 h-3" />
-                          {status.label}
+                          {t(`admin.overview.${status.labelKey}`)}
                         </span>
                       </div>
                     </div>
                   </div>
                 );
               })}
-              {!loading && recentOrders.length === 0 && <p className="p-6 text-sm text-gray-500">No order records found.</p>}
+              {!loading && recentOrders.length === 0 && <p className="p-6 text-sm text-gray-500">{t("admin.overview.noOrderRecords")}</p>}
             </div>
           </div>
         </div>
@@ -227,27 +229,27 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"><Recycle className="w-6 h-6 text-green-600" /></div>
             <div>
-              <h2 className="font-semibold text-gray-900">Platform Environmental Impact</h2>
-              <p className="text-sm text-gray-600">Total waste diverted through all artworks</p>
+              <h2 className="font-semibold text-gray-900">{t("admin.overview.environmentalImpactTitle")}</h2>
+              <p className="text-sm text-gray-600">{t("admin.overview.environmentalImpactSubtitle")}</p>
             </div>
             <Link href="/dashboard/admin/impact" className="ml-auto text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1">
-              Manage Impact
+              {t("admin.overview.manageImpact")}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <ImpactStat value={metrics ? metrics.kgDiverted.toLocaleString() : "-"} label="Total kg Diverted" color="text-green-600" />
-            <ImpactStat value={metrics ? metrics.artworkCount.toLocaleString() : "-"} label="Artworks with Impact" color="text-teal-600" />
-            <ImpactStat value={metrics ? avgKgPerArtwork.toFixed(1) : "-"} label="Avg kg per Artwork" color="text-amber-600" />
-            <ImpactStat value={topMaterial} label="Most Common Material" color="text-purple-600" small />
+            <ImpactStat value={metrics ? metrics.kgDiverted.toLocaleString() : "-"} label={t("admin.overview.impactTotalKgDiverted")} color="text-green-600" />
+            <ImpactStat value={metrics ? metrics.artworkCount.toLocaleString() : "-"} label={t("admin.overview.impactArtworksWithImpact")} color="text-teal-600" />
+            <ImpactStat value={metrics ? avgKgPerArtwork.toFixed(1) : "-"} label={t("admin.overview.impactAvgKgPerArtwork")} color="text-amber-600" />
+            <ImpactStat value={topMaterial} label={t("admin.overview.impactMostCommonMaterial")} color="text-purple-600" small />
           </div>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <QuickAction href="/dashboard/admin/artworks?status=submitted" icon={Palette} title="Review Artworks" detail={`${pendingArtworkCount} pending`} tone="amber" />
-          <QuickAction href="/dashboard/admin/artists?status=pending" icon={UserCheck} title="Verify Artists" detail={`${pendingArtistCount} pending`} tone="blue" />
-          <QuickAction href="/dashboard/admin/materials" icon={Recycle} title="Material Records" detail="Manage waste data" tone="green" />
-          <QuickAction href="/dashboard/admin/users" icon={Users} title="Manage Users" detail="User endpoint pending" tone="purple" />
+          <QuickAction href="/dashboard/admin/artworks?status=submitted" icon={Palette} title={t("admin.overview.quickReviewArtworks")} detail={t("admin.overview.quickPendingCount", { count: pendingArtworkCount })} tone="amber" />
+          <QuickAction href="/dashboard/admin/artists?status=pending" icon={UserCheck} title={t("admin.overview.quickVerifyArtists")} detail={t("admin.overview.quickPendingCount", { count: pendingArtistCount })} tone="blue" />
+          <QuickAction href="/dashboard/admin/materials" icon={Recycle} title={t("admin.overview.quickMaterialRecords")} detail={t("admin.overview.quickManageWasteData")} tone="green" />
+          <QuickAction href="/dashboard/admin/users" icon={Users} title={t("admin.overview.quickManageUsers")} detail={t("admin.overview.quickUserEndpointPending")} tone="purple" />
         </div>
       </div>
     </DashboardLayout>

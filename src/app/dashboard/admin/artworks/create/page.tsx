@@ -8,6 +8,7 @@ import { AlertCircle, ArrowLeft, Check, Loader2, Plus, Recycle, Upload, X } from
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type ImageDraft = {
   preview: string;
@@ -26,6 +27,7 @@ const categories = [...artworkCategories];
 const materialTypes = [...recyclableMaterials];
 
 export default function AdminCreateArtworkPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [images, setImages] = useState<ImageDraft[]>([]);
   const [materials, setMaterials] = useState<MaterialDraft[]>([{ material: "", weightKg: "", source: "" }]);
@@ -66,7 +68,7 @@ export default function AdminCreateArtworkPage() {
         setImages((current) =>
           current.map((image, imageIndex) =>
             imageIndex === startIndex + index
-              ? { ...image, uploading: false, error: error instanceof Error ? error.message : "Upload failed." }
+              ? { ...image, uploading: false, error: error instanceof Error ? error.message : t("admin.artworksCreate.uploadFailed") }
               : image
           )
         );
@@ -112,19 +114,19 @@ export default function AdminCreateArtworkPage() {
       }));
 
     if (!formData.title || !formData.description || !formData.category || !formData.price) {
-      setFormError("Complete title, description, category, and price before publishing.");
+      setFormError(t("admin.artworksCreate.errorRequiredFields"));
       return;
     }
     if (images.some((image) => image.uploading)) {
-      setFormError("Please wait for all images to finish uploading.");
+      setFormError(t("admin.artworksCreate.errorImagesUploading"));
       return;
     }
     if (uploadedImages.length === 0) {
-      setFormError("Upload at least one artwork image.");
+      setFormError(t("admin.artworksCreate.errorNoImage"));
       return;
     }
     if (validMaterials.length === 0) {
-      setFormError("Add at least one material with a valid weight.");
+      setFormError(t("admin.artworksCreate.errorNoMaterial"));
       return;
     }
 
@@ -142,7 +144,7 @@ export default function AdminCreateArtworkPage() {
       });
       router.push("/dashboard/admin/artworks");
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Could not create RenewCanvas-owned artwork.");
+      setFormError(error instanceof Error ? error.message : t("admin.artworksCreate.errorCreateFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -154,10 +156,10 @@ export default function AdminCreateArtworkPage() {
         <div>
           <Link href="/dashboard/admin/artworks" className="mb-4 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
             <ArrowLeft className="h-4 w-4" />
-            Back to Artwork Moderation
+            {t("admin.artworksCreate.backToModeration")}
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Create RenewCanvas Artwork</h1>
-          <p className="mt-1 text-gray-500">Publish artwork owned by RenewCanvas directly to the marketplace.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("admin.artworksCreate.pageTitle")}</h1>
+          <p className="mt-1 text-gray-500">{t("admin.artworksCreate.pageSubtitle")}</p>
         </div>
 
         {formError && (
@@ -170,30 +172,30 @@ export default function AdminCreateArtworkPage() {
         <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1fr_340px]">
           <div className="space-y-6">
             <section className="rounded-xl border border-gray-100 bg-white p-5">
-              <h2 className="font-semibold text-gray-900">Artwork Details</h2>
+              <h2 className="font-semibold text-gray-900">{t("admin.artworksCreate.detailsHeading")}</h2>
               <div className="mt-4 grid gap-4">
                 <label className="block text-sm font-medium text-gray-700">
-                  Title
+                  {t("admin.artworksCreate.titleLabel")}
                   <input name="title" value={formData.title} onChange={handleChange} className="mt-1 w-full rounded-lg border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500" />
                 </label>
                 <label className="block text-sm font-medium text-gray-700">
-                  Description
+                  {t("admin.artworksCreate.descriptionLabel")}
                   <textarea name="description" value={formData.description} onChange={handleChange} rows={5} className="mt-1 w-full resize-none rounded-lg border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500" />
                 </label>
                 <div className="grid gap-4 md:grid-cols-3">
                   <label className="block text-sm font-medium text-gray-700">
-                    Category
+                    {t("admin.artworksCreate.categoryLabel")}
                     <select name="category" value={formData.category} onChange={handleChange} className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                      <option value="">Select category</option>
+                      <option value="">{t("admin.artworksCreate.categoryPlaceholder")}</option>
                       {categories.map((category) => <option key={category} value={category}>{category}</option>)}
                     </select>
                   </label>
                   <label className="block text-sm font-medium text-gray-700">
-                    Dimensions
+                    {t("admin.artworksCreate.dimensionsLabel")}
                     <input name="dimensions" value={formData.dimensions} onChange={handleChange} className="mt-1 w-full rounded-lg border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500" />
                   </label>
                   <label className="block text-sm font-medium text-gray-700">
-                    Price (RWF)
+                    {t("admin.artworksCreate.priceLabel")}
                     <input name="price" type="number" min="1" value={formData.price} onChange={handleChange} className="mt-1 w-full rounded-lg border border-gray-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500" />
                   </label>
                 </div>
@@ -202,22 +204,22 @@ export default function AdminCreateArtworkPage() {
 
             <section className="rounded-xl border border-gray-100 bg-white p-5">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="font-semibold text-gray-900">Materials</h2>
+                <h2 className="font-semibold text-gray-900">{t("admin.artworksCreate.materialsHeading")}</h2>
                 <button type="button" onClick={addMaterial} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
                   <Plus className="h-4 w-4" />
-                  Add Material
+                  {t("admin.artworksCreate.addMaterial")}
                 </button>
               </div>
               <div className="mt-4 space-y-3">
                 {materials.map((material, index) => (
                   <div key={index} className="grid gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 md:grid-cols-[1fr_120px_1fr_auto]">
                     <select value={material.material} onChange={(event) => updateMaterial(index, "material", event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2">
-                      <option value="">Material</option>
+                      <option value="">{t("admin.artworksCreate.materialPlaceholder")}</option>
                       {materialTypes.map((type) => <option key={type} value={type}>{type}</option>)}
                     </select>
-                    <input value={material.weightKg} onChange={(event) => updateMaterial(index, "weightKg", event.target.value)} type="number" min="0" step="0.1" placeholder="kg" className="rounded-lg border border-gray-200 px-3 py-2" />
-                    <input value={material.source} onChange={(event) => updateMaterial(index, "source", event.target.value)} placeholder="Source" className="rounded-lg border border-gray-200 px-3 py-2" />
-                    <button type="button" onClick={() => removeMaterial(index)} className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label="Remove material">
+                    <input value={material.weightKg} onChange={(event) => updateMaterial(index, "weightKg", event.target.value)} type="number" min="0" step="0.1" placeholder={t("admin.artworksCreate.weightPlaceholder")} className="rounded-lg border border-gray-200 px-3 py-2" />
+                    <input value={material.source} onChange={(event) => updateMaterial(index, "source", event.target.value)} placeholder={t("admin.artworksCreate.sourcePlaceholder")} className="rounded-lg border border-gray-200 px-3 py-2" />
+                    <button type="button" onClick={() => removeMaterial(index)} className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label={t("admin.artworksCreate.removeMaterialAria")}>
                       <X className="h-4 w-4" />
                     </button>
                   </div>
@@ -228,11 +230,11 @@ export default function AdminCreateArtworkPage() {
 
           <aside className="space-y-6">
             <section className="rounded-xl border border-gray-100 bg-white p-5">
-              <h2 className="font-semibold text-gray-900">Images</h2>
+              <h2 className="font-semibold text-gray-900">{t("admin.artworksCreate.imagesHeading")}</h2>
               <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 p-6 text-center hover:border-teal-300 hover:bg-teal-50/30">
                 <Upload className="mb-2 h-8 w-8 text-teal-600" />
-                <span className="text-sm font-medium text-gray-900">Upload artwork images</span>
-                <span className="text-xs text-gray-500">Up to 5 images</span>
+                <span className="text-sm font-medium text-gray-900">{t("admin.artworksCreate.uploadImagesLabel")}</span>
+                <span className="text-xs text-gray-500">{t("admin.artworksCreate.uploadImagesHint")}</span>
                 <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
               </label>
               <div className="mt-4 grid grid-cols-2 gap-3">
@@ -254,16 +256,16 @@ export default function AdminCreateArtworkPage() {
               <div className="flex items-start gap-3">
                 <Recycle className="mt-0.5 h-5 w-5 text-teal-700" />
                 <div>
-                  <h2 className="font-semibold text-teal-900">RenewCanvas-Owned</h2>
+                  <h2 className="font-semibold text-teal-900">{t("admin.artworksCreate.ownedHeading")}</h2>
                   <p className="mt-1 text-sm text-teal-700">
-                    This artwork will be saved as RenewCanvas-owned and listed immediately after creation.
+                    {t("admin.artworksCreate.ownedDescription")}
                   </p>
                 </div>
               </div>
             </section>
 
             <button type="submit" disabled={isSubmitting} className="w-full rounded-lg bg-teal-600 px-5 py-3 font-medium text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60">
-              {isSubmitting ? "Publishing..." : "Publish Artwork"}
+              {isSubmitting ? t("admin.artworksCreate.publishing") : t("admin.artworksCreate.publishButton")}
             </button>
           </aside>
         </form>

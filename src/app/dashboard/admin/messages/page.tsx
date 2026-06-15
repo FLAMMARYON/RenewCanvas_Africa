@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface ContactMessage {
   id: string;
@@ -33,20 +34,21 @@ interface ContactMessage {
 }
 
 const typeConfig = {
-  contact_form: { label: "Contact Form", color: "bg-blue-100 text-blue-700" },
-  artist_application: { label: "Artist Application", color: "bg-purple-100 text-purple-700" },
-  partnership_inquiry: { label: "Partnership", color: "bg-green-100 text-green-700" },
-  waste_supply_request: { label: "Waste Supply", color: "bg-amber-100 text-amber-700" },
+  contact_form: { labelKey: "admin.messages.typeContactForm", color: "bg-blue-100 text-blue-700" },
+  artist_application: { labelKey: "admin.messages.typeArtistApplication", color: "bg-purple-100 text-purple-700" },
+  partnership_inquiry: { labelKey: "admin.messages.typePartnership", color: "bg-green-100 text-green-700" },
+  waste_supply_request: { labelKey: "admin.messages.typeWasteSupply", color: "bg-amber-100 text-amber-700" },
 };
 
 const statusConfig = {
-  unread: { label: "Unread", color: "bg-red-100 text-red-700", icon: Mail },
-  read: { label: "Read", color: "bg-blue-100 text-blue-700", icon: MailOpen },
-  replied: { label: "Replied", color: "bg-green-100 text-green-700", icon: Reply },
-  archived: { label: "Archived", color: "bg-gray-100 text-gray-600", icon: Archive },
+  unread: { labelKey: "admin.messages.statusUnread", color: "bg-red-100 text-red-700", icon: Mail },
+  read: { labelKey: "admin.messages.statusRead", color: "bg-blue-100 text-blue-700", icon: MailOpen },
+  replied: { labelKey: "admin.messages.statusReplied", color: "bg-green-100 text-green-700", icon: Reply },
+  archived: { labelKey: "admin.messages.statusArchived", color: "bg-gray-100 text-gray-600", icon: Archive },
 };
 
 export default function AdminMessagesPage() {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [filteredMessages, setFilteredMessages] = useState<ContactMessage[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
@@ -62,11 +64,11 @@ export default function AdminMessagesPage() {
     setError(null);
     try {
       const response = await fetch("/api/admin/messages");
-      if (!response.ok) throw new Error("Failed to fetch messages");
+      if (!response.ok) throw new Error(t("admin.messages.errorFetch"));
       const data = await response.json();
       setMessages(data.messages || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : t("admin.messages.errorGeneric"));
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +114,7 @@ export default function AdminMessagesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-      if (!response.ok) throw new Error("Failed to update message");
+      if (!response.ok) throw new Error(t("admin.messages.errorUpdate"));
 
       // Update local state
       setMessages((prev) =>
@@ -141,8 +143,8 @@ export default function AdminMessagesPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Messages Inbox</h1>
-            <p className="text-gray-500">Manage contact form submissions and inquiries</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.messages.title")}</h1>
+            <p className="text-gray-500">{t("admin.messages.subtitle")}</p>
           </div>
           <button
             type="button"
@@ -151,7 +153,7 @@ export default function AdminMessagesPage() {
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-            Refresh
+            {t("admin.messages.refresh")}
           </button>
         </div>
 
@@ -163,11 +165,11 @@ export default function AdminMessagesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          <StatCard label="Total" value={stats.total} icon={Inbox} />
-          <StatCard label="Unread" value={stats.unread} icon={Mail} tone="red" />
-          <StatCard label="Read" value={stats.read} icon={MailOpen} tone="blue" />
-          <StatCard label="Replied" value={stats.replied} icon={Reply} tone="green" />
-          <StatCard label="Archived" value={stats.archived} icon={Archive} tone="gray" />
+          <StatCard label={t("admin.messages.statTotal")} value={stats.total} icon={Inbox} />
+          <StatCard label={t("admin.messages.statUnread")} value={stats.unread} icon={Mail} tone="red" />
+          <StatCard label={t("admin.messages.statRead")} value={stats.read} icon={MailOpen} tone="blue" />
+          <StatCard label={t("admin.messages.statReplied")} value={stats.replied} icon={Reply} tone="green" />
+          <StatCard label={t("admin.messages.statArchived")} value={stats.archived} icon={Archive} tone="gray" />
         </div>
 
         {/* Filters */}
@@ -178,7 +180,7 @@ export default function AdminMessagesPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, email, or message..."
+              placeholder={t("admin.messages.searchPlaceholder")}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
@@ -189,22 +191,22 @@ export default function AdminMessagesPage() {
               onChange={(e) => setTypeFilter(e.target.value)}
               className="px-3 py-2.5 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
-              <option value="all">All Types</option>
-              <option value="contact_form">Contact Form</option>
-              <option value="artist_application">Artist Application</option>
-              <option value="partnership_inquiry">Partnership</option>
-              <option value="waste_supply_request">Waste Supply</option>
+              <option value="all">{t("admin.messages.allTypes")}</option>
+              <option value="contact_form">{t("admin.messages.typeContactForm")}</option>
+              <option value="artist_application">{t("admin.messages.typeArtistApplication")}</option>
+              <option value="partnership_inquiry">{t("admin.messages.typePartnership")}</option>
+              <option value="waste_supply_request">{t("admin.messages.typeWasteSupply")}</option>
             </select>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-2.5 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
-              <option value="all">All Status</option>
-              <option value="unread">Unread</option>
-              <option value="read">Read</option>
-              <option value="replied">Replied</option>
-              <option value="archived">Archived</option>
+              <option value="all">{t("admin.messages.allStatus")}</option>
+              <option value="unread">{t("admin.messages.statusUnread")}</option>
+              <option value="read">{t("admin.messages.statusRead")}</option>
+              <option value="replied">{t("admin.messages.statusReplied")}</option>
+              <option value="archived">{t("admin.messages.statusArchived")}</option>
             </select>
           </div>
         </div>
@@ -215,19 +217,19 @@ export default function AdminMessagesPage() {
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
             <div className="p-4 border-b border-gray-100">
               <h2 className="font-semibold text-gray-900">
-                Messages ({filteredMessages.length})
+                {t("admin.messages.messagesCount", { count: filteredMessages.length })}
               </h2>
             </div>
             <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
               {isLoading ? (
                 <div className="p-8 text-center text-gray-500">
                   <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                  Loading messages...
+                  {t("admin.messages.loading")}
                 </div>
               ) : filteredMessages.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   <MessageSquare className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                  <p>No messages found</p>
+                  <p>{t("admin.messages.noMessages")}</p>
                 </div>
               ) : (
                 filteredMessages.map((message) => (
@@ -260,7 +262,7 @@ export default function AdminMessagesPage() {
               <div className="h-full flex items-center justify-center p-8 text-gray-500">
                 <div className="text-center">
                   <Eye className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                  <p>Select a message to view details</p>
+                  <p>{t("admin.messages.selectPrompt")}</p>
                 </div>
               </div>
             )}
@@ -313,6 +315,7 @@ function MessageRow({
   isSelected: boolean;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   const type = typeConfig[message.type];
   const status = statusConfig[message.status];
   const StatusIcon = status.icon;
@@ -341,7 +344,7 @@ function MessageRow({
               {message.name}
             </span>
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${type.color}`}>
-              {type.label}
+              {t(type.labelKey)}
             </span>
           </div>
           <p className="text-sm text-gray-600 truncate">{message.subject || message.message}</p>
@@ -373,6 +376,7 @@ function MessageDetail({
   onClose: () => void;
   isUpdating: boolean;
 }) {
+  const { t } = useTranslation();
   const type = typeConfig[message.type];
   const status = statusConfig[message.status];
 
@@ -382,10 +386,10 @@ function MessageDetail({
       <div className="p-4 border-b border-gray-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${type.color}`}>
-            {type.label}
+            {t(type.labelKey)}
           </span>
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
-            {status.label}
+            {t(status.labelKey)}
           </span>
         </div>
         <button
@@ -409,13 +413,13 @@ function MessageDetail({
 
         {message.subject && (
           <div className="mb-4">
-            <p className="text-sm font-medium text-gray-700">Subject</p>
+            <p className="text-sm font-medium text-gray-700">{t("admin.messages.subjectLabel")}</p>
             <p className="text-gray-900">{message.subject}</p>
           </div>
         )}
 
         <div className="mb-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">Message</p>
+          <p className="text-sm font-medium text-gray-700 mb-2">{t("admin.messages.messageLabel")}</p>
           <div className="bg-gray-50 rounded-lg p-4 text-gray-800 whitespace-pre-wrap">
             {message.message}
           </div>
@@ -423,7 +427,7 @@ function MessageDetail({
 
         {message.metadata && Object.keys(message.metadata).length > 0 && (
           <div className="mb-4">
-            <p className="text-sm font-medium text-gray-700 mb-2">Additional Information</p>
+            <p className="text-sm font-medium text-gray-700 mb-2">{t("admin.messages.additionalInfo")}</p>
             <div className="bg-gray-50 rounded-lg p-4">
               {Object.entries(message.metadata).map(([key, value]) => (
                 <div key={key} className="flex justify-between py-1">
@@ -436,9 +440,9 @@ function MessageDetail({
         )}
 
         <div className="text-xs text-gray-400">
-          Received: {new Date(message.createdAt).toLocaleString()}
+          {t("admin.messages.received", { date: new Date(message.createdAt).toLocaleString() })}
           {message.updatedAt !== message.createdAt && (
-            <> &middot; Updated: {new Date(message.updatedAt).toLocaleString()}</>
+            <> &middot; {t("admin.messages.updated", { date: new Date(message.updatedAt).toLocaleString() })}</>
           )}
         </div>
       </div>
@@ -447,11 +451,11 @@ function MessageDetail({
       <div className="p-4 border-t border-gray-100">
         <div className="flex flex-wrap gap-2">
           <a
-            href={`mailto:${message.email}?subject=Re: ${message.subject || "Your inquiry to RenewCanvas Africa"}`}
+            href={`mailto:${message.email}?subject=Re: ${message.subject || t("admin.messages.defaultReplySubject")}`}
             className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700"
           >
             <Reply className="w-4 h-4" />
-            Reply via Email
+            {t("admin.messages.replyViaEmail")}
           </a>
 
           {message.status !== "replied" && (
@@ -462,7 +466,7 @@ function MessageDetail({
               className="inline-flex items-center gap-2 px-4 py-2 border border-green-300 text-green-700 text-sm font-medium rounded-lg hover:bg-green-50 disabled:opacity-50"
             >
               <CheckCircle className="w-4 h-4" />
-              Mark as Replied
+              {t("admin.messages.markAsReplied")}
             </button>
           )}
 
@@ -474,7 +478,7 @@ function MessageDetail({
               className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50"
             >
               <Archive className="w-4 h-4" />
-              Archive
+              {t("admin.messages.archive")}
             </button>
           )}
 
@@ -486,7 +490,7 @@ function MessageDetail({
               className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50"
             >
               <Inbox className="w-4 h-4" />
-              Move to Inbox
+              {t("admin.messages.moveToInbox")}
             </button>
           )}
         </div>

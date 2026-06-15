@@ -19,18 +19,20 @@ import {
   EyeOff,
 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-// Settings sections
+// Settings sections (labels resolved via t() inside the component)
 const settingsSections = [
-  { id: "general", label: "General", icon: Settings },
-  { id: "email", label: "Email", icon: Mail },
-  { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "security", label: "Security", icon: Shield },
-  { id: "payments", label: "Payments", icon: DollarSign },
-  { id: "shipping", label: "Shipping", icon: Truck },
+  { id: "general", labelKey: "tabGeneral", icon: Settings },
+  { id: "email", labelKey: "tabEmail", icon: Mail },
+  { id: "notifications", labelKey: "tabNotifications", icon: Bell },
+  { id: "security", labelKey: "tabSecurity", icon: Shield },
+  { id: "payments", labelKey: "tabPayments", icon: DollarSign },
+  { id: "shipping", labelKey: "tabShipping", icon: Truck },
 ];
 
 export default function AdminSettingsPage() {
+  const { t } = useTranslation();
   const [activeSection, setActiveSection] = useState("general");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -121,9 +123,9 @@ export default function AdminSettingsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Platform Settings</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.settings.pageTitle")}</h1>
             <p className="text-gray-500">
-              Configure your platform settings and preferences
+              {t("admin.settings.pageSubtitle")}
             </p>
           </div>
           <button
@@ -134,17 +136,17 @@ export default function AdminSettingsPage() {
             {isSaving ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                Saving...
+                {t("admin.settings.saving")}
               </>
             ) : saveSuccess ? (
               <>
                 <CheckCircle className="w-4 h-4" />
-                Saved!
+                {t("admin.settings.saved")}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Save Changes
+                {t("admin.settings.saveChanges")}
               </>
             )}
           </button>
@@ -165,7 +167,7 @@ export default function AdminSettingsPage() {
                   }`}
                 >
                   <section.icon className="w-5 h-5" />
-                  <span className="font-medium">{section.label}</span>
+                  <span className="font-medium">{t(`admin.settings.${section.labelKey}`)}</span>
                 </button>
               ))}
             </div>
@@ -183,10 +185,10 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">
-                        General Settings
+                        {t("admin.settings.generalTitle")}
                       </h2>
                       <p className="text-sm text-gray-500">
-                        Basic platform configuration
+                        {t("admin.settings.generalSubtitle")}
                       </p>
                     </div>
                   </div>
@@ -194,7 +196,7 @@ export default function AdminSettingsPage() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Site Name
+                        {t("admin.settings.siteNameLabel")}
                       </label>
                       <input
                         type="text"
@@ -210,7 +212,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Site URL
+                        {t("admin.settings.siteUrlLabel")}
                       </label>
                       <input
                         type="url"
@@ -226,7 +228,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Support Email
+                        {t("admin.settings.supportEmailLabel")}
                       </label>
                       <input
                         type="email"
@@ -242,7 +244,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Timezone
+                        {t("admin.settings.timezoneLabel")}
                       </label>
                       <select
                         value={generalSettings.timezone}
@@ -254,16 +256,16 @@ export default function AdminSettingsPage() {
                         }
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
                       >
-                        <option value="Africa/Kigali">Africa/Kigali (EAT)</option>
-                        <option value="Africa/Nairobi">Africa/Nairobi (EAT)</option>
-                        <option value="Africa/Lagos">Africa/Lagos (WAT)</option>
-                        <option value="Africa/Cairo">Africa/Cairo (EET)</option>
-                        <option value="UTC">UTC</option>
+                        <option value="Africa/Kigali">{t("admin.settings.tzKigali")}</option>
+                        <option value="Africa/Nairobi">{t("admin.settings.tzNairobi")}</option>
+                        <option value="Africa/Lagos">{t("admin.settings.tzLagos")}</option>
+                        <option value="Africa/Cairo">{t("admin.settings.tzCairo")}</option>
+                        <option value="UTC">{t("admin.settings.tzUtc")}</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Default Currency
+                        {t("admin.settings.defaultCurrencyLabel")}
                       </label>
                       <select
                         value={generalSettings.currency}
@@ -275,16 +277,16 @@ export default function AdminSettingsPage() {
                         }
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
                       >
-                        <option value="USD">USD - US Dollar</option>
-                        <option value="EUR">EUR - Euro</option>
-                        <option value="RWF">RWF - Rwandan Franc</option>
-                        <option value="KES">KES - Kenyan Shilling</option>
-                        <option value="NGN">NGN - Nigerian Naira</option>
+                        <option value="USD">{t("admin.settings.currencyUsd")}</option>
+                        <option value="EUR">{t("admin.settings.currencyEur")}</option>
+                        <option value="RWF">{t("admin.settings.currencyRwf")}</option>
+                        <option value="KES">{t("admin.settings.currencyKes")}</option>
+                        <option value="NGN">{t("admin.settings.currencyNgn")}</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Language
+                        {t("admin.settings.languageLabel")}
                       </label>
                       <select
                         value={generalSettings.language}
@@ -310,10 +312,10 @@ export default function AdminSettingsPage() {
                         <AlertTriangle className="w-5 h-5 text-amber-600" />
                         <div>
                           <p className="font-medium text-gray-900">
-                            Maintenance Mode
+                            {t("admin.settings.maintenanceModeLabel")}
                           </p>
                           <p className="text-sm text-gray-600">
-                            Temporarily disable the site for maintenance
+                            {t("admin.settings.maintenanceModeDesc")}
                           </p>
                         </div>
                       </div>
@@ -342,10 +344,10 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">
-                        Email Settings
+                        {t("admin.settings.emailTitle")}
                       </h2>
                       <p className="text-sm text-gray-500">
-                        Configure email delivery settings
+                        {t("admin.settings.emailSubtitle")}
                       </p>
                     </div>
                   </div>
@@ -353,7 +355,7 @@ export default function AdminSettingsPage() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        SMTP Host
+                        {t("admin.settings.smtpHostLabel")}
                       </label>
                       <input
                         type="text"
@@ -369,7 +371,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        SMTP Port
+                        {t("admin.settings.smtpPortLabel")}
                       </label>
                       <input
                         type="text"
@@ -385,7 +387,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        SMTP Username
+                        {t("admin.settings.smtpUsernameLabel")}
                       </label>
                       <input
                         type="text"
@@ -401,7 +403,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        SMTP Password
+                        {t("admin.settings.smtpPasswordLabel")}
                       </label>
                       <input
                         type="password"
@@ -417,7 +419,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        From Name
+                        {t("admin.settings.fromNameLabel")}
                       </label>
                       <input
                         type="text"
@@ -433,7 +435,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        From Email
+                        {t("admin.settings.fromEmailLabel")}
                       </label>
                       <input
                         type="email"
@@ -450,7 +452,7 @@ export default function AdminSettingsPage() {
                   </div>
 
                   <button className="mt-4 px-4 py-2 border border-teal-600 text-teal-600 rounded-lg hover:bg-teal-50 transition-colors">
-                    Send Test Email
+                    {t("admin.settings.sendTestEmail")}
                   </button>
                 </div>
               )}
@@ -464,10 +466,10 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">
-                        Notification Settings
+                        {t("admin.settings.notificationsTitle")}
                       </h2>
                       <p className="text-sm text-gray-500">
-                        Configure admin email notifications
+                        {t("admin.settings.notificationsSubtitle")}
                       </p>
                     </div>
                   </div>
@@ -476,43 +478,43 @@ export default function AdminSettingsPage() {
                     {[
                       {
                         key: "newUserRegistration",
-                        label: "New User Registration",
-                        desc: "Notify when a new user signs up",
+                        labelKey: "notifNewUserRegistrationLabel",
+                        descKey: "notifNewUserRegistrationDesc",
                       },
                       {
                         key: "newOrder",
-                        label: "New Order",
-                        desc: "Notify when a new order is placed",
+                        labelKey: "notifNewOrderLabel",
+                        descKey: "notifNewOrderDesc",
                       },
                       {
                         key: "orderStatusChange",
-                        label: "Order Status Change",
-                        desc: "Notify when an order status changes",
+                        labelKey: "notifOrderStatusChangeLabel",
+                        descKey: "notifOrderStatusChangeDesc",
                       },
                       {
                         key: "newArtistApplication",
-                        label: "New Artist Application",
-                        desc: "Notify when a new artist applies",
+                        labelKey: "notifNewArtistApplicationLabel",
+                        descKey: "notifNewArtistApplicationDesc",
                       },
                       {
                         key: "artistVerified",
-                        label: "Artist Verified",
-                        desc: "Notify when an artist is verified",
+                        labelKey: "notifArtistVerifiedLabel",
+                        descKey: "notifArtistVerifiedDesc",
                       },
                       {
                         key: "newArtwork",
-                        label: "New Artwork Listed",
-                        desc: "Notify when new artwork is listed",
+                        labelKey: "notifNewArtworkLabel",
+                        descKey: "notifNewArtworkDesc",
                       },
                       {
                         key: "paymentReceived",
-                        label: "Payment Received",
-                        desc: "Notify when payment is received",
+                        labelKey: "notifPaymentReceivedLabel",
+                        descKey: "notifPaymentReceivedDesc",
                       },
                       {
                         key: "refundProcessed",
-                        label: "Refund Processed",
-                        desc: "Notify when a refund is processed",
+                        labelKey: "notifRefundProcessedLabel",
+                        descKey: "notifRefundProcessedDesc",
                       },
                     ].map((item) => (
                       <label
@@ -520,8 +522,8 @@ export default function AdminSettingsPage() {
                         className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
                       >
                         <div>
-                          <p className="font-medium text-gray-900">{item.label}</p>
-                          <p className="text-sm text-gray-500">{item.desc}</p>
+                          <p className="font-medium text-gray-900">{t(`admin.settings.${item.labelKey}`)}</p>
+                          <p className="text-sm text-gray-500">{t(`admin.settings.${item.descKey}`)}</p>
                         </div>
                         <input
                           type="checkbox"
@@ -556,10 +558,10 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">
-                        Security Settings
+                        {t("admin.settings.securityTitle")}
                       </h2>
                       <p className="text-sm text-gray-500">
-                        Configure security and authentication settings
+                        {t("admin.settings.securitySubtitle")}
                       </p>
                     </div>
                   </div>
@@ -567,7 +569,7 @@ export default function AdminSettingsPage() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Session Timeout (minutes)
+                        {t("admin.settings.sessionTimeoutLabel")}
                       </label>
                       <input
                         type="number"
@@ -583,7 +585,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Max Login Attempts
+                        {t("admin.settings.maxLoginAttemptsLabel")}
                       </label>
                       <input
                         type="number"
@@ -599,7 +601,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Minimum Password Length
+                        {t("admin.settings.minPasswordLengthLabel")}
                       </label>
                       <input
                         type="number"
@@ -617,16 +619,16 @@ export default function AdminSettingsPage() {
 
                   <div className="space-y-4 mt-6">
                     <h3 className="font-medium text-gray-900">
-                      Password Requirements
+                      {t("admin.settings.passwordRequirementsHeading")}
                     </h3>
                     {[
                       {
                         key: "twoFactorRequired",
-                        label: "Require 2FA for Admin Users",
+                        labelKey: "secRequire2faLabel",
                       },
-                      { key: "requireSpecialChar", label: "Require Special Character" },
-                      { key: "requireNumber", label: "Require Number" },
-                      { key: "requireUppercase", label: "Require Uppercase Letter" },
+                      { key: "requireSpecialChar", labelKey: "secRequireSpecialCharLabel" },
+                      { key: "requireNumber", labelKey: "secRequireNumberLabel" },
+                      { key: "requireUppercase", labelKey: "secRequireUppercaseLabel" },
                     ].map((item) => (
                       <label
                         key={item.key}
@@ -650,7 +652,7 @@ export default function AdminSettingsPage() {
                           }
                           className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
                         />
-                        <span className="text-gray-700">{item.label}</span>
+                        <span className="text-gray-700">{t(`admin.settings.${item.labelKey}`)}</span>
                       </label>
                     ))}
                   </div>
@@ -666,10 +668,10 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">
-                        Payment Settings
+                        {t("admin.settings.paymentsTitle")}
                       </h2>
                       <p className="text-sm text-gray-500">
-                        Configure buyer payment collection and artist payout release
+                        {t("admin.settings.paymentsSubtitle")}
                       </p>
                     </div>
                   </div>
@@ -677,26 +679,21 @@ export default function AdminSettingsPage() {
                   {/* Commission Settings */}
                   <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
                     <h3 className="font-medium text-blue-900 mb-2">
-                      Managed Marketplace Payment Flow
+                      {t("admin.settings.managedFlowHeading")}
                     </h3>
                     <p className="text-sm text-blue-700">
-                      Buyers pay RenewCanvas Africa directly. RenewCanvas holds
-                      artist payouts until the configured return request window
-                      closes, then admins release payouts to the artist payment
-                      method on file. RenewCanvas-owned artworks do not create
-                      artist payouts; 100% of net sale revenue stays with
-                      RenewCanvas after payment and delivery costs.
+                      {t("admin.settings.managedFlowDesc")}
                     </p>
                   </div>
 
                   <div className="p-4 bg-teal-50 rounded-lg">
                     <h3 className="font-medium text-gray-900 mb-4">
-                      Commission & Payout Structure
+                      {t("admin.settings.commissionPayoutHeading")}
                     </h3>
                     <div className="grid sm:grid-cols-4 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Artist Commission (%)
+                          {t("admin.settings.artistCommissionLabel")}
                         </label>
                         <input
                           type="number"
@@ -712,7 +709,7 @@ export default function AdminSettingsPage() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Platform Fee (%)
+                          {t("admin.settings.platformFeeLabel")}
                         </label>
                         <input
                           type="number"
@@ -728,7 +725,7 @@ export default function AdminSettingsPage() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Min Payout (RWF)
+                          {t("admin.settings.minPayoutLabel")}
                         </label>
                         <input
                           type="number"
@@ -744,7 +741,7 @@ export default function AdminSettingsPage() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Payout Hold (hours)
+                          {t("admin.settings.payoutHoldLabel")}
                         </label>
                         <input
                           type="number"
@@ -760,8 +757,7 @@ export default function AdminSettingsPage() {
                       </div>
                     </div>
                     <p className="text-xs text-teal-700 mt-3">
-                      Artist payment details are private and visible only to the
-                      artist and authorized admins.
+                      {t("admin.settings.artistPaymentPrivacyNote")}
                     </p>
                   </div>
 
@@ -769,9 +765,9 @@ export default function AdminSettingsPage() {
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <label className="flex items-center justify-between mb-4 cursor-pointer">
                       <div>
-                        <p className="font-medium text-gray-900">Stripe</p>
+                        <p className="font-medium text-gray-900">{t("admin.settings.stripeLabel")}</p>
                         <p className="text-sm text-gray-500">
-                          Accept card payments into the RenewCanvas account
+                          {t("admin.settings.stripeDesc")}
                         </p>
                       </div>
                       <input
@@ -790,7 +786,7 @@ export default function AdminSettingsPage() {
                       <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Publishable Key
+                            {t("admin.settings.publishableKeyLabel")}
                           </label>
                           <div className="relative">
                             <input
@@ -819,7 +815,7 @@ export default function AdminSettingsPage() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Secret Key
+                            {t("admin.settings.secretKeyLabel")}
                           </label>
                           <input
                             type="password"
@@ -841,10 +837,9 @@ export default function AdminSettingsPage() {
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <label className="flex items-center justify-between cursor-pointer">
                       <div>
-                        <p className="font-medium text-gray-900">MTN Mobile Money</p>
+                        <p className="font-medium text-gray-900">{t("admin.settings.mtnMomoLabel")}</p>
                         <p className="text-sm text-gray-500">
-                          Accept phone approval prompts and USSD fallback into the
-                          RenewCanvas account
+                          {t("admin.settings.mtnMomoDesc")}
                         </p>
                       </div>
                       <input
@@ -864,11 +859,10 @@ export default function AdminSettingsPage() {
                         <label className="flex items-center justify-between gap-4 sm:col-span-3 p-3 bg-white border border-gray-200 rounded-lg cursor-pointer">
                           <div>
                             <p className="text-sm font-medium text-gray-900">
-                              Phone approval prompt
+                              {t("admin.settings.phoneApprovalLabel")}
                             </p>
                             <p className="text-xs text-gray-500">
-                              Send a MoMo prompt to the buyer's phone so they
-                              only enter their PIN to approve payment.
+                              {t("admin.settings.phoneApprovalDesc")}
                             </p>
                           </div>
                           <input
@@ -886,11 +880,10 @@ export default function AdminSettingsPage() {
                         <label className="flex items-center justify-between gap-4 sm:col-span-3 p-3 bg-white border border-gray-200 rounded-lg cursor-pointer">
                           <div>
                             <p className="text-sm font-medium text-gray-900">
-                              USSD fallback
+                              {t("admin.settings.ussdFallbackLabel")}
                             </p>
                             <p className="text-xs text-gray-500">
-                              Let buyers pay manually only when the approval
-                              prompt or hosted payment link is unavailable.
+                              {t("admin.settings.ussdFallbackDesc")}
                             </p>
                           </div>
                           <input
@@ -907,7 +900,7 @@ export default function AdminSettingsPage() {
                         </label>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            USSD Code
+                            {t("admin.settings.ussdCodeLabel")}
                           </label>
                           <input
                             type="text"
@@ -923,7 +916,7 @@ export default function AdminSettingsPage() {
                         </div>
                         <div className="sm:col-span-2">
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            RenewCanvas Merchant Code
+                            {t("admin.settings.merchantCodeLabel")}
                           </label>
                           <input
                             type="text"
@@ -938,10 +931,7 @@ export default function AdminSettingsPage() {
                           />
                         </div>
                         <p className="text-xs text-gray-500 sm:col-span-3">
-                          Phone approvals should reconcile automatically through
-                          provider callbacks. Fallback USSD payments must store
-                          the order reference so admins can match MoMo
-                          confirmations to RenewCanvas orders.
+                          {t("admin.settings.momoReconcileNote")}
                         </p>
                       </div>
                     )}
@@ -958,10 +948,10 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold text-gray-900">
-                        Shipping Settings
+                        {t("admin.settings.shippingTitle")}
                       </h2>
                       <p className="text-sm text-gray-500">
-                        Configure shipping rates and options
+                        {t("admin.settings.shippingSubtitle")}
                       </p>
                     </div>
                   </div>
@@ -969,7 +959,7 @@ export default function AdminSettingsPage() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Domestic Base Rate ($)
+                        {t("admin.settings.domesticBaseRateLabel")}
                       </label>
                       <input
                         type="number"
@@ -985,7 +975,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        International Base Rate ($)
+                        {t("admin.settings.internationalBaseRateLabel")}
                       </label>
                       <input
                         type="number"
@@ -1001,7 +991,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Free Shipping Threshold ($)
+                        {t("admin.settings.freeShippingThresholdLabel")}
                       </label>
                       <input
                         type="number"
@@ -1017,7 +1007,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Domestic Delivery (days)
+                        {t("admin.settings.domesticDeliveryLabel")}
                       </label>
                       <input
                         type="text"
@@ -1033,7 +1023,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        International Delivery (days)
+                        {t("admin.settings.internationalDeliveryLabel")}
                       </label>
                       <input
                         type="text"
@@ -1062,7 +1052,7 @@ export default function AdminSettingsPage() {
                       className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
                     />
                     <span className="text-gray-700">
-                      Enable shipment tracking for all orders
+                      {t("admin.settings.enableTrackingLabel")}
                     </span>
                   </label>
                 </div>

@@ -21,6 +21,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 // TODO: Replace this mock list with /api/admin/users once that API route exists.
 // There is currently no existing users endpoint under src/app/api, so this page
@@ -127,19 +128,19 @@ const users = [
 
 const roleConfig = {
   artist: {
-    label: "Artist",
+    labelKey: "roleArtist",
     color: "text-purple-600",
     bgColor: "bg-purple-50",
     icon: Palette,
   },
   buyer: {
-    label: "Buyer",
+    labelKey: "roleBuyer",
     color: "text-blue-600",
     bgColor: "bg-blue-50",
     icon: ShoppingBag,
   },
   admin: {
-    label: "Admin",
+    labelKey: "roleAdmin",
     color: "text-red-600",
     bgColor: "bg-red-50",
     icon: Shield,
@@ -148,23 +149,24 @@ const roleConfig = {
 
 const statusConfig = {
   active: {
-    label: "Active",
+    labelKey: "statusActive",
     color: "text-green-600",
     bgColor: "bg-green-50",
   },
   inactive: {
-    label: "Inactive",
+    labelKey: "statusInactive",
     color: "text-gray-600",
     bgColor: "bg-gray-50",
   },
   suspended: {
-    label: "Suspended",
+    labelKey: "statusSuspended",
     color: "text-red-600",
     bgColor: "bg-red-50",
   },
 };
 
 export default function AdminUsersPage() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -209,8 +211,10 @@ export default function AdminUsersPage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-500">Manage all platform users</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("admin.users.title")}
+          </h1>
+          <p className="text-gray-500">{t("admin.users.subtitle")}</p>
         </div>
 
         {/* Stats */}
@@ -222,7 +226,9 @@ export default function AdminUsersPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-sm text-gray-500">Total Users</p>
+                <p className="text-sm text-gray-500">
+                  {t("admin.users.statTotal")}
+                </p>
               </div>
             </div>
           </div>
@@ -235,7 +241,9 @@ export default function AdminUsersPage() {
                 <p className="text-2xl font-bold text-purple-600">
                   {stats.artists}
                 </p>
-                <p className="text-sm text-gray-500">Artists</p>
+                <p className="text-sm text-gray-500">
+                  {t("admin.users.statArtists")}
+                </p>
               </div>
             </div>
           </div>
@@ -246,7 +254,9 @@ export default function AdminUsersPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-blue-600">{stats.buyers}</p>
-                <p className="text-sm text-gray-500">Buyers</p>
+                <p className="text-sm text-gray-500">
+                  {t("admin.users.statBuyers")}
+                </p>
               </div>
             </div>
           </div>
@@ -259,7 +269,9 @@ export default function AdminUsersPage() {
                 <p className="text-2xl font-bold text-green-600">
                   {stats.active}
                 </p>
-                <p className="text-sm text-gray-500">Active</p>
+                <p className="text-sm text-gray-500">
+                  {t("admin.users.statActive")}
+                </p>
               </div>
             </div>
           </div>
@@ -272,7 +284,9 @@ export default function AdminUsersPage() {
                 <p className="text-2xl font-bold text-red-600">
                   {stats.suspended}
                 </p>
-                <p className="text-sm text-gray-500">Suspended</p>
+                <p className="text-sm text-gray-500">
+                  {t("admin.users.statSuspended")}
+                </p>
               </div>
             </div>
           </div>
@@ -285,7 +299,7 @@ export default function AdminUsersPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name or email..."
+                placeholder={t("admin.users.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
@@ -297,19 +311,27 @@ export default function AdminUsersPage() {
                 onChange={(e) => setRoleFilter(e.target.value)}
                 className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
               >
-                <option value="all">All Roles</option>
-                <option value="artist">Artists</option>
-                <option value="buyer">Buyers</option>
+                <option value="all">{t("admin.users.filterAllRoles")}</option>
+                <option value="artist">
+                  {t("admin.users.filterArtists")}
+                </option>
+                <option value="buyer">{t("admin.users.filterBuyers")}</option>
               </select>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
               >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
+                <option value="all">{t("admin.users.filterAllStatus")}</option>
+                <option value="active">
+                  {t("admin.users.statusActive")}
+                </option>
+                <option value="inactive">
+                  {t("admin.users.statusInactive")}
+                </option>
+                <option value="suspended">
+                  {t("admin.users.statusSuspended")}
+                </option>
               </select>
             </div>
           </div>
@@ -317,13 +339,15 @@ export default function AdminUsersPage() {
           {selectedUsers.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-4">
               <span className="text-sm text-gray-600">
-                {selectedUsers.length} selected
+                {t("admin.users.selectedCount", {
+                  count: selectedUsers.length,
+                })}
               </span>
               <button className="text-sm text-teal-600 hover:text-teal-700 font-medium">
-                Send Email
+                {t("admin.users.sendEmail")}
               </button>
               <button className="text-sm text-amber-600 hover:text-amber-700 font-medium">
-                Suspend
+                {t("admin.users.suspend")}
               </button>
             </div>
           )}
@@ -344,22 +368,22 @@ export default function AdminUsersPage() {
                     />
                   </th>
                   <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">
-                    User
+                    {t("admin.users.columnUser")}
                   </th>
                   <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">
-                    Role
+                    {t("admin.users.columnRole")}
                   </th>
                   <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">
-                    Status
+                    {t("admin.users.columnStatus")}
                   </th>
                   <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">
-                    Activity
+                    {t("admin.users.columnActivity")}
                   </th>
                   <th className="text-left text-sm font-medium text-gray-500 px-4 py-3">
-                    Joined
+                    {t("admin.users.columnJoined")}
                   </th>
                   <th className="text-left text-sm font-medium text-gray-500 px-4 py-3 w-20">
-                    Actions
+                    {t("admin.users.columnActions")}
                   </th>
                 </tr>
               </thead>
@@ -406,14 +430,14 @@ export default function AdminUsersPage() {
                           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${role.bgColor} ${role.color}`}
                         >
                           <RoleIcon className="w-3 h-3" />
-                          {role.label}
+                          {t(`admin.users.${role.labelKey}`)}
                         </span>
                       </td>
                       <td className="px-4 py-4">
                         <span
                           className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${status.bgColor} ${status.color}`}
                         >
-                          {status.label}
+                          {t(`admin.users.${status.labelKey}`)}
                         </span>
                       </td>
                       <td className="px-4 py-4">
@@ -432,7 +456,9 @@ export default function AdminUsersPage() {
                           ) : (
                             <span className="flex items-center gap-1 text-gray-600">
                               <ShoppingBag className="w-3 h-3" />
-                              {user.ordersCount} orders
+                              {t("admin.users.ordersCount", {
+                                count: user.ordersCount,
+                              })}
                             </span>
                           )}
                         </div>
@@ -448,27 +474,27 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => setShowUserModal(user.id)}
                             className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                            title="View Details"
+                            title={t("admin.users.actionViewDetails")}
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Send Email"
+                            title={t("admin.users.sendEmail")}
                           >
                             <Mail className="w-4 h-4" />
                           </button>
                           {user.status === "active" ? (
                             <button
                               className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Suspend User"
+                              title={t("admin.users.actionSuspendUser")}
                             >
                               <Ban className="w-4 h-4" />
                             </button>
                           ) : (
                             <button
                               className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                              title="Activate User"
+                              title={t("admin.users.actionActivateUser")}
                             >
                               <UserCheck className="w-4 h-4" />
                             </button>
@@ -485,7 +511,10 @@ export default function AdminUsersPage() {
           {/* Pagination */}
           <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              Showing {filteredUsers.length} of {users.length} users
+              {t("admin.users.paginationShowing", {
+                shown: filteredUsers.length,
+                total: users.length,
+              })}
             </p>
             <div className="flex items-center gap-2">
               <button className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-50">

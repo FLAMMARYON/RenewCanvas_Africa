@@ -5,19 +5,21 @@ import { listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
 import { Calendar, CheckCircle, Clock, DollarSign, Mail, Package, Search, Truck, User, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const statusConfig = {
-  pending_payment: { label: "Pending Payment", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  paid: { label: "Paid", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
-  processing: { label: "Processing", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
-  shipped: { label: "Shipped", color: "text-purple-600", bgColor: "bg-purple-50", icon: Truck },
-  delivered: { label: "Delivered", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  cancelled: { label: "Cancelled", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-  refunded: { label: "Refunded", color: "text-gray-600", bgColor: "bg-gray-100", icon: XCircle },
-  failed: { label: "Failed", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
+  pending_payment: { labelKey: "pendingPayment", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
+  paid: { labelKey: "paid", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
+  processing: { labelKey: "processing", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
+  shipped: { labelKey: "shipped", color: "text-purple-600", bgColor: "bg-purple-50", icon: Truck },
+  delivered: { labelKey: "delivered", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
+  cancelled: { labelKey: "cancelled", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
+  refunded: { labelKey: "refunded", color: "text-gray-600", bgColor: "bg-gray-100", icon: XCircle },
+  failed: { labelKey: "failed", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
 };
 
 export default function AdminOrdersPage() {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState<FrontendOrder[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -27,7 +29,7 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     listOrders()
       .then(setOrders)
-      .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load orders."));
+      .catch((error) => setStatusMessage(error instanceof Error ? error.message : t("admin.orders.loadError")));
   }, []);
 
   const filteredOrders = orders.filter((order) => {
@@ -53,46 +55,46 @@ export default function AdminOrdersPage() {
     <DashboardLayout role="admin" userName="Admin User">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
-          <p className="text-gray-500">Review buyer orders, payment instructions, delivery snapshots, and artist payouts</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("admin.orders.title")}</h1>
+          <p className="text-gray-500">{t("admin.orders.subtitle")}</p>
         </div>
 
         {statusMessage && <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{statusMessage}</div>}
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
-          <Stat label="Total Orders" value={stats.total} />
-          <Stat label="Pending Payment" value={stats.pending} tone="amber" />
-          <Stat label="In Progress" value={stats.active} tone="blue" />
-          <Stat label="Delivered" value={stats.delivered} tone="green" />
-          <Stat label="Gross Revenue" value={`${Math.round(stats.revenue).toLocaleString()} RWF`} tone="teal" />
-          <Stat label="Platform Fees" value={`${Math.round(stats.platformFees).toLocaleString()} RWF`} tone="teal" />
+          <Stat label={t("admin.orders.statTotalOrders")} value={stats.total} />
+          <Stat label={t("admin.orders.statPendingPayment")} value={stats.pending} tone="amber" />
+          <Stat label={t("admin.orders.statInProgress")} value={stats.active} tone="blue" />
+          <Stat label={t("admin.orders.statDelivered")} value={stats.delivered} tone="green" />
+          <Stat label={t("admin.orders.statGrossRevenue")} value={`${Math.round(stats.revenue).toLocaleString()} RWF`} tone="teal" />
+          <Stat label={t("admin.orders.statPlatformFees")} value={`${Math.round(stats.platformFees).toLocaleString()} RWF`} tone="teal" />
         </div>
 
         <div className="rounded-xl border border-gray-100 bg-white p-4">
           <div className="flex flex-col gap-4 lg:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-              <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search orders, artworks, buyers, or artists..." className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder={t("admin.orders.searchPlaceholder")} className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-teal-500" />
             </div>
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5">
-              <option value="all">All Status</option>
-              <option value="pending_payment">Pending Payment</option>
-              <option value="paid">Paid</option>
-              <option value="processing">Processing</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all">{t("admin.orders.filterAllStatus")}</option>
+              <option value="pending_payment">{t("admin.orders.pendingPayment")}</option>
+              <option value="paid">{t("admin.orders.paid")}</option>
+              <option value="processing">{t("admin.orders.processing")}</option>
+              <option value="shipped">{t("admin.orders.shipped")}</option>
+              <option value="delivered">{t("admin.orders.delivered")}</option>
+              <option value="cancelled">{t("admin.orders.cancelled")}</option>
             </select>
           </div>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-gray-100 bg-white">
           <div className="hidden grid-cols-12 gap-4 border-b border-gray-100 bg-gray-50 p-4 text-sm font-medium text-gray-500 lg:grid">
-            <div className="col-span-2">Order</div>
-            <div className="col-span-3">Artwork / Artist</div>
-            <div className="col-span-3">Buyer</div>
-            <div className="col-span-2">Amount</div>
-            <div className="col-span-2">Status</div>
+            <div className="col-span-2">{t("admin.orders.columnOrder")}</div>
+            <div className="col-span-3">{t("admin.orders.columnArtworkArtist")}</div>
+            <div className="col-span-3">{t("admin.orders.columnBuyer")}</div>
+            <div className="col-span-2">{t("admin.orders.columnAmount")}</div>
+            <div className="col-span-2">{t("admin.orders.columnStatus")}</div>
           </div>
 
           <div className="divide-y divide-gray-100">
@@ -111,11 +113,11 @@ export default function AdminOrdersPage() {
                         <p className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleString()}</p>
                       </div>
                       <div className="lg:col-span-3">
-                        <p className="font-medium text-gray-900">{item?.title ?? "Artwork"}</p>
-                        <p className="text-sm text-gray-500">by {item?.artistName ?? "RenewCanvas Africa"}</p>
+                        <p className="font-medium text-gray-900">{item?.title ?? t("admin.orders.artworkFallback")}</p>
+                        <p className="text-sm text-gray-500">{t("admin.orders.byArtist", { name: item?.artistName ?? "RenewCanvas Africa" })}</p>
                       </div>
                       <div className="lg:col-span-3">
-                        <p className="font-medium text-gray-900">{order.buyer?.name ?? String(delivery.fullName ?? "Buyer")}</p>
+                        <p className="font-medium text-gray-900">{order.buyer?.name ?? String(delivery.fullName ?? t("admin.orders.buyerFallback"))}</p>
                         <p className="text-sm text-gray-500">{order.buyer?.email ?? String(delivery.email ?? "")}</p>
                       </div>
                       <div className="lg:col-span-2">
@@ -125,7 +127,7 @@ export default function AdminOrdersPage() {
                       <div className="lg:col-span-2">
                         <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${status.bgColor} ${status.color}`}>
                           <StatusIcon className="h-3 w-3" />
-                          {status.label}
+                          {t(`admin.orders.${status.labelKey}`)}
                         </span>
                       </div>
                     </div>
@@ -135,20 +137,20 @@ export default function AdminOrdersPage() {
                     <div className="border-t border-gray-100 bg-gray-50 p-4">
                       <div className="grid gap-4 md:grid-cols-3">
                         <div className="rounded-lg border border-gray-100 bg-white p-4">
-                          <h4 className="mb-3 flex items-center gap-2 font-medium text-gray-900"><DollarSign className="h-4 w-4 text-green-600" />Financial Details</h4>
+                          <h4 className="mb-3 flex items-center gap-2 font-medium text-gray-900"><DollarSign className="h-4 w-4 text-green-600" />{t("admin.orders.financialDetails")}</h4>
                           <div className="space-y-2 text-sm">
-                            <Detail label="Subtotal" value={`${order.subtotalAmount.toLocaleString()} RWF`} />
-                            <Detail label="Delivery" value={`${order.deliveryAmount.toLocaleString()} RWF`} />
-                            <Detail label="Total" value={`${order.totalAmount.toLocaleString()} RWF`} />
-                            <Detail label="Platform Fee Estimate" value={`${Math.round(order.totalAmount * 0.2).toLocaleString()} RWF`} />
-                            <Detail label="Artist Payout Estimate" value={item?.ownerType === "renewcanvas" ? "Not applicable" : `${Math.round(order.totalAmount * 0.8).toLocaleString()} RWF`} />
+                            <Detail label={t("admin.orders.subtotal")} value={`${order.subtotalAmount.toLocaleString()} RWF`} />
+                            <Detail label={t("admin.orders.delivery")} value={`${order.deliveryAmount.toLocaleString()} RWF`} />
+                            <Detail label={t("admin.orders.total")} value={`${order.totalAmount.toLocaleString()} RWF`} />
+                            <Detail label={t("admin.orders.platformFeeEstimate")} value={`${Math.round(order.totalAmount * 0.2).toLocaleString()} RWF`} />
+                            <Detail label={t("admin.orders.artistPayoutEstimate")} value={item?.ownerType === "renewcanvas" ? t("admin.orders.notApplicable") : `${Math.round(order.totalAmount * 0.8).toLocaleString()} RWF`} />
                           </div>
                         </div>
 
                         <div className="rounded-lg border border-gray-100 bg-white p-4">
-                          <h4 className="mb-3 flex items-center gap-2 font-medium text-gray-900"><User className="h-4 w-4 text-blue-600" />Buyer And Delivery</h4>
+                          <h4 className="mb-3 flex items-center gap-2 font-medium text-gray-900"><User className="h-4 w-4 text-blue-600" />{t("admin.orders.buyerAndDelivery")}</h4>
                           <div className="space-y-2 text-sm text-gray-600">
-                            <p className="font-medium text-gray-900">{String(delivery.fullName ?? order.buyer?.name ?? "Buyer")}</p>
+                            <p className="font-medium text-gray-900">{String(delivery.fullName ?? order.buyer?.name ?? t("admin.orders.buyerFallback"))}</p>
                             <p>{String(delivery.email ?? order.buyer?.email ?? "")}</p>
                             <p>{String(delivery.phone ?? "")}</p>
                             <p>{String(delivery.address ?? "")}, {String(delivery.city ?? "")}</p>
@@ -157,13 +159,13 @@ export default function AdminOrdersPage() {
                         </div>
 
                         <div className="rounded-lg border border-gray-100 bg-white p-4">
-                          <h4 className="mb-3 flex items-center gap-2 font-medium text-gray-900"><Calendar className="h-4 w-4 text-purple-600" />Admin Actions</h4>
+                          <h4 className="mb-3 flex items-center gap-2 font-medium text-gray-900"><Calendar className="h-4 w-4 text-purple-600" />{t("admin.orders.adminActions")}</h4>
                           <div className="space-y-2 text-sm text-gray-600">
-                            <p>Confirm payment to RenewCanvas before asking the artist to ship.</p>
-                            <p>Keep buyer and artist communication mediated through admin.</p>
-                            <Link href={`/order-confirmation?order=${encodeURIComponent(order.id)}`} className="inline-flex rounded-lg bg-teal-600 px-4 py-2 text-white">Payment Instructions</Link>
+                            <p>{t("admin.orders.adminActionConfirmPayment")}</p>
+                            <p>{t("admin.orders.adminActionMediate")}</p>
+                            <Link href={`/order-confirmation?order=${encodeURIComponent(order.id)}`} className="inline-flex rounded-lg bg-teal-600 px-4 py-2 text-white">{t("admin.orders.paymentInstructions")}</Link>
                             <a href={`mailto:${order.buyer?.email ?? String(delivery.email ?? "")}`} className="ml-2 inline-flex items-center gap-1 rounded-lg border border-gray-200 px-4 py-2 text-gray-700">
-                              <Mail className="h-4 w-4" />Email Buyer
+                              <Mail className="h-4 w-4" />{t("admin.orders.emailBuyer")}
                             </a>
                           </div>
                         </div>
@@ -178,8 +180,8 @@ export default function AdminOrdersPage() {
           {filteredOrders.length === 0 && (
             <div className="p-12 text-center">
               <Package className="mx-auto mb-4 h-12 w-12 text-gray-300" />
-              <h3 className="mb-1 font-medium text-gray-900">No orders found</h3>
-              <p className="text-gray-500">Try adjusting your search or filters.</p>
+              <h3 className="mb-1 font-medium text-gray-900">{t("admin.orders.emptyTitle")}</h3>
+              <p className="text-gray-500">{t("admin.orders.emptyHint")}</p>
             </div>
           )}
         </div>

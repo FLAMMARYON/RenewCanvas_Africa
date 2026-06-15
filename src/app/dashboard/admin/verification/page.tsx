@@ -5,10 +5,12 @@ import { defaultP1VerificationCopy } from "@/lib/i18n/p1-verification";
 import { decideVerification, listVerificationItems, type VerificationItem } from "@/lib/frontend/verification-api";
 import { AlertTriangle, CheckCircle, FileSearch, Info, Recycle, ShieldCheck, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const copy = defaultP1VerificationCopy.page;
 
 export default function AdminVerificationPage() {
+  const { t } = useTranslation();
   const [queue, setQueue] = useState<VerificationItem[]>([]);
   const [statusMessage, setStatusMessage] = useState("");
   const [actionArtworkId, setActionArtworkId] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export default function AdminVerificationPage() {
   const refreshQueue = () => {
     listVerificationItems()
       .then(setQueue)
-      .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load verification queue."));
+      .catch((error) => setStatusMessage(error instanceof Error ? error.message : t("admin.verification.loadError")));
   };
 
   const counts = useMemo(
@@ -40,7 +42,7 @@ export default function AdminVerificationPage() {
       setNote("");
       refreshQueue();
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "Could not save verification decision.");
+      setStatusMessage(error instanceof Error ? error.message : t("admin.verification.saveError"));
     }
   };
 
@@ -72,7 +74,7 @@ export default function AdminVerificationPage() {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
-                    <p className="text-sm text-gray-500">{copy.byArtist(item.artist?.name ?? "Unknown artist")}</p>
+                    <p className="text-sm text-gray-500">{copy.byArtist(item.artist?.name ?? t("admin.verification.unknownArtist"))}</p>
                     <p className="mt-2 text-sm text-gray-700">{item.plainLanguageSummary}</p>
                     {item.adminNotes && <p className="mt-2 text-sm text-amber-700">{item.adminNotes}</p>}
                   </div>
@@ -104,7 +106,7 @@ export default function AdminVerificationPage() {
 
                 {item.evidence.length > 0 && (
                   <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-4">
-                    <h4 className="text-sm font-medium text-gray-900">Evidence</h4>
+                    <h4 className="text-sm font-medium text-gray-900">{t("admin.verification.evidence")}</h4>
                     <div className="mt-2 space-y-2">
                       {item.evidence.map((evidence) => (
                         <a key={evidence.id} href={evidence.url} target="_blank" className="block text-sm text-teal-700">
@@ -118,31 +120,31 @@ export default function AdminVerificationPage() {
                 <div className="mt-5 flex flex-col gap-3 lg:flex-row">
                   <button onClick={() => handleDecision(item.artworkId, "approve")} className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700">
                     <ThumbsUp className="h-4 w-4" />
-                    Approve
+                    {t("admin.verification.approve")}
                   </button>
                   <button onClick={() => setActionArtworkId(item.artworkId)} className="inline-flex items-center justify-center gap-2 rounded-lg border border-amber-200 px-4 py-2.5 text-sm font-medium text-amber-700 hover:bg-amber-50">
                     <FileSearch className="h-4 w-4" />
-                    Request More Info
+                    {t("admin.verification.requestMoreInfo")}
                   </button>
                   <button onClick={() => setActionArtworkId(item.artworkId)} className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50">
                     <ThumbsDown className="h-4 w-4" />
-                    Reject
+                    {t("admin.verification.reject")}
                   </button>
                 </div>
 
                 {actionArtworkId === item.artworkId && (
                   <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
-                    <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} placeholder="Decision note for the artist" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                    <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} placeholder={t("admin.verification.decisionNotePlaceholder")} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <button onClick={() => handleDecision(item.artworkId, "request_more_info", note)} className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white">Send Request</button>
-                      <button onClick={() => handleDecision(item.artworkId, "reject", note)} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white">Reject</button>
-                      <button onClick={() => setActionArtworkId(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm">Cancel</button>
+                      <button onClick={() => handleDecision(item.artworkId, "request_more_info", note)} className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white">{t("admin.verification.sendRequest")}</button>
+                      <button onClick={() => handleDecision(item.artworkId, "reject", note)} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white">{t("admin.verification.reject")}</button>
+                      <button onClick={() => setActionArtworkId(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm">{t("admin.verification.cancel")}</button>
                     </div>
                   </div>
                 )}
               </article>
             ))}
-            {queue.length === 0 && <p className="p-5 text-sm text-gray-500">No artwork is waiting for verification.</p>}
+            {queue.length === 0 && <p className="p-5 text-sm text-gray-500">{t("admin.verification.emptyQueue")}</p>}
           </div>
         </section>
 

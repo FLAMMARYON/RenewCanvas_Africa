@@ -4,6 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { readProfile, saveProfile } from "@/lib/frontend/profile-api";
 import { CheckCircle, Mail, Phone, Save, Shield, User } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const initialProfile = {
   firstName: "",
@@ -18,6 +19,7 @@ function stringValue(value: unknown): string {
 }
 
 export default function AdminProfilePage() {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState(initialProfile);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -39,7 +41,7 @@ export default function AdminProfilePage() {
         });
       } catch (error) {
         if (isCurrent) {
-          setStatusMessage(error instanceof Error ? error.message : "Could not load profile.");
+          setStatusMessage(error instanceof Error ? error.message : t("admin.profile.loadError"));
         }
       }
     }
@@ -69,7 +71,7 @@ export default function AdminProfilePage() {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "Could not save profile.");
+      setStatusMessage(error instanceof Error ? error.message : t("admin.profile.saveError"));
     } finally {
       setIsSaving(false);
     }
@@ -80,8 +82,8 @@ export default function AdminProfilePage() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Admin Profile</h1>
-            <p className="text-gray-500">Manage internal operator identity and contact details.</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.profile.heading")}</h1>
+            <p className="text-gray-500">{t("admin.profile.subheading")}</p>
           </div>
           <button
             type="button"
@@ -92,17 +94,17 @@ export default function AdminProfilePage() {
             {isSaving ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                Saving...
+                {t("admin.profile.saving")}
               </>
             ) : saveSuccess ? (
               <>
                 <CheckCircle className="h-4 w-4" />
-                Saved!
+                {t("admin.profile.saved")}
               </>
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                Save Profile
+                {t("admin.profile.saveButton")}
               </>
             )}
           </button>
@@ -120,14 +122,14 @@ export default function AdminProfilePage() {
               <Shield className="h-8 w-8 text-teal-600" />
             </div>
             <div>
-              <h2 className="font-semibold text-gray-900">Operator Details</h2>
-              <p className="text-sm text-gray-500">These details identify admin actions internally.</p>
+              <h2 className="font-semibold text-gray-900">{t("admin.profile.operatorDetails")}</h2>
+              <p className="text-sm text-gray-500">{t("admin.profile.operatorDetailsHelp")}</p>
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">First Name</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t("admin.profile.firstName")}</label>
               <input
                 type="text"
                 value={profile.firstName}
@@ -136,7 +138,7 @@ export default function AdminProfilePage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Last Name</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t("admin.profile.lastName")}</label>
               <input
                 type="text"
                 value={profile.lastName}
@@ -147,7 +149,7 @@ export default function AdminProfilePage() {
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 <Mail className="mr-1 inline h-4 w-4" />
-                Email
+                {t("admin.profile.email")}
               </label>
               <input
                 type="email"
@@ -159,7 +161,7 @@ export default function AdminProfilePage() {
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 <Phone className="mr-1 inline h-4 w-4" />
-                Phone
+                {t("admin.profile.phone")}
               </label>
               <input
                 type="tel"
@@ -171,7 +173,7 @@ export default function AdminProfilePage() {
             <div className="sm:col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 <User className="mr-1 inline h-4 w-4" />
-                Role Title
+                {t("admin.profile.roleTitle")}
               </label>
               <input
                 type="text"

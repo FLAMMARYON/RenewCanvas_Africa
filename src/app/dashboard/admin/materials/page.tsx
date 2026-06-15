@@ -20,10 +20,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const materialColors = ["#0EA5E9", "#EC4899", "#6B7280", "#F59E0B", "#8B5CF6", "#10B981", "#EF4444", "#3B82F6", "#14B8A6", "#84CC16"];
 
 export default function AdminMaterialsPage() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"types" | "records">("types");
@@ -40,7 +42,7 @@ export default function AdminMaterialsPage() {
         if (active) setArtworks(result.artworks);
       })
       .catch((loadError) => {
-        if (active) setError(loadError instanceof Error ? loadError.message : "Could not load material records.");
+        if (active) setError(loadError instanceof Error ? loadError.message : t("admin.materials.loadError"));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -79,7 +81,7 @@ export default function AdminMaterialsPage() {
       .map(([name, value], index) => ({
         id: name,
         name,
-        description: "Recorded from artwork material entries",
+        description: t("admin.materials.recordedFromEntries"),
         totalKgTracked: value.totalKgTracked,
         artworksCount: value.artworkIds.size,
         avgKgPerArtwork: value.artworkIds.size > 0 ? value.totalKgTracked / value.artworkIds.size : 0,
@@ -110,23 +112,23 @@ export default function AdminMaterialsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Material & Waste Records
+              {t("admin.materials.title")}
             </h1>
             <p className="text-gray-500">
-              Track and manage recycled materials across artworks
+              {t("admin.materials.subtitle")}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
               <Download className="w-4 h-4" />
-              Export
+              {t("admin.materials.export")}
             </button>
             <button
               onClick={() => setShowAddModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Add Material Type
+              {t("admin.materials.addMaterialType")}
             </button>
           </div>
         </div>
@@ -148,7 +150,7 @@ export default function AdminMaterialsPage() {
                 <p className="text-2xl font-bold text-green-700">
                   {loading ? "-" : totalKgDiverted.toFixed(1)}
                 </p>
-                <p className="text-sm text-green-600">Total kg Diverted</p>
+                <p className="text-sm text-green-600">{t("admin.materials.totalKgDiverted")}</p>
               </div>
             </div>
           </div>
@@ -161,7 +163,7 @@ export default function AdminMaterialsPage() {
                 <p className="text-2xl font-bold text-gray-900">
                   {loading ? "-" : materialTypes.length}
                 </p>
-                <p className="text-sm text-gray-500">Material Types</p>
+                <p className="text-sm text-gray-500">{t("admin.materials.materialTypesStat")}</p>
               </div>
             </div>
           </div>
@@ -174,7 +176,7 @@ export default function AdminMaterialsPage() {
                 <p className="text-2xl font-bold text-gray-900">
                   {loading ? "-" : materialTypes.reduce((sum, m) => sum + m.artworksCount, 0)}
                 </p>
-                <p className="text-sm text-gray-500">Total Records</p>
+                <p className="text-sm text-gray-500">{t("admin.materials.totalRecords")}</p>
               </div>
             </div>
           </div>
@@ -187,7 +189,7 @@ export default function AdminMaterialsPage() {
                 <p className="text-2xl font-bold text-gray-900">
                   {loading ? "-" : averageKg.toFixed(1)}
                 </p>
-                <p className="text-sm text-gray-500">Avg kg per Artwork</p>
+                <p className="text-sm text-gray-500">{t("admin.materials.avgKgPerArtwork")}</p>
               </div>
             </div>
           </div>
@@ -196,7 +198,7 @@ export default function AdminMaterialsPage() {
         {/* Material Distribution Chart */}
         <div className="bg-white rounded-xl border border-gray-100 p-6">
           <h2 className="font-semibold text-gray-900 mb-4">
-            Material Distribution
+            {t("admin.materials.materialDistribution")}
           </h2>
           <div className="h-8 bg-gray-100 rounded-full overflow-hidden flex">
             {materialTypes.map((material) => (
@@ -206,9 +208,13 @@ export default function AdminMaterialsPage() {
                   width: `${totalKgDiverted > 0 ? (material.totalKgTracked / totalKgDiverted) * 100 : 0}%`,
                   backgroundColor: material.color,
                 }}
-                title={`${material.name}: ${material.totalKgTracked} kg (${(
-                  totalKgDiverted > 0 ? (material.totalKgTracked / totalKgDiverted) * 100 : 0
-                ).toFixed(1)}%)`}
+                title={t("admin.materials.distributionTooltip", {
+                  name: material.name,
+                  kg: material.totalKgTracked,
+                  percent: (
+                    totalKgDiverted > 0 ? (material.totalKgTracked / totalKgDiverted) * 100 : 0
+                  ).toFixed(1),
+                })}
                 className="h-full transition-all hover:opacity-80"
               />
             ))}
@@ -237,7 +243,7 @@ export default function AdminMaterialsPage() {
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               }`}
             >
-              Material Types
+              {t("admin.materials.tabMaterialTypes")}
             </button>
             <button
               onClick={() => setActiveTab("records")}
@@ -247,7 +253,7 @@ export default function AdminMaterialsPage() {
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               }`}
             >
-              Recent Records
+              {t("admin.materials.tabRecentRecords")}
             </button>
           </div>
 
@@ -259,8 +265,8 @@ export default function AdminMaterialsPage() {
                 type="text"
                 placeholder={
                   activeTab === "types"
-                    ? "Search material types..."
-                    : "Search records..."
+                    ? t("admin.materials.searchMaterialTypesPlaceholder")
+                    : t("admin.materials.searchRecordsPlaceholder")
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -276,22 +282,22 @@ export default function AdminMaterialsPage() {
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="text-left text-sm font-medium text-gray-500 px-6 py-3">
-                      Material Type
+                      {t("admin.materials.colMaterialType")}
                     </th>
                     <th className="text-right text-sm font-medium text-gray-500 px-6 py-3">
-                      Total kg
+                      {t("admin.materials.colTotalKg")}
                     </th>
                     <th className="text-right text-sm font-medium text-gray-500 px-6 py-3">
-                      Artworks
+                      {t("admin.materials.colArtworks")}
                     </th>
                     <th className="text-right text-sm font-medium text-gray-500 px-6 py-3">
-                      Avg kg/Artwork
+                      {t("admin.materials.colAvgKgPerArtwork")}
                     </th>
                     <th className="text-right text-sm font-medium text-gray-500 px-6 py-3">
-                      Share
+                      {t("admin.materials.colShare")}
                     </th>
                     <th className="text-right text-sm font-medium text-gray-500 px-6 py-3 w-24">
-                      Actions
+                      {t("admin.materials.colActions")}
                     </th>
                   </tr>
                 </thead>
@@ -338,13 +344,13 @@ export default function AdminMaterialsPage() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                            title="Edit"
+                            title={t("admin.materials.edit")}
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
                             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete"
+                            title={t("admin.materials.delete")}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -355,7 +361,7 @@ export default function AdminMaterialsPage() {
                   {!loading && filteredTypes.length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-6 py-10 text-center text-sm text-gray-500">
-                        No material types found.
+                        {t("admin.materials.noMaterialTypes")}
                       </td>
                     </tr>
                   )}
@@ -371,22 +377,22 @@ export default function AdminMaterialsPage() {
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="text-left text-sm font-medium text-gray-500 px-6 py-3">
-                      Artwork
+                      {t("admin.materials.colArtwork")}
                     </th>
                     <th className="text-left text-sm font-medium text-gray-500 px-6 py-3">
-                      Artist
+                      {t("admin.materials.colArtist")}
                     </th>
                     <th className="text-left text-sm font-medium text-gray-500 px-6 py-3">
-                      Material
+                      {t("admin.materials.colMaterial")}
                     </th>
                     <th className="text-right text-sm font-medium text-gray-500 px-6 py-3">
-                      Weight
+                      {t("admin.materials.colWeight")}
                     </th>
                     <th className="text-left text-sm font-medium text-gray-500 px-6 py-3">
-                      Status
+                      {t("admin.materials.colStatus")}
                     </th>
                     <th className="text-left text-sm font-medium text-gray-500 px-6 py-3">
-                      Date
+                      {t("admin.materials.colDate")}
                     </th>
                   </tr>
                 </thead>
@@ -421,8 +427,8 @@ export default function AdminMaterialsPage() {
                           }`}
                         >
                           {record.status === "verified"
-                            ? "Verified"
-                            : "Pending"}
+                            ? t("admin.materials.statusVerified")
+                            : t("admin.materials.statusPending")}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-gray-500 text-sm">
@@ -433,7 +439,7 @@ export default function AdminMaterialsPage() {
                   {!loading && filteredRecords.length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-6 py-10 text-center text-sm text-gray-500">
-                        No material records found.
+                        {t("admin.materials.noMaterialRecords")}
                       </td>
                     </tr>
                   )}
@@ -445,11 +451,12 @@ export default function AdminMaterialsPage() {
           {/* Pagination */}
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              Showing{" "}
-              {activeTab === "types"
-                ? filteredTypes.length
-                : filteredRecords.length}{" "}
-              results
+              {t("admin.materials.showingResults", {
+                count:
+                  activeTab === "types"
+                    ? filteredTypes.length
+                    : filteredRecords.length,
+              })}
             </p>
             <div className="flex items-center gap-2">
               <button className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-50">
@@ -471,32 +478,32 @@ export default function AdminMaterialsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-md w-full">
             <h3 className="font-semibold text-gray-900 mb-4">
-              Add Material Type
+              {t("admin.materials.addMaterialType")}
             </h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Material Name
+                  {t("admin.materials.materialName")}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., PET Bottles"
+                  placeholder={t("admin.materials.materialNamePlaceholder")}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
+                  {t("admin.materials.description")}
                 </label>
                 <textarea
-                  placeholder="Brief description of this material type..."
+                  placeholder={t("admin.materials.descriptionPlaceholder")}
                   rows={3}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Color (for charts)
+                  {t("admin.materials.colorForCharts")}
                 </label>
                 <input
                   type="color"
@@ -510,10 +517,10 @@ export default function AdminMaterialsPage() {
                 onClick={() => setShowAddModal(false)}
                 className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
               >
-                Cancel
+                {t("admin.materials.cancel")}
               </button>
               <button className="flex-1 px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium">
-                Add Material
+                {t("admin.materials.addMaterial")}
               </button>
             </div>
           </div>
