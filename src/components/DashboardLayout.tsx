@@ -24,6 +24,7 @@ import {
   Gavel,
   ChevronDown,
   MessageSquare,
+  Bell,
 } from "lucide-react";
 import {
   dashboardPathForRole,
@@ -75,6 +76,7 @@ const navigationItems: Record<UserRole, NavigationItem[]> = {
   admin: [
     { name: "dashboard.nav.dashboard", href: "/dashboard/admin", icon: LayoutDashboard, group: "Overview" },
     { name: "dashboard.nav.messages", href: "/dashboard/admin/messages", icon: MessageSquare, group: "Overview" },
+    { name: "dashboard.nav.notifications", href: "/dashboard/admin/notifications", icon: Bell, group: "Overview" },
     { name: "dashboard.nav.users", href: "/dashboard/admin/users", icon: Users, group: "People" },
     {
       name: "dashboard.nav.artistVerification",
@@ -179,8 +181,14 @@ export default function DashboardLayout({
   }, [pathname, role, router]);
 
   const handleSignOut = async () => {
-    await logoutServerSession();
-    router.replace("/login");
+    try {
+      await logoutServerSession();
+    } catch {
+      /* even if the revoke call fails, still send the user to login */
+    }
+    // Hard navigation guarantees the cleared session cookie is applied and all
+    // in-memory dashboard/session state is dropped.
+    window.location.href = "/login";
   };
 
   if (!authChecked) {

@@ -1,0 +1,85 @@
+/**
+ * Single source of truth for artwork + order status display.
+ *
+ * Every admin/dashboard page that renders a status chip MUST resolve it through
+ * `artworkStatusMeta()` / `orderStatusMeta()` instead of hardcoding labels or
+ * keeping a private per-page map. This guarantees an approved/sold artwork is
+ * never mislabelled as "Pending Review" (the old per-page fallback bug), and
+ * that colours/icons stay consistent across the dashboard.
+ *
+ * `labelKey` points at the `statusLabels.*` i18n namespace (en.json is the
+ * canonical copy; other locales fall back to English via fallbackLng="en").
+ */
+import {
+  Archive,
+  Banknote,
+  CheckCircle,
+  Clock,
+  FileText,
+  Truck,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react";
+
+export type StatusMeta = {
+  labelKey: string;
+  color: string;
+  bgColor: string;
+  icon: LucideIcon;
+};
+
+/** ArtworkStatus enum → display meta. Mirrors prisma `ArtworkStatus`. */
+export const ARTWORK_STATUS_META: Record<string, StatusMeta> = {
+  draft: { labelKey: "statusLabels.draft", color: "text-gray-600", bgColor: "bg-gray-100", icon: FileText },
+  submitted: { labelKey: "statusLabels.submitted", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
+  under_review: { labelKey: "statusLabels.underReview", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
+  approved: { labelKey: "statusLabels.approved", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
+  listed: { labelKey: "statusLabels.listed", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
+  rejected: { labelKey: "statusLabels.rejected", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
+  reserved: { labelKey: "statusLabels.reserved", color: "text-blue-600", bgColor: "bg-blue-50", icon: Clock },
+  sold: { labelKey: "statusLabels.sold", color: "text-purple-600", bgColor: "bg-purple-50", icon: CheckCircle },
+  archived: { labelKey: "statusLabels.archived", color: "text-gray-600", bgColor: "bg-gray-100", icon: Archive },
+};
+
+/** OrderStatus enum → display meta. Mirrors prisma `OrderStatus` (+ artist_paid). */
+export const ORDER_STATUS_META: Record<string, StatusMeta> = {
+  pending_payment: { labelKey: "statusLabels.pendingPayment", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
+  paid: { labelKey: "statusLabels.paid", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
+  processing: { labelKey: "statusLabels.processing", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
+  shipped: { labelKey: "statusLabels.shipped", color: "text-purple-600", bgColor: "bg-purple-50", icon: Truck },
+  delivered: { labelKey: "statusLabels.delivered", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
+  artist_paid: { labelKey: "statusLabels.artistPaid", color: "text-teal-600", bgColor: "bg-teal-50", icon: Banknote },
+  cancelled: { labelKey: "statusLabels.cancelled", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
+  refunded: { labelKey: "statusLabels.refunded", color: "text-gray-600", bgColor: "bg-gray-100", icon: XCircle },
+  failed: { labelKey: "statusLabels.failed", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
+};
+
+const UNKNOWN_META: StatusMeta = {
+  labelKey: "statusLabels.unknown",
+  color: "text-gray-600",
+  bgColor: "bg-gray-100",
+  icon: FileText,
+};
+
+/** Resolve artwork status → meta. Unknown statuses get a neutral chip, never "Pending Review". */
+export function artworkStatusMeta(status: string): StatusMeta {
+  return ARTWORK_STATUS_META[status] ?? UNKNOWN_META;
+}
+
+/** Resolve order status → meta. Unknown statuses get a neutral chip, never "Pending Payment". */
+export function orderStatusMeta(status: string): StatusMeta {
+  return ORDER_STATUS_META[status] ?? UNKNOWN_META;
+}
+
+/**
+ * Order statuses that represent money actually received by RenewCanvas.
+ * Revenue must be summed ONLY over these — pending/cancelled/refunded/failed
+ * orders are excluded. `artist_paid` is still confirmed revenue (the buyer paid;
+ * the artist has since been disbursed).
+ */
+export const CONFIRMED_REVENUE_STATUSES = ["paid", "processing", "shipped", "delivered", "artist_paid"] as const;
+
+/** True if the order's payment has been confirmed (buyer → RenewCanvas). */
+export function isConfirmedRevenueStatus(status: string): boolean {
+  return (CONFIRMED_REVENUE_STATUSES as readonly string[]).includes(status);
+}

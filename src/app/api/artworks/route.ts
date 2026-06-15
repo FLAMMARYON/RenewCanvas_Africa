@@ -10,6 +10,7 @@ import {
   type ArtworkInput,
   type ArtworkListQuery,
 } from "@/lib/backend/artworks";
+import { notifyAdmins } from "@/lib/backend/admin-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,16 @@ export async function POST(request: NextRequest) {
     const user = await requireRole(db, readSessionCookie(request), ["artist", "admin"]);
     const body = (await readJsonBody(request)) as ArtworkInput;
     const artwork = await createArtwork(artworkDb, user, body);
+
+    // Admin push: new artwork submitted for moderation (artist consignment only).
+    if (artwork.ownerType === "artist") {
+      await notifyAdmins(db, {
+        templateKey: "admin_new_artwork",
+        subject: "New artwork submitted",
+        body: `"${artwork.title}" was submitted by ${artwork.artist?.name ?? "an artist"} and is awaiting review.`,
+        metadata: { artworkId: artwork.id },
+      });
+    }
 
     return NextResponse.json({ ok: true, artwork: normalizeArtwork(artwork) }, { status: 201 });
   } catch (error) {

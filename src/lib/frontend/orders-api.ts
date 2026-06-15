@@ -61,3 +61,25 @@ export async function readOrder(id: string) {
   if (!response.ok || !body.ok) throw new Error(body.message ?? "Could not load order.");
   return body.order;
 }
+
+type OrderActionResponse = { ok: boolean; id?: string; status?: string; message?: string };
+
+async function postOrderAction(orderId: string, action: "confirm-payment" | "disburse"): Promise<string> {
+  const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/${action}`, {
+    method: "POST",
+    credentials: "include",
+  });
+  const body = (await response.json()) as OrderActionResponse;
+  if (!response.ok || !body.ok) throw new Error(body.message ?? "Could not update order.");
+  return body.status ?? "";
+}
+
+/** Admin: confirm the buyer's payment was received (pending_payment → paid, artwork sold). */
+export async function confirmOrderPayment(orderId: string): Promise<string> {
+  return postOrderAction(orderId, "confirm-payment");
+}
+
+/** Admin: record the artist disbursement (paid → artist_paid). */
+export async function disburseOrder(orderId: string): Promise<string> {
+  return postOrderAction(orderId, "disburse");
+}

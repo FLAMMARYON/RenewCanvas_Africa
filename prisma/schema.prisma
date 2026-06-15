@@ -48,6 +48,7 @@ enum OrderStatus {
   processing
   shipped
   delivered
+  artist_paid
   cancelled
   refunded
   failed
@@ -205,6 +206,8 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   buyerCommissionRequests CommissionRequest[] @relation("BuyerCommissionRequests")
   assignedCommissionRequests CommissionRequest[] @relation("AssignedCommissionRequests")
+  artistDisbursements Disbursement[] @relation("ArtistDisbursements")
+  adminDisbursements Disbursement[] @relation("AdminDisbursements")
   termsAcceptedAt DateTime?
   privacyAcceptedAt DateTime?
   deletedAt    DateTime?
@@ -544,10 +547,33 @@ model Order {
   shipment Shipment?
   payouts PayoutLedger[]
   returnRequests ReturnRequest[]
+  disbursements Disbursement[]
 
   @@index([buyerId])
   @@index([status])
   @@index([createdAt])
+}
+
+// Admin-recorded payout of an order's proceeds to the artist (the second step of
+// the two-step admin settlement: payment received → artist disbursed). One row
+// per artist per order. amountCents is the artist's share that was paid out.
+model Disbursement {
+  id                 String   @id @default(cuid())
+  orderId            String
+  artistId           String
+  amountCents        Int
+  currency           String   @default("RWF")
+  disbursedByAdminId String
+  disbursedAt        DateTime @default(now())
+  createdAt          DateTime @default(now())
+
+  order            Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  artist           User  @relation("ArtistDisbursements", fields: [artistId], references: [id], onDelete: Restrict)
+  disbursedByAdmin User  @relation("AdminDisbursements", fields: [disbursedByAdminId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([artistId])
+  @@index([disbursedByAdminId])
 }
 
 model OrderItem {
@@ -699,6 +725,7 @@ model Notification {
   metadata     Json?
   errorMessage String?
   sentAt       DateTime?
+  readAt       DateTime?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 
@@ -881,6 +908,15 @@ model ContactMessage {
   @@index([type])
   @@index([status])
   @@index([createdAt])
+}
+
+// Global platform settings as a simple key/value store (singleton-ish rows).
+// Keys in use: "maintenanceMode" (boolean), "defaultLanguage" (string),
+// "supportEmail" (string). Read/written by the admin settings page + middleware.
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @default(now())
 }
 
 model AuditLog {

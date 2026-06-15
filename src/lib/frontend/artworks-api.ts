@@ -16,7 +16,7 @@ export type FrontendArtwork = {
   submittedAt: string | null;
   reviewedAt: string | null;
   createdAt: string;
-  artist: { id: string; name: string; email: string } | null;
+  artist: { id: string; name: string; email: string; phone: string | null } | null;
   images: Array<{ id: string; url: string; altText: string; sortOrder: number }>;
   materials: Array<{ id: string; material: string; weightKg: number; source: string | null; isVerified: boolean }>;
   latestPricingRecommendation: {

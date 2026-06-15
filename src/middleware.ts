@@ -25,8 +25,42 @@ const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 const CSRF_EXEMPT_PATHS = ["/api/payments/webhook", "/api/admin/reminders"];
 
-export function middleware(request: NextRequest) {
+// Paths reachable even while maintenance mode is ON. /login + /maintenance let an
+// admin sign in; /dashboard/admin lets them reach the toggle to turn it back off
+// (non-admins are bounced by the dashboard role guard regardless).
+function isMaintenanceAllowed(pathname: string): boolean {
+  return (
+    pathname === "/maintenance" ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/dashboard/admin") ||
+    pathname.startsWith("/api/")
+  );
+}
+
+async function readMaintenanceStatus(request: NextRequest): Promise<{ maintenance: boolean; isAdmin: boolean }> {
+  try {
+    const response = await fetch(new URL("/api/maintenance", request.url), {
+      headers: { cookie: request.headers.get("cookie") ?? "" },
+      cache: "no-store",
+    });
+    if (!response.ok) return { maintenance: false, isAdmin: false };
+    return (await response.json()) as { maintenance: boolean; isAdmin: boolean };
+  } catch {
+    return { maintenance: false, isAdmin: false };
+  }
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // --- Maintenance gate: when ON, all non-admin users are sent to /maintenance. ---
+  // Only page navigations are gated (GET, not /api, not an allowed bypass path).
+  if (request.method === "GET" && !isMaintenanceAllowed(pathname)) {
+    const { maintenance, isAdmin } = await readMaintenanceStatus(request);
+    if (maintenance && !isAdmin) {
+      return NextResponse.redirect(new URL("/maintenance", request.url));
+    }
+  }
 
   // --- Page guard: private dashboard routes require a session cookie. ---
   // This is a fast presence check; the API layer + dashboard layout still do
@@ -87,6 +121,7 @@ function csrfRejection() {
 }
 
 export const config = {
-  // API routes (CSRF) + private dashboard pages (auth guard). Static assets untouched.
-  matcher: ["/api/:path*", "/dashboard/:path*"],
+  // All page navigations (maintenance gate) + API routes (CSRF) + dashboard pages
+  // (auth guard). Excludes Next internals and static files (anything ending .ext).
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.[\\w]+$).*)"],
 };

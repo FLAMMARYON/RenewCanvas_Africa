@@ -11,17 +11,11 @@ import {
   Scale,
   Download,
   Calendar,
-  Activity,
-  Target,
   Award,
   Leaf,
-  TreePine,
-  Droplets,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const materialColors = ["#0EA5E9", "#EC4899", "#8B5CF6", "#6B7280", "#10B981", "#F59E0B", "#EF4444", "#14B8A6", "#6366F1", "#84CC16"];
 
 export default function AdminImpactPage() {
   const { t } = useTranslation();
@@ -49,19 +43,8 @@ export default function AdminImpactPage() {
     };
   }, []);
 
-  const monthlyTrend = metrics?.monthlyTrend ?? [];
-  const materialBreakdown = metrics?.materialBreakdown ?? [];
   const topArtists = metrics?.topArtists ?? [];
-  const maxMonthlyKg = Math.max(1, ...monthlyTrend.map((m) => m.kg));
   const avgKgPerArtwork = metrics && metrics.artworkCount > 0 ? metrics.kgDiverted / metrics.artworkCount : 0;
-  const impactGoals = metrics
-    ? [
-        { title: t("adminImpact.annualTarget"), current: metrics.kgDiverted, target: 2500, unit: "kg", icon: Target },
-        { title: t("adminImpact.monthlyAverage"), current: monthlyTrend.length ? monthlyTrend.reduce((sum, item) => sum + item.kg, 0) / monthlyTrend.length : 0, target: 200, unit: "kg/month", icon: Activity },
-        { title: t("adminImpact.activeArtists"), current: metrics.artistCount, target: 200, unit: "artists", icon: Users },
-        { title: t("adminImpact.artworksWithImpact"), current: metrics.artworkCount, target: 500, unit: "artworks", icon: Palette },
-      ]
-    : [];
 
   return (
     <DashboardLayout role="admin" userName="Admin User">
@@ -100,76 +83,6 @@ export default function AdminImpactPage() {
             <p className="text-green-100">{t("adminImpact.totalKgDiverted")}</p>
           </div>
           <MetricCard icon={Leaf} value={metrics?.co2SavedKg.toLocaleString() ?? "-"} label={t("adminImpact.co2Saved")} iconClass="text-blue-600" bgClass="bg-blue-50" />
-          <MetricCard icon={TreePine} value={metrics?.treesEquivalent.toLocaleString() ?? "-"} label={t("adminImpact.treesEquivalent")} iconClass="text-green-600" bgClass="bg-green-50" />
-          <MetricCard icon={Droplets} value={metrics ? `${(metrics.waterSavedLitres / 1000).toFixed(1)}k` : "-"} label={t("adminImpact.waterSaved")} iconClass="text-cyan-600" bgClass="bg-cyan-50" />
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <h2 className="font-semibold text-gray-900 mb-6">{t("adminImpact.goalsTitle")}</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {impactGoals.map((goal) => {
-              const progress = goal.target > 0 ? (goal.current / goal.target) * 100 : 0;
-              return (
-                <div key={goal.title}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center"><goal.icon className="w-4 h-4 text-teal-600" /></div>
-                      <span className="font-medium text-gray-900 text-sm">{goal.title}</span>
-                    </div>
-                  </div>
-                  <div className="h-3 bg-gray-100 rounded-full overflow-hidden mb-2">
-                    <div className="h-full bg-gradient-to-r from-teal-500 to-green-500 rounded-full transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">{goal.current.toLocaleString(undefined, { maximumFractionDigits: 1 })} / {goal.target.toLocaleString()} {goal.unit}</span>
-                    <span className="font-medium text-teal-600">{progress.toFixed(0)}%</span>
-                  </div>
-                </div>
-              );
-            })}
-            {!loading && impactGoals.length === 0 && <p className="text-sm text-gray-500">{t("adminImpact.noGoals")}</p>}
-          </div>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h2 className="font-semibold text-gray-900 mb-6">{t("adminImpact.monthlyTrend")}</h2>
-            <div className="space-y-4">
-              {monthlyTrend.map((month) => (
-                <div key={month.month}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">{month.month}</span>
-                    <span className="text-sm text-gray-500">{month.kg.toFixed(1)} kg ({month.artworks} artworks)</span>
-                  </div>
-                  <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-teal-500 to-green-400 rounded-full transition-all" style={{ width: `${(month.kg / maxMonthlyKg) * 100}%` }} />
-                  </div>
-                </div>
-              ))}
-              {!loading && monthlyTrend.length === 0 && <p className="text-sm text-gray-500">{t("adminImpact.noTrend")}</p>}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h2 className="font-semibold text-gray-900 mb-6">{t("adminImpact.materialBreakdown")}</h2>
-            <div className="space-y-4">
-              {materialBreakdown.map((material, index) => (
-                <div key={material.material}>
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: materialColors[index % materialColors.length] }} />
-                      <span className="text-sm font-medium text-gray-700">{material.material}</span>
-                    </div>
-                    <span className="text-sm text-gray-500">{material.kg.toFixed(1)} kg ({material.percentage}%)</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${material.percentage}%`, backgroundColor: materialColors[index % materialColors.length] }} />
-                  </div>
-                </div>
-              ))}
-              {!loading && materialBreakdown.length === 0 && <p className="text-sm text-gray-500">{t("adminImpact.noMaterials")}</p>}
-            </div>
-          </div>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 p-6">

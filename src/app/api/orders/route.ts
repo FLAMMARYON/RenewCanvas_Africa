@@ -8,6 +8,7 @@ import {
   sendNewOrderAlertEmail,
   type NotificationServiceDatabase,
 } from "@/lib/backend/notification-service";
+import { notifyAdmins } from "@/lib/backend/admin-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,14 @@ export async function POST(request: NextRequest) {
         currency: order.currency,
       });
     }
+
+    // Admin push: a new order was placed.
+    await notifyAdmins(db, {
+      templateKey: "admin_new_order",
+      subject: "New order placed",
+      body: `${buyer.name} placed order ${order.id}${firstItem ? ` for "${firstItem.title}"` : ""}.`,
+      metadata: { orderId: order.id },
+    });
 
     return NextResponse.json({ ok: true, order: normalizeOrder(order, buyer.role) }, { status: 201 });
   } catch (error) {

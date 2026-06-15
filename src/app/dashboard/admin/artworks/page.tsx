@@ -2,18 +2,11 @@
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { listArtworks, reviewArtwork, type FrontendArtwork } from "@/lib/frontend/artworks-api";
-import { CheckCircle, Clock, Eye, Palette, Plus, Recycle, Search, ThumbsDown, ThumbsUp, User, XCircle } from "lucide-react";
+import { artworkStatusMeta } from "@/lib/frontend/status-labels";
+import { Eye, Mail, Palette, Phone, Plus, Recycle, Search, ThumbsDown, ThumbsUp, User, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const statusConfig = {
-  submitted: { labelKey: "pendingReview", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  under_review: { labelKey: "underReview", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  listed: { labelKey: "listed", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  approved: { labelKey: "approved", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  rejected: { labelKey: "rejected", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-};
 
 export default function AdminArtworksPage() {
   const { t } = useTranslation();
@@ -108,7 +101,7 @@ export default function AdminArtworksPage() {
 
         <div className="space-y-4">
           {filteredArtworks.map((artwork) => {
-            const status = statusConfig[artwork.status as keyof typeof statusConfig] ?? statusConfig.submitted;
+            const status = artworkStatusMeta(artwork.status);
             const StatusIcon = status.icon;
             const isExpanded = expandedArtwork === artwork.id;
             return (
@@ -124,7 +117,7 @@ export default function AdminArtworksPage() {
                           <h2 className="font-semibold text-gray-900">{artwork.title}</h2>
                           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${status.bgColor} ${status.color}`}>
                             <StatusIcon className="h-3 w-3" />
-                            {t(`admin.artworks.${status.labelKey}`)}
+                            {t(status.labelKey)}
                           </span>
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500">
@@ -149,6 +142,29 @@ export default function AdminArtworksPage() {
                       <div>
                         <h3 className="font-medium text-gray-900">{t("admin.artworks.descriptionHeading")}</h3>
                         <p className="mt-2 text-sm text-gray-600">{artwork.description}</p>
+                        {artwork.ownerType !== "renewcanvas" && artwork.artist && (
+                          <div className="mt-4 rounded-lg border border-gray-100 bg-white p-3">
+                            <h3 className="font-medium text-gray-900">{t("admin.artworks.artistContactHeading")}</h3>
+                            <div className="mt-2 space-y-1 text-sm text-gray-600">
+                              <p className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-gray-400" />{artwork.artist.name}</p>
+                              {artwork.artist.email && (
+                                <a href={`mailto:${artwork.artist.email}`} className="flex items-center gap-2 text-teal-700 hover:underline">
+                                  <Mail className="h-3.5 w-3.5 text-gray-400" />{artwork.artist.email}
+                                </a>
+                              )}
+                              {artwork.artist.phone ? (
+                                <a href={`tel:${artwork.artist.phone}`} className="flex items-center gap-2 text-teal-700 hover:underline">
+                                  <Phone className="h-3.5 w-3.5 text-gray-400" />{artwork.artist.phone}
+                                </a>
+                              ) : (
+                                <p className="flex items-center gap-2 text-gray-400"><Phone className="h-3.5 w-3.5" />{t("admin.artworks.noPhone")}</p>
+                              )}
+                            </div>
+                            <Link href={`/artists/${artwork.artist.id}`} target="_blank" className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:underline">
+                              <Eye className="h-4 w-4" />{t("admin.artworks.viewArtistProfile")}
+                            </Link>
+                          </div>
+                        )}
                         <h3 className="mt-4 font-medium text-gray-900">{t("admin.artworks.materialsHeading")}</h3>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {artwork.materials.map((material) => (

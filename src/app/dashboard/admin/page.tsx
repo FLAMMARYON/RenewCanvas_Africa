@@ -5,16 +5,12 @@ import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api"
 import { fetchDetailedMetrics, formatMetric, type DetailedMetrics } from "@/lib/frontend/metrics-api";
 import { listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
 import { listVerificationItems, type VerificationItem } from "@/lib/frontend/verification-api";
+import { artworkStatusMeta, orderStatusMeta, isConfirmedRevenueStatus } from "@/lib/frontend/status-labels";
 import {
   Users,
   Palette,
   ShoppingBag,
-  DollarSign,
   Recycle,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
   UserCheck,
   Package,
   ArrowRight,
@@ -22,20 +18,6 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const statusConfig = {
-  submitted: { labelKey: "statusSubmitted", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  under_review: { labelKey: "statusUnderReview", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  approved: { labelKey: "statusApproved", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  listed: { labelKey: "statusListed", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  rejected: { labelKey: "statusRejected", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-  pending_payment: { labelKey: "statusPendingPayment", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  paid: { labelKey: "statusPaid", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
-  processing: { labelKey: "statusProcessing", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
-  shipped: { labelKey: "statusShipped", color: "text-purple-600", bgColor: "bg-purple-50", icon: Package },
-  delivered: { labelKey: "statusDelivered", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  cancelled: { labelKey: "statusCancelled", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-};
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
@@ -79,14 +61,19 @@ export default function AdminDashboard() {
   const pendingArtworkCount = artworks.filter((artwork) => ["submitted", "under_review"].includes(artwork.status)).length;
   const pendingArtistCount = verificationItems.filter((item) => item.reviewStatus === "pending").length;
   const pendingOrderCount = orders.filter((order) => order.status === "pending_payment").length;
-  const revenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  // Revenue counts ONLY confirmed payments (buyer → RenewCanvas). Pending /
+  // cancelled / refunded / failed orders are excluded.
+  const revenue = orders
+    .filter((order) => isConfirmedRevenueStatus(order.status))
+    .reduce((sum, order) => sum + order.totalAmount, 0);
 
   const stats = useMemo(
     () => [
       { label: t("admin.overview.statActiveArtists"), value: metrics ? formatMetric(metrics.artistCount) : "-", icon: Users, color: "text-blue-600", bgColor: "bg-blue-50", href: "/dashboard/admin/artists" },
       { label: t("admin.overview.statArtworks"), value: metrics ? formatMetric(metrics.artworkCount) : "-", icon: Palette, color: "text-purple-600", bgColor: "bg-purple-50", href: "/dashboard/admin/artworks" },
       { label: t("admin.overview.statTotalOrders"), value: orders.length.toLocaleString(), icon: ShoppingBag, color: "text-green-600", bgColor: "bg-green-50", href: "/dashboard/admin/orders" },
-      { label: t("admin.overview.statRevenue"), value: revenue.toLocaleString(), unit: "RWF", icon: DollarSign, color: "text-teal-600", bgColor: "bg-teal-50", href: "/dashboard/admin/orders" },
+      // Revenue card intentionally renders NO icon (no $ / DollarSign) — RWF text only.
+      { label: t("admin.overview.statRevenue"), value: revenue.toLocaleString(), unit: "RWF", icon: null, color: "text-teal-600", bgColor: "bg-teal-50", href: "/dashboard/admin/orders" },
     ],
     [metrics, orders.length, revenue, t]
   );
@@ -116,9 +103,11 @@ export default function AdminDashboard() {
           {stats.map((stat) => (
             <Link key={stat.label} href={stat.href} className="bg-white rounded-xl p-5 border border-gray-100 hover:border-teal-200 hover:shadow-md transition-all group">
               <div className="flex items-center justify-between mb-3">
-                <div className={`w-10 h-10 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
-                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                </div>
+                {stat.icon && (
+                  <div className={`w-10 h-10 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
+                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                  </div>
+                )}
               </div>
               <p className="text-2xl font-bold text-gray-900">
                 {loading ? "-" : stat.value}
@@ -155,7 +144,7 @@ export default function AdminDashboard() {
             </div>
             <div className="divide-y divide-gray-100">
               {recentArtworks.map((artwork) => {
-                const status = statusConfig[artwork.status as keyof typeof statusConfig] ?? statusConfig.submitted;
+                const status = artworkStatusMeta(artwork.status);
                 const StatusIcon = status.icon;
                 return (
                   <div key={artwork.id} className="p-4 hover:bg-gray-50 transition-colors">
@@ -172,7 +161,7 @@ export default function AdminDashboard() {
                       <div className="text-right">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.bgColor} ${status.color}`}>
                           <StatusIcon className="w-3 h-3" />
-                          {t(`admin.overview.${status.labelKey}`)}
+                          {t(status.labelKey)}
                         </span>
                         <p className="text-xs text-gray-400 mt-1">{new Date(artwork.createdAt).toLocaleDateString()}</p>
                       </div>
@@ -194,7 +183,7 @@ export default function AdminDashboard() {
             </div>
             <div className="divide-y divide-gray-100">
               {recentOrders.map((order) => {
-                const status = statusConfig[order.status as keyof typeof statusConfig] ?? statusConfig.pending_payment;
+                const status = orderStatusMeta(order.status);
                 const StatusIcon = status.icon;
                 const item = order.items[0];
                 return (
@@ -213,7 +202,7 @@ export default function AdminDashboard() {
                         <p className="font-semibold text-gray-900">{order.totalAmount.toLocaleString()} RWF</p>
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.bgColor} ${status.color}`}>
                           <StatusIcon className="w-3 h-3" />
-                          {t(`admin.overview.${status.labelKey}`)}
+                          {t(status.labelKey)}
                         </span>
                       </div>
                     </div>

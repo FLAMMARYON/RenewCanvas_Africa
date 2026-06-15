@@ -8,6 +8,7 @@ import {
   type VerificationDecision,
 } from "@/lib/backend/verification";
 import { sendArtworkDecisionEmail, type NotificationServiceDatabase } from "@/lib/backend/notification-service";
+import { notifyAdmins } from "@/lib/backend/admin-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,16 @@ export async function POST(
       decision: emailDecision,
       adminNote: result.note ?? undefined,
     });
+
+    // Admin push: artist/artwork verified.
+    if (emailDecision === "approved") {
+      await notifyAdmins(db, {
+        templateKey: "admin_artist_verified",
+        subject: "Artist verified",
+        body: `${result.artwork.artistName}'s "${result.artwork.title}" was verified.`,
+        metadata: { artworkId: result.artwork.id, artistId: result.artwork.artistId },
+      });
+    }
 
     return NextResponse.json({ ok: true, review: result.review });
   } catch (error) {

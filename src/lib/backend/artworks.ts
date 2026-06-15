@@ -43,7 +43,7 @@ export type ArtworkRecord = {
   reviewedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  artist?: { id: string; name: string; email: string } | null;
+  artist?: { id: string; name: string; email: string; artistProfile?: { phone: string | null } | null } | null;
   images?: Array<{ id: string; url: string; altText: string; sortOrder: number }>;
   materials?: Array<{ id: string; material: string; weightKg: unknown; source: string | null; isVerified: boolean }>;
   pricingRecommendations?: PricingRecommendationRecord[];
@@ -163,7 +163,7 @@ export type ArtworkDatabase = {
 };
 
 type ArtworkInclude = {
-  artist: { select: { id: true; name: true; email: true } };
+  artist: { select: { id: true; name: true; email: true; artistProfile: { select: { phone: true } } } };
   images: { orderBy: { sortOrder: "asc" } };
   materials: true;
   pricingRecommendations: { orderBy: { createdAt: "desc" }; take: 1 };
@@ -196,7 +196,7 @@ export type ArtworkListQuery = {
 };
 
 const includeArtwork = {
-  artist: { select: { id: true, name: true, email: true } },
+  artist: { select: { id: true, name: true, email: true, artistProfile: { select: { phone: true } } } },
   images: { orderBy: { sortOrder: "asc" as const } },
   materials: true,
   pricingRecommendations: { orderBy: { createdAt: "desc" as const }, take: 1 },
@@ -414,7 +414,12 @@ export function normalizeArtwork(artwork: ArtworkRecord) {
     reviewedAt: artwork.reviewedAt?.toISOString() ?? null,
     createdAt: artwork.createdAt.toISOString(),
     artist: artwork.artist
-      ? { id: artwork.artist.id, name: artwork.artist.name, email: artwork.artist.email }
+      ? {
+          id: artwork.artist.id,
+          name: artwork.artist.name,
+          email: artwork.artist.email,
+          phone: artwork.artist.artistProfile?.phone ?? null,
+        }
       : null,
     images: (artwork.images ?? []).map((image) => ({
       id: image.id,

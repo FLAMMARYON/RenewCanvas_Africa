@@ -8,6 +8,7 @@ import {
   requestMetadata,
 } from "@/lib/backend/auth-route";
 import { auditEvent, rateLimit } from "@/lib/backend/security-log";
+import { notifyAdmins } from "@/lib/backend/admin-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,14 @@ export async function POST(request: NextRequest) {
       eventType: "auth.register.success",
       severity: "info",
       metadata: { role: result.user.role },
+    });
+
+    // Admin push: new user registration (and new artist application for artists).
+    await notifyAdmins(db, {
+      templateKey: result.user.role === "artist" ? "admin_new_artist_application" : "admin_new_user",
+      subject: result.user.role === "artist" ? "New artist application" : "New user registration",
+      body: `${result.user.name} signed up as ${result.user.role}.`,
+      metadata: { userId: result.user.id, role: result.user.role },
     });
 
     const responseBody: {

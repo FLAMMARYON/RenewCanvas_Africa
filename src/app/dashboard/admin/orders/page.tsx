@@ -1,22 +1,12 @@
 "use client";
 
 import DashboardLayout from "@/components/DashboardLayout";
-import { listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
-import { Calendar, CheckCircle, Clock, DollarSign, Mail, Package, Search, Truck, User, XCircle } from "lucide-react";
+import { confirmOrderPayment, disburseOrder, listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
+import { orderStatusMeta, isConfirmedRevenueStatus } from "@/lib/frontend/status-labels";
+import { Banknote, Calendar, CheckCircle, DollarSign, Mail, Package, Search, User } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const statusConfig = {
-  pending_payment: { labelKey: "pendingPayment", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  paid: { labelKey: "paid", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
-  processing: { labelKey: "processing", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
-  shipped: { labelKey: "shipped", color: "text-purple-600", bgColor: "bg-purple-50", icon: Truck },
-  delivered: { labelKey: "delivered", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  cancelled: { labelKey: "cancelled", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-  refunded: { labelKey: "refunded", color: "text-gray-600", bgColor: "bg-gray-100", icon: XCircle },
-  failed: { labelKey: "failed", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-};
 
 export default function AdminOrdersPage() {
   const { t } = useTranslation();
@@ -25,12 +15,26 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
+  const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     listOrders()
       .then(setOrders)
       .catch((error) => setStatusMessage(error instanceof Error ? error.message : t("admin.orders.loadError")));
   }, []);
+
+  const runOrderAction = async (orderId: string, action: "confirm" | "disburse") => {
+    setBusyOrderId(orderId);
+    setStatusMessage("");
+    try {
+      const newStatus = action === "confirm" ? await confirmOrderPayment(orderId) : await disburseOrder(orderId);
+      setOrders((current) => current.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)));
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : t("admin.orders.actionError"));
+    } finally {
+      setBusyOrderId(null);
+    }
+  };
 
   const filteredOrders = orders.filter((order) => {
     const item = order.items[0];
@@ -45,8 +49,11 @@ export default function AdminOrdersPage() {
       pending: orders.filter((order) => order.status === "pending_payment").length,
       active: orders.filter((order) => ["paid", "processing", "shipped"].includes(order.status)).length,
       delivered: orders.filter((order) => order.status === "delivered").length,
-      revenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
-      platformFees: orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.unitAmount * item.quantity * 0.2, 0), 0),
+      // Revenue + platform fees count ONLY confirmed payments (exclude pending/cancelled/refunded/failed).
+      revenue: orders.filter((order) => isConfirmedRevenueStatus(order.status)).reduce((sum, order) => sum + order.totalAmount, 0),
+      platformFees: orders
+        .filter((order) => isConfirmedRevenueStatus(order.status))
+        .reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.unitAmount * item.quantity * 0.2, 0), 0),
     }),
     [orders]
   );
@@ -76,14 +83,15 @@ export default function AdminOrdersPage() {
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder={t("admin.orders.searchPlaceholder")} className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-teal-500" />
             </div>
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5">
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label={t("admin.orders.columnStatus")} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5">
               <option value="all">{t("admin.orders.filterAllStatus")}</option>
-              <option value="pending_payment">{t("admin.orders.pendingPayment")}</option>
-              <option value="paid">{t("admin.orders.paid")}</option>
-              <option value="processing">{t("admin.orders.processing")}</option>
-              <option value="shipped">{t("admin.orders.shipped")}</option>
-              <option value="delivered">{t("admin.orders.delivered")}</option>
-              <option value="cancelled">{t("admin.orders.cancelled")}</option>
+              <option value="pending_payment">{t("statusLabels.pendingPayment")}</option>
+              <option value="paid">{t("statusLabels.paid")}</option>
+              <option value="processing">{t("statusLabels.processing")}</option>
+              <option value="shipped">{t("statusLabels.shipped")}</option>
+              <option value="delivered">{t("statusLabels.delivered")}</option>
+              <option value="artist_paid">{t("statusLabels.artistPaid")}</option>
+              <option value="cancelled">{t("statusLabels.cancelled")}</option>
             </select>
           </div>
         </div>
@@ -100,7 +108,7 @@ export default function AdminOrdersPage() {
           <div className="divide-y divide-gray-100">
             {filteredOrders.map((order) => {
               const item = order.items[0];
-              const status = statusConfig[order.status as keyof typeof statusConfig] ?? statusConfig.pending_payment;
+              const status = orderStatusMeta(order.status);
               const StatusIcon = status.icon;
               const isExpanded = expandedOrder === order.id;
               const delivery = order.deliveryAddress ?? {};
@@ -127,7 +135,7 @@ export default function AdminOrdersPage() {
                       <div className="lg:col-span-2">
                         <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${status.bgColor} ${status.color}`}>
                           <StatusIcon className="h-3 w-3" />
-                          {t(`admin.orders.${status.labelKey}`)}
+                          {t(status.labelKey)}
                         </span>
                       </div>
                     </div>
@@ -160,11 +168,29 @@ export default function AdminOrdersPage() {
 
                         <div className="rounded-lg border border-gray-100 bg-white p-4">
                           <h4 className="mb-3 flex items-center gap-2 font-medium text-gray-900"><Calendar className="h-4 w-4 text-purple-600" />{t("admin.orders.adminActions")}</h4>
-                          <div className="space-y-2 text-sm text-gray-600">
-                            <p>{t("admin.orders.adminActionConfirmPayment")}</p>
-                            <p>{t("admin.orders.adminActionMediate")}</p>
-                            <Link href={`/order-confirmation?order=${encodeURIComponent(order.id)}`} className="inline-flex rounded-lg bg-teal-600 px-4 py-2 text-white">{t("admin.orders.paymentInstructions")}</Link>
-                            <a href={`mailto:${order.buyer?.email ?? String(delivery.email ?? "")}`} className="ml-2 inline-flex items-center gap-1 rounded-lg border border-gray-200 px-4 py-2 text-gray-700">
+                          <div className="space-y-3 text-sm text-gray-600">
+                            {/* Step 1 — buyer payment received (pending_payment → paid / artwork sold). */}
+                            <button
+                              type="button"
+                              disabled={order.status !== "pending_payment" || busyOrderId === order.id}
+                              onClick={() => runOrderAction(order.id, "confirm")}
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2 font-medium text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              {order.status === "pending_payment" ? t("admin.orders.confirmPaymentReceived") : t("admin.orders.paymentConfirmed")}
+                            </button>
+                            {/* Step 2 — artist disbursed (paid → artist_paid). Only after payment is confirmed. */}
+                            <button
+                              type="button"
+                              disabled={order.status !== "paid" || busyOrderId === order.id}
+                              onClick={() => runOrderAction(order.id, "disburse")}
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 font-medium text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <Banknote className="h-4 w-4" />
+                              {order.status === "artist_paid" ? t("admin.orders.artistDisbursed") : t("admin.orders.confirmArtistDisbursement")}
+                            </button>
+                            {order.status === "pending_payment" && <p className="text-xs text-gray-500">{t("admin.orders.disbursementHint")}</p>}
+                            <a href={`mailto:${order.buyer?.email ?? String(delivery.email ?? "")}`} className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-50">
                               <Mail className="h-4 w-4" />{t("admin.orders.emailBuyer")}
                             </a>
                           </div>
