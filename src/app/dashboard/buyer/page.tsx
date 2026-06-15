@@ -17,70 +17,71 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 const statusConfig = {
   pending: {
-    label: "Pending",
+    label: "dashboard.orderStatus.pending",
     color: "text-amber-600",
     bgColor: "bg-amber-50",
     icon: Clock,
   },
   pending_payment: {
-    label: "Pending Payment",
+    label: "dashboard.orderStatus.pending_payment",
     color: "text-amber-600",
     bgColor: "bg-amber-50",
     icon: Clock,
   },
   paid: {
-    label: "Paid",
+    label: "dashboard.orderStatus.paid",
     color: "text-blue-600",
     bgColor: "bg-blue-50",
     icon: CheckCircle,
   },
   processing: {
-    label: "Processing",
+    label: "dashboard.orderStatus.processing",
     color: "text-blue-600",
     bgColor: "bg-blue-50",
     icon: CheckCircle,
   },
   shipped: {
-    label: "Shipped",
+    label: "dashboard.orderStatus.shipped",
     color: "text-purple-600",
     bgColor: "bg-purple-50",
     icon: Truck,
   },
   confirmed: {
-    label: "Confirmed",
+    label: "dashboard.orderStatus.confirmed",
     color: "text-blue-600",
     bgColor: "bg-blue-50",
     icon: CheckCircle,
   },
   in_transit: {
-    label: "In Transit",
+    label: "dashboard.orderStatus.in_transit",
     color: "text-purple-600",
     bgColor: "bg-purple-50",
     icon: Truck,
   },
   delivered: {
-    label: "Delivered",
+    label: "dashboard.orderStatus.delivered",
     color: "text-green-600",
     bgColor: "bg-green-50",
     icon: CheckCircle,
   },
   cancelled: {
-    label: "Cancelled",
+    label: "dashboard.orderStatus.cancelled",
     color: "text-red-600",
     bgColor: "bg-red-50",
     icon: Clock,
   },
   refunded: {
-    label: "Refunded",
+    label: "dashboard.orderStatus.refunded",
     color: "text-gray-600",
     bgColor: "bg-gray-100",
     icon: Clock,
   },
   failed: {
-    label: "Failed",
+    label: "dashboard.orderStatus.failed",
     color: "text-red-600",
     bgColor: "bg-red-50",
     icon: Clock,
@@ -88,6 +89,7 @@ const statusConfig = {
 };
 
 export default function BuyerDashboard() {
+  const { t } = useTranslation();
   const [userName, setUserName] = useState("User");
   const [loading, setLoading] = useState(true);
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
@@ -118,7 +120,7 @@ export default function BuyerDashboard() {
           setStatusMessage(
             failedDataRequest.reason instanceof Error
               ? failedDataRequest.reason.message
-              : "Could not load account activity."
+              : t("dashboard.buyer.overview.loadActivityError")
           );
         }
       })
@@ -145,7 +147,7 @@ export default function BuyerDashboard() {
 
   const stats = [
     {
-      label: "Saved Artworks",
+      label: t("dashboard.buyer.overview.statSaved"),
       value: accountMetrics.savedArtworks.toString(),
       icon: Heart,
       color: "text-rose-600",
@@ -153,7 +155,7 @@ export default function BuyerDashboard() {
       href: "/dashboard/buyer/wishlist",
     },
     {
-      label: "Total Orders",
+      label: t("dashboard.buyer.overview.statOrders"),
       value: accountMetrics.totalOrders.toString(),
       icon: ShoppingBag,
       color: "text-teal-600",
@@ -161,7 +163,7 @@ export default function BuyerDashboard() {
       href: "/dashboard/buyer/orders",
     },
     {
-      label: "Active Orders",
+      label: t("dashboard.buyer.overview.statActive"),
       value: accountMetrics.pendingOrders.toString(),
       icon: Clock,
       color: "text-amber-600",
@@ -169,7 +171,7 @@ export default function BuyerDashboard() {
       href: "/dashboard/buyer/orders",
     },
     {
-      label: "Impact (kg diverted)",
+      label: t("dashboard.buyer.overview.statImpact"),
       value: accountMetrics.wasteDiverted.toFixed(1),
       icon: Recycle,
       color: "text-green-600",
@@ -187,11 +189,12 @@ export default function BuyerDashboard() {
         {/* Welcome Header */}
         <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-xl p-6 text-white">
           <h1 className="text-2xl font-bold mb-2">
-            Welcome back{loading ? "" : `, ${userName}`}!
+            {loading
+              ? t("dashboard.buyer.overview.welcomePlain")
+              : t("dashboard.buyer.overview.welcome", { name: userName })}
           </h1>
           <p className="text-teal-100">
-            Track your orders, manage your wishlist, and discover your
-            environmental impact.
+            {t("dashboard.buyer.overview.welcomeSub")}
           </p>
         </div>
 
@@ -224,12 +227,12 @@ export default function BuyerDashboard() {
           {/* Recent Orders */}
           <div className="bg-white rounded-xl border border-gray-100">
             <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Recent Orders</h2>
+              <h2 className="font-semibold text-gray-900">{t("dashboard.buyer.overview.recentOrders")}</h2>
               <Link
                 href="/dashboard/buyer/orders"
                 className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
               >
-                View All
+                {t("common.viewAll")}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -248,17 +251,17 @@ export default function BuyerDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">
-                          {item?.title ?? "Artwork"}
+                          {item?.title ?? t("dashboard.artworkFallback")}
                         </p>
                         <p className="text-sm text-gray-500">
-                          by {item?.artistName ?? "RenewCanvas Africa"}
+                          {t("dashboard.byArtist", { name: item?.artistName ?? "RenewCanvas Africa" })}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.bgColor} ${status.color}`}
                           >
                             <status.icon className="w-3 h-3" />
-                            {status.label}
+                            {t(status.label)}
                           </span>
                           <span className="text-xs text-gray-400">
                             {new Date(order.createdAt).toLocaleDateString()}
@@ -273,7 +276,7 @@ export default function BuyerDashboard() {
                           href="/dashboard/buyer/orders"
                           className="text-xs text-teal-600 hover:text-teal-700"
                         >
-                          View Details
+                          {t("dashboard.buyer.overview.viewDetails")}
                         </Link>
                       </div>
                     </div>
@@ -283,8 +286,8 @@ export default function BuyerDashboard() {
               {recentOrders.length === 0 && (
                 <div className="p-8 text-center">
                   <Package className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-                  <p className="font-medium text-gray-900">No orders yet</p>
-                  <p className="mt-1 text-sm text-gray-500">Orders you place will appear here.</p>
+                  <p className="font-medium text-gray-900">{t("dashboard.buyer.overview.noOrders")}</p>
+                  <p className="mt-1 text-sm text-gray-500">{t("dashboard.buyer.overview.noOrdersDesc")}</p>
                 </div>
               )}
             </div>
@@ -293,12 +296,12 @@ export default function BuyerDashboard() {
           {/* Saved Artworks */}
           <div className="bg-white rounded-xl border border-gray-100">
             <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Saved Artworks</h2>
+              <h2 className="font-semibold text-gray-900">{t("dashboard.buyer.overview.savedArtworks")}</h2>
               <Link
                 href="/dashboard/buyer/wishlist"
                 className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
               >
-                View All
+                {t("common.viewAll")}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -319,7 +322,7 @@ export default function BuyerDashboard() {
                         {artwork.title}
                       </p>
                       <p className="text-sm text-gray-500">
-                        by {artwork.artist?.name ?? "RenewCanvas Africa"}
+                        {t("dashboard.byArtist", { name: artwork.artist?.name ?? "RenewCanvas Africa" })}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {artwork.materials.slice(0, 2).map((material) => (
@@ -341,7 +344,7 @@ export default function BuyerDashboard() {
                         className="inline-flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700"
                       >
                         <Eye className="w-3 h-3" />
-                        View
+                        {t("dashboard.buyer.overview.view")}
                       </Link>
                     </div>
                   </div>
@@ -351,8 +354,8 @@ export default function BuyerDashboard() {
               {savedArtworks.length === 0 && (
                 <div className="p-8 text-center">
                   <Heart className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-                  <p className="font-medium text-gray-900">No saved artworks yet</p>
-                  <p className="mt-1 text-sm text-gray-500">Saved artworks from the marketplace will appear here.</p>
+                  <p className="font-medium text-gray-900">{t("dashboard.buyer.overview.noSaved")}</p>
+                  <p className="mt-1 text-sm text-gray-500">{t("dashboard.buyer.overview.noSavedDesc")}</p>
                 </div>
               )}
             </div>
@@ -367,29 +370,29 @@ export default function BuyerDashboard() {
             </div>
             <div>
               <h2 className="font-semibold text-gray-900">
-                Your Environmental Impact
+                {t("dashboard.buyer.overview.envImpactTitle")}
               </h2>
               <p className="text-sm text-gray-600">
-                Through your purchases on RenewCanvas Africa
+                {t("dashboard.buyer.overview.envImpactSub")}
               </p>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
             <div className="bg-white/70 rounded-lg p-4 text-center">
               <p className="text-2xl font-bold text-green-600">{accountMetrics.wasteDiverted.toFixed(1)} kg</p>
-              <p className="text-xs text-gray-600">Waste Diverted</p>
+              <p className="text-xs text-gray-600">{t("dashboard.buyer.overview.wasteDiverted")}</p>
             </div>
             <div className="bg-white/70 rounded-lg p-4 text-center">
               <p className="text-2xl font-bold text-teal-600">{accountMetrics.artistsSupported}</p>
-              <p className="text-xs text-gray-600">Artists Supported</p>
+              <p className="text-xs text-gray-600">{t("dashboard.buyer.overview.artistsSupported")}</p>
             </div>
             <div className="bg-white/70 rounded-lg p-4 text-center">
               <p className="text-2xl font-bold text-amber-600">{accountMetrics.artworksPurchased}</p>
-              <p className="text-xs text-gray-600">Artworks Purchased</p>
+              <p className="text-xs text-gray-600">{t("dashboard.buyer.overview.artworksPurchased")}</p>
             </div>
             <div className="bg-white/70 rounded-lg p-4 text-center">
               <p className="text-2xl font-bold text-purple-600">{accountMetrics.artistIncome.toLocaleString()}</p>
-              <p className="text-xs text-gray-600">RWF to Artists</p>
+              <p className="text-xs text-gray-600">{t("dashboard.buyer.overview.rwfToArtists")}</p>
             </div>
           </div>
         </div>
@@ -404,21 +407,8 @@ export default function BuyerDashboard() {
               <ShoppingBag className="w-6 h-6 text-teal-600" />
             </div>
             <div>
-              <p className="font-medium text-gray-900">Browse Marketplace</p>
-              <p className="text-sm text-gray-500">Discover new artworks</p>
-            </div>
-            <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-teal-600 ml-auto transition-colors" />
-          </Link>
-          <Link
-            href="/artists"
-            className="group flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-teal-200 hover:shadow-md transition-all"
-          >
-            <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center group-hover:bg-amber-100 transition-colors">
-              <Heart className="w-6 h-6 text-amber-600" />
-            </div>
-            <div>
-              <p className="font-medium text-gray-900">Meet Artists</p>
-              <p className="text-sm text-gray-500">Explore artist profiles</p>
+              <p className="font-medium text-gray-900">{t("dashboard.browseMarketplace")}</p>
+              <p className="text-sm text-gray-500">{t("dashboard.buyer.overview.browseMarketplaceDesc")}</p>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-teal-600 ml-auto transition-colors" />
           </Link>
@@ -430,8 +420,8 @@ export default function BuyerDashboard() {
               <Recycle className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <p className="font-medium text-gray-900">Platform Impact</p>
-              <p className="text-sm text-gray-500">See collective impact</p>
+              <p className="font-medium text-gray-900">{t("dashboard.buyer.overview.platformImpact")}</p>
+              <p className="text-sm text-gray-500">{t("dashboard.buyer.overview.platformImpactDesc")}</p>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-teal-600 ml-auto transition-colors" />
           </Link>

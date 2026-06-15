@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Recycle, Mail, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import { requestResetLink } from "@/lib/frontend/auth-api";
 import Navbar from "@/components/Navbar";
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -23,7 +25,7 @@ export default function ForgotPasswordPage() {
       setResetToken(token);
       setIsSubmitted(true);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Unable to request password reset.");
+      setError(error instanceof Error ? error.message : t("auth.forgot.errFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -57,11 +59,10 @@ export default function ForgotPasswordPage() {
                   <Mail className="w-8 h-8 text-teal-600" />
                 </div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  Forgot your password?
+                  {t("auth.forgot.title")}
                 </h1>
                 <p className="text-gray-600">
-                  No worries! Enter your email address and we'll send you a link to
-                  reset your password.
+                  {t("auth.forgot.subtitle")}
                 </p>
               </div>
 
@@ -78,14 +79,14 @@ export default function ForgotPasswordPage() {
                     htmlFor="email"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Email Address
+                    {t("auth.emailLabel")}
                   </label>
                   <input
                     type="email"
                     id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder={t("auth.emailPlaceholder")}
                     required
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                   />
@@ -99,10 +100,10 @@ export default function ForgotPasswordPage() {
                   {isSubmitting ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Sending...
+                      {t("auth.forgot.submitting")}
                     </>
                   ) : (
-                    "Send Reset Link"
+                    t("auth.forgot.submit")
                   )}
                 </button>
               </form>
@@ -113,28 +114,29 @@ export default function ForgotPasswordPage() {
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Check your email
+                {t("auth.forgot.sentTitle")}
               </h2>
               <p className="text-gray-600 mb-6">
-                We've sent a password reset link to{" "}
+                {t("auth.forgot.sentTo")}{" "}
                 <span className="font-medium text-gray-900">{email}</span>
               </p>
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
                 <p className="text-sm text-gray-600">
-                  Didn't receive the email? Check your spam folder or{" "}
+                  {t("auth.forgot.noEmail")}{" "}
                   <button
+                    type="button"
                     onClick={() => {
                       setIsSubmitted(false);
                       setEmail("");
                     }}
                     className="text-teal-600 hover:text-teal-700 font-medium"
                   >
-                    try another email address
+                    {t("auth.forgot.tryAnother")}
                   </button>
                 </p>
                 {resetToken && (
                   <p className="mt-3 text-xs text-gray-500 break-all">
-                    Development reset link: /reset-password?token={resetToken}
+                    {t("auth.forgot.devLink")} /reset-password?token={resetToken}
                   </p>
                 )}
               </div>
@@ -143,7 +145,7 @@ export default function ForgotPasswordPage() {
                 className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 font-medium"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Sign In
+                {t("auth.backToSignIn")}
               </Link>
             </div>
           )}
@@ -157,7 +159,7 @@ export default function ForgotPasswordPage() {
               className="inline-flex items-center gap-2 text-gray-600 hover:text-teal-600 font-medium transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Sign In
+              {t("auth.backToSignIn")}
             </Link>
           </div>
         )}

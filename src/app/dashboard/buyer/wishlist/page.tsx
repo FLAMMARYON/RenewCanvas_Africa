@@ -5,8 +5,10 @@ import { readWishlist, removeFromWishlist, type WishlistItem } from "@/lib/front
 import { ArrowRight, Eye, Grid, Heart, List, Palette, Recycle, Search, ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function WishlistPage() {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [items, setItems] = useState<WishlistItem[]>([]);
@@ -16,7 +18,7 @@ export default function WishlistPage() {
   useEffect(() => {
     readWishlist()
       .then(setItems)
-      .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load wishlist."));
+      .catch((error) => setStatusMessage(error instanceof Error ? error.message : t("dashboard.buyer.wishlist.loadError")));
 
     // Fetch user name
     fetch("/api/profile")
@@ -48,8 +50,8 @@ export default function WishlistPage() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Wishlist</h1>
-            <p className="text-gray-500">{items.length} saved artworks backed by your account</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("dashboard.buyer.wishlist.title")}</h1>
+            <p className="text-gray-500">{t("dashboard.buyer.wishlist.subtitle", { count: items.length })}</p>
           </div>
         </div>
 
@@ -60,17 +62,17 @@ export default function WishlistPage() {
         )}
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <Summary icon={Heart} label="Total Saved" value={items.length.toString()} />
-          <Summary icon={ShoppingCart} label="Available" value={filteredItems.length.toString()} tone="green" />
-          <Summary icon={Recycle} label="Potential Impact" value={`${totalImpact.toFixed(1)} kg`} tone="teal" />
-          <Summary icon={Palette} label="Total Value" value={totalValue.toLocaleString()} tone="amber" />
+          <Summary icon={Heart} label={t("dashboard.buyer.wishlist.summaryTotalSaved")} value={items.length.toString()} />
+          <Summary icon={ShoppingCart} label={t("dashboard.buyer.wishlist.summaryAvailable")} value={filteredItems.length.toString()} tone="green" />
+          <Summary icon={Recycle} label={t("dashboard.buyer.wishlist.summaryPotentialImpact")} value={`${totalImpact.toFixed(1)} kg`} tone="teal" />
+          <Summary icon={Palette} label={t("dashboard.buyer.wishlist.summaryTotalValue")} value={totalValue.toLocaleString()} tone="amber" />
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative max-w-md flex-1">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
-              placeholder="Search saved artworks..."
+              placeholder={t("dashboard.buyer.wishlist.searchPlaceholder")}
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-4 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
@@ -89,10 +91,10 @@ export default function WishlistPage() {
         {filteredItems.length === 0 ? (
           <div className="rounded-xl border border-gray-100 bg-white p-12 text-center">
             <Heart className="mx-auto mb-4 h-12 w-12 text-gray-300" />
-            <h2 className="mb-2 text-lg font-medium text-gray-900">No saved artworks found</h2>
-            <p className="mb-6 text-gray-500">{searchQuery ? "Try a different search term" : "Save artwork from the marketplace to see it here."}</p>
+            <h2 className="mb-2 text-lg font-medium text-gray-900">{t("dashboard.buyer.wishlist.noneFound")}</h2>
+            <p className="mb-6 text-gray-500">{searchQuery ? t("dashboard.buyer.wishlist.noneFoundSearch") : t("dashboard.buyer.wishlist.noneFoundDefault")}</p>
             <Link href="/marketplace" className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 font-medium text-white hover:bg-teal-700">
-              Browse Marketplace
+              {t("dashboard.browseMarketplace")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -115,6 +117,7 @@ export default function WishlistPage() {
 }
 
 function WishlistCard({ item, onRemove }: { item: WishlistItem; onRemove: (artworkId: string) => void }) {
+  const { t } = useTranslation();
   const artwork = item.artwork;
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white transition hover:border-teal-200 hover:shadow-lg">
@@ -127,22 +130,22 @@ function WishlistCard({ item, onRemove }: { item: WishlistItem; onRemove: (artwo
           </div>
         )}
         <div className="absolute right-3 top-3 flex flex-col gap-2">
-          <button onClick={() => onRemove(artwork.id)} className="rounded-full bg-white p-2 shadow-md hover:bg-red-50" title="Remove from wishlist">
+          <button type="button" onClick={() => onRemove(artwork.id)} className="rounded-full bg-white p-2 shadow-md hover:bg-red-50" title={t("dashboard.buyer.wishlist.removeTitle")}>
             <Trash2 className="h-4 w-4 text-red-500" />
           </button>
-          <Link href={`/artwork/${artwork.slug}`} className="rounded-full bg-white p-2 shadow-md hover:bg-teal-50" title="View artwork">
+          <Link href={`/artwork/${artwork.slug}`} className="rounded-full bg-white p-2 shadow-md hover:bg-teal-50" title={t("dashboard.buyer.wishlist.viewTitle")}>
             <Eye className="h-4 w-4 text-teal-600" />
           </Link>
         </div>
       </div>
       <div className="p-4">
         <h2 className="truncate font-medium text-gray-900">{artwork.title}</h2>
-        <p className="text-sm text-gray-500">by {artwork.artist?.name ?? "RenewCanvas Africa"}</p>
+        <p className="text-sm text-gray-500">{t("dashboard.byArtist", { name: artwork.artist?.name ?? "RenewCanvas Africa" })}</p>
         <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
           <p className="font-semibold text-gray-900">{artwork.priceAmount.toLocaleString()} RWF</p>
           <span className="inline-flex items-center gap-1 text-xs text-green-600">
             <Recycle className="h-3 w-3" />
-            {artwork.kgDiverted.toFixed(1)} kg
+            {t("dashboard.kg", { kg: artwork.kgDiverted.toFixed(1) })}
           </span>
         </div>
       </div>
@@ -151,6 +154,7 @@ function WishlistCard({ item, onRemove }: { item: WishlistItem; onRemove: (artwo
 }
 
 function WishlistRow({ item, onRemove }: { item: WishlistItem; onRemove: (artworkId: string) => void }) {
+  const { t } = useTranslation();
   const artwork = item.artwork;
   return (
     <div className="flex items-center gap-4 p-4 hover:bg-gray-50">
@@ -159,16 +163,16 @@ function WishlistRow({ item, onRemove }: { item: WishlistItem; onRemove: (artwor
       </div>
       <div className="min-w-0 flex-1">
         <h2 className="truncate font-medium text-gray-900">{artwork.title}</h2>
-        <p className="text-sm text-gray-500">by {artwork.artist?.name ?? "RenewCanvas Africa"}</p>
+        <p className="text-sm text-gray-500">{t("dashboard.byArtist", { name: artwork.artist?.name ?? "RenewCanvas Africa" })}</p>
       </div>
       <div className="text-right">
         <p className="font-semibold text-gray-900">{artwork.priceAmount.toLocaleString()} RWF</p>
-        <p className="text-xs text-green-600">{artwork.kgDiverted.toFixed(1)} kg diverted</p>
+        <p className="text-xs text-green-600">{t("dashboard.kgDiverted", { kg: artwork.kgDiverted.toFixed(1) })}</p>
       </div>
-      <Link href={`/artwork/${artwork.slug}`} className="p-2 text-gray-400 hover:text-teal-600">
+      <Link href={`/artwork/${artwork.slug}`} className="p-2 text-gray-400 hover:text-teal-600" title={t("dashboard.buyer.wishlist.viewTitle")}>
         <Eye className="h-5 w-5" />
       </Link>
-      <button onClick={() => onRemove(artwork.id)} className="p-2 text-gray-400 hover:text-red-600">
+      <button type="button" onClick={() => onRemove(artwork.id)} className="p-2 text-gray-400 hover:text-red-600" title={t("dashboard.buyer.wishlist.removeTitle")}>
         <Trash2 className="h-5 w-5" />
       </button>
     </div>

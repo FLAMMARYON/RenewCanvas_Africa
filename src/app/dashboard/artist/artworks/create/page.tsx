@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { createArtwork } from "@/lib/frontend/artworks-api";
 import { readProfile } from "@/lib/frontend/profile-api";
 import { getListingSuggestions, type ListingAssistantResponse } from "@/lib/frontend/listing-assistant-api";
@@ -31,26 +32,28 @@ import { artworkCategories, recyclableMaterials } from "@/lib/ml/schemas";
 const categories = [...artworkCategories];
 const materialTypes = [...recyclableMaterials];
 
-const materialSources = [
-  "Self-collected",
-  "RenewCanvas partner",
-  "School collection",
-  "Community cleanup",
-  "Business donation",
-  "Other",
+// Code values are stored / sent to the API; display labels are translated at
+// the usage site via t("artistDashboard.create.materialSource.<key>").
+const materialSources: Array<{ value: string; labelKey: string }> = [
+  { value: "Self-collected", labelKey: "materialSourceSelfCollected" },
+  { value: "RenewCanvas partner", labelKey: "materialSourcePartner" },
+  { value: "School collection", labelKey: "materialSourceSchool" },
+  { value: "Community cleanup", labelKey: "materialSourceCleanup" },
+  { value: "Business donation", labelKey: "materialSourceBusiness" },
+  { value: "Other", labelKey: "materialSourceOther" },
 ];
 
-const experienceLevels = [
-  { id: "emerging", label: "Emerging Artist", description: "Less than 2 years" },
-  { id: "intermediate", label: "Intermediate", description: "2-5 years experience" },
-  { id: "professional", label: "Professional", description: "5+ years experience" },
+const experienceLevels: Array<{ id: string; labelKey: string; descriptionKey: string }> = [
+  { id: "emerging", labelKey: "experienceEmergingLabel", descriptionKey: "experienceEmergingDescription" },
+  { id: "intermediate", labelKey: "experienceIntermediateLabel", descriptionKey: "experienceIntermediateDescription" },
+  { id: "professional", labelKey: "experienceProfessionalLabel", descriptionKey: "experienceProfessionalDescription" },
 ];
 
-const complexityLevels = [
-  { id: "simple", label: "Simple", hours: "1-5 hours" },
-  { id: "moderate", label: "Moderate", hours: "5-15 hours" },
-  { id: "complex", label: "Complex", hours: "15-30 hours" },
-  { id: "very_complex", label: "Very Complex", hours: "30+ hours" },
+const complexityLevels: Array<{ id: string; labelKey: string; hoursKey: string }> = [
+  { id: "simple", labelKey: "complexitySimpleLabel", hoursKey: "complexitySimpleHours" },
+  { id: "moderate", labelKey: "complexityModerateLabel", hoursKey: "complexityModerateHours" },
+  { id: "complex", labelKey: "complexityComplexLabel", hoursKey: "complexityComplexHours" },
+  { id: "very_complex", labelKey: "complexityVeryComplexLabel", hoursKey: "complexityVeryComplexHours" },
 ];
 
 // Per-complexity hour ceilings. Hours above the cap are rejected (e.g. Simple
@@ -63,6 +66,7 @@ const complexityHourCaps: Record<string, number> = {
 };
 
 export default function CreateArtworkPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [images, setImages] = useState<Array<{
@@ -85,7 +89,7 @@ export default function CreateArtworkPage() {
   const [aiListingSuggestions, setAiListingSuggestions] = useState<ListingAssistantResponse | null>(null);
   const [formError, setFormError] = useState("");
   const [toast, setToast] = useState<string | null>(null);
-  const [userName, setUserName] = useState("Artist");
+  const [userName, setUserName] = useState(t("artistDashboard.create.defaultUserName"));
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -113,7 +117,7 @@ export default function CreateArtworkPage() {
   useEffect(() => {
     readProfile()
       .then((profile) => {
-        setUserName(profile.displayName || "Artist");
+        setUserName(profile.displayName || t("artistDashboard.create.defaultUserName"));
       })
       .catch(() => {
         // User not logged in or profile fetch failed
@@ -140,45 +144,48 @@ export default function CreateArtworkPage() {
   const hasUploadedImage = images.some((img) => img.uploaded);
 
   const hoursCap = formData.complexity ? complexityHourCaps[formData.complexity] : undefined;
+  const complexityLabel = formData.complexity
+    ? t(`artistDashboard.create.${complexityLevels.find((c) => c.id === formData.complexity)?.labelKey ?? "complexityThisFallback"}`)
+    : t("artistDashboard.create.complexityThisFallback");
   const hoursError =
     formData.hoursWorked && hoursCap && Number(formData.hoursWorked) > hoursCap
-      ? `${complexityLevels.find((c) => c.id === formData.complexity)?.label ?? "This"} artworks are capped at ${hoursCap} hours. Lower the hours or pick a higher complexity.`
+      ? t("artistDashboard.create.hoursCapError", { complexity: complexityLabel, cap: hoursCap })
       : "";
 
   const missingStep1 = () => {
     const missing: string[] = [];
-    if (!hasUploadedImage) missing.push("at least one uploaded image");
-    if (!formData.title.trim()) missing.push("title");
-    if (!formData.description.trim()) missing.push("description");
-    if (!formData.category) missing.push("category");
-    if (!formData.dimensions.trim()) missing.push("dimensions");
+    if (!hasUploadedImage) missing.push(t("artistDashboard.create.missingUploadedImage"));
+    if (!formData.title.trim()) missing.push(t("artistDashboard.create.missingTitle"));
+    if (!formData.description.trim()) missing.push(t("artistDashboard.create.missingDescription"));
+    if (!formData.category) missing.push(t("artistDashboard.create.missingCategory"));
+    if (!formData.dimensions.trim()) missing.push(t("artistDashboard.create.missingDimensions"));
     return missing;
   };
 
   const missingStep2 = () => {
     const missing: string[] = [];
-    if (selectedMaterials.length === 0) missing.push("at least one material");
-    if (!formData.materialWeight || Number(formData.materialWeight) <= 0) missing.push("material weight");
-    if (!formData.materialSource) missing.push("material source");
+    if (selectedMaterials.length === 0) missing.push(t("artistDashboard.create.missingMaterial"));
+    if (!formData.materialWeight || Number(formData.materialWeight) <= 0) missing.push(t("artistDashboard.create.missingMaterialWeight"));
+    if (!formData.materialSource) missing.push(t("artistDashboard.create.missingMaterialSource"));
     return missing;
   };
 
   const missingStep3 = () => {
     const missing: string[] = [];
-    if (!formData.experienceLevel) missing.push("experience level");
-    if (!formData.complexity) missing.push("complexity");
-    if (!formData.price || Number(formData.price) <= 0) missing.push("price");
+    if (!formData.experienceLevel) missing.push(t("artistDashboard.create.missingExperienceLevel"));
+    if (!formData.complexity) missing.push(t("artistDashboard.create.missingComplexity"));
+    if (!formData.price || Number(formData.price) <= 0) missing.push(t("artistDashboard.create.missingPrice"));
     return missing;
   };
 
   // AI listing agent needs image + title + dimensions + description + category together.
   const listingMissing = () => {
     const missing: string[] = [];
-    if (!hasUploadedImage) missing.push("an image");
-    if (!formData.title.trim()) missing.push("title");
-    if (!formData.dimensions.trim()) missing.push("dimensions");
-    if (!formData.description.trim()) missing.push("description");
-    if (!formData.category) missing.push("category");
+    if (!hasUploadedImage) missing.push(t("artistDashboard.create.missingAnImage"));
+    if (!formData.title.trim()) missing.push(t("artistDashboard.create.missingTitle"));
+    if (!formData.dimensions.trim()) missing.push(t("artistDashboard.create.missingDimensions"));
+    if (!formData.description.trim()) missing.push(t("artistDashboard.create.missingDescription"));
+    if (!formData.category) missing.push(t("artistDashboard.create.missingCategory"));
     return missing;
   };
   const listingReady = listingMissing().length === 0;
@@ -186,7 +193,7 @@ export default function CreateArtworkPage() {
   const goToStep2 = () => {
     const missing = missingStep1();
     if (missing.length > 0) {
-      showToast(`Complete every field to continue: ${missing.join(", ")}.`);
+      showToast(t("artistDashboard.create.completeToContinue", { fields: missing.join(", ") }));
       return;
     }
     setStep(2);
@@ -195,7 +202,7 @@ export default function CreateArtworkPage() {
   const goToStep3 = () => {
     const missing = missingStep2();
     if (missing.length > 0) {
-      showToast(`Complete every field to continue: ${missing.join(", ")}.`);
+      showToast(t("artistDashboard.create.completeToContinue", { fields: missing.join(", ") }));
       return;
     }
     setStep(3);
@@ -235,7 +242,7 @@ export default function CreateArtworkPage() {
       } catch (error) {
         console.error("Artwork image upload failed:", error);
         const errorMessage =
-          error instanceof Error ? error.message : "Upload failed";
+          error instanceof Error ? error.message : t("artistDashboard.create.uploadFailed");
         setImages((prev) =>
           prev.map((img, idx) =>
             idx === imageIndex
@@ -266,7 +273,7 @@ export default function CreateArtworkPage() {
     // The price itself isn't required to ask for a suggestion, but the factors are.
     const factorsMissing = missing.filter((m) => m !== "price");
     if (factorsMissing.length > 0 || selectedMaterials.length === 0 || !formData.materialWeight) {
-      showToast("Add materials, weight, complexity, and experience before requesting a price.");
+      showToast(t("artistDashboard.create.pricingFactorsRequired"));
       return;
     }
     if (hoursError) {
@@ -300,7 +307,7 @@ export default function CreateArtworkPage() {
       const body = await response.json();
 
       if (!response.ok) {
-        showToast("Complete category, materials, weight, complexity, and experience before requesting a price.");
+        showToast(t("artistDashboard.create.pricingFieldsRequired"));
         return;
       }
 
@@ -315,7 +322,7 @@ export default function CreateArtworkPage() {
   const getAiListingSuggestions = async () => {
     const missing = listingMissing();
     if (missing.length > 0) {
-      showToast(`The AI listing assistant needs: ${missing.join(", ")}.`);
+      showToast(t("artistDashboard.create.listingAssistantNeeds", { fields: missing.join(", ") }));
       return;
     }
 
@@ -334,7 +341,7 @@ export default function CreateArtworkPage() {
 
       setAiListingSuggestions(result);
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "Could not get AI suggestions. Please try again.");
+      showToast(error instanceof Error ? error.message : t("artistDashboard.create.aiSuggestionsError"));
     } finally {
       setIsLoadingAiSuggestions(false);
     }
@@ -360,7 +367,7 @@ export default function CreateArtworkPage() {
 
   const applyDimensionSuggestion = (value: string) => {
     setFormData((current) => ({ ...current, dimensions: value }));
-    showToast("Dimensions updated.");
+    showToast(t("artistDashboard.create.dimensionsUpdated"));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -370,7 +377,7 @@ export default function CreateArtworkPage() {
     // Final submit must require every field across all three steps.
     const missing = [...missingStep1(), ...missingStep2(), ...missingStep3()];
     if (missing.length > 0) {
-      showToast(`Complete every field before submitting: ${Array.from(new Set(missing)).join(", ")}.`);
+      showToast(t("artistDashboard.create.completeBeforeSubmit", { fields: Array.from(new Set(missing)).join(", ") }));
       return;
     }
     if (hoursError) {
@@ -381,7 +388,7 @@ export default function CreateArtworkPage() {
     // Check all images are uploaded
     const pendingUploads = images.filter((img) => img.uploading);
     if (pendingUploads.length > 0) {
-      showToast("Please wait for all images to finish uploading.");
+      showToast(t("artistDashboard.create.waitForUploads"));
       return;
     }
 
@@ -389,11 +396,11 @@ export default function CreateArtworkPage() {
       .filter((img) => img.uploaded)
       .map((img, index) => ({
         url: img.uploaded!.publicUrl,
-        altText: `${formData.title} image ${index + 1}`,
+        altText: t("artistDashboard.create.imageAltText", { title: formData.title, index: index + 1 }),
       }));
 
     if (uploadedImages.length === 0) {
-      showToast("Please upload at least one image of your artwork.");
+      showToast(t("artistDashboard.create.uploadAtLeastOne"));
       return;
     }
 
@@ -418,7 +425,7 @@ export default function CreateArtworkPage() {
       });
       router.push("/dashboard/artist/artworks");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not submit artwork.";
+      const message = error instanceof Error ? error.message : t("artistDashboard.create.submitError");
       setFormError(message);
       showToast(message);
     }
@@ -436,7 +443,7 @@ export default function CreateArtworkPage() {
               type="button"
               onClick={() => setToast(null)}
               className="ml-2 text-gray-400 hover:text-gray-600"
-              aria-label="Dismiss notification"
+              aria-label={t("artistDashboard.create.dismissNotification")}
             >
               <X className="h-4 w-4" />
             </button>
@@ -452,13 +459,13 @@ export default function CreateArtworkPage() {
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Artworks
+            {t("artistDashboard.create.backToArtworks")}
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">
-            Create New Artwork
+            {t("artistDashboard.create.pageTitle")}
           </h1>
           <p className="text-gray-500 mt-1">
-            List your upcycled artwork on the marketplace
+            {t("artistDashboard.create.pageSubtitle")}
           </p>
         </div>
 
@@ -466,9 +473,9 @@ export default function CreateArtworkPage() {
         <div className="mb-8">
           <div className="flex items-center gap-4">
             {[
-              { num: 1, label: "Basic Info" },
-              { num: 2, label: "Materials" },
-              { num: 3, label: "Pricing" },
+              { num: 1, label: t("artistDashboard.create.stepBasicInfo") },
+              { num: 2, label: t("artistDashboard.create.stepMaterials") },
+              { num: 3, label: t("artistDashboard.create.stepPricing") },
             ].map((s, i) => (
               <div key={s.num} className="flex items-center">
                 <button
@@ -517,11 +524,10 @@ export default function CreateArtworkPage() {
               {/* Image Upload */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="font-semibold text-gray-900 mb-4">
-                  Artwork Images *
+                  {t("artistDashboard.create.artworkImagesHeading")}
                 </h2>
                 <p className="text-sm text-gray-500 mb-4">
-                  Upload up to 5 high-quality photos of your artwork. The first
-                  image will be the main display image.
+                  {t("artistDashboard.create.artworkImagesHint")}
                 </p>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
@@ -533,7 +539,7 @@ export default function CreateArtworkPage() {
                       >
                         <img
                           src={image.preview}
-                          alt={`Artwork ${index + 1}`}
+                          alt={t("artistDashboard.create.artworkImageAlt", { index: index + 1 })}
                           className="w-full h-full object-cover"
                         />
                         {image.uploading && (
@@ -555,13 +561,13 @@ export default function CreateArtworkPage() {
                           type="button"
                           onClick={() => removeImage(index)}
                           className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label={`Remove artwork image ${index + 1}`}
+                          aria-label={t("artistDashboard.create.removeImageAria", { index: index + 1 })}
                         >
                           <X className="w-4 h-4" />
                         </button>
                         {index === 0 && (
                           <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-teal-600 text-white text-xs rounded">
-                            Main
+                            {t("artistDashboard.create.mainImageBadge")}
                           </span>
                         )}
                       </div>
@@ -579,7 +585,7 @@ export default function CreateArtworkPage() {
                       ) : (
                         <Upload className="w-6 h-6 text-gray-400 mb-2" />
                       )}
-                      <span className="text-xs text-gray-500">{isUploading ? "Uploading..." : "Add Photo"}</span>
+                      <span className="text-xs text-gray-500">{isUploading ? t("artistDashboard.create.uploading") : t("artistDashboard.create.addPhoto")}</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -596,20 +602,20 @@ export default function CreateArtworkPage() {
               {/* Basic Details */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="font-semibold text-gray-900 mb-4">
-                  Basic Details
+                  {t("artistDashboard.create.basicDetailsHeading")}
                 </h2>
 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Artwork Title *
+                      {t("artistDashboard.create.titleLabel")}
                     </label>
                     <input
                       type="text"
                       name="title"
                       value={formData.title}
                       onChange={handleChange}
-                      placeholder="e.g., Ocean Waves"
+                      placeholder={t("artistDashboard.create.titlePlaceholder")}
                       className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
                       required
                     />
@@ -617,13 +623,13 @@ export default function CreateArtworkPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description *
+                      {t("artistDashboard.create.descriptionLabel")}
                     </label>
                     <textarea
                       name="description"
                       value={formData.description}
                       onChange={handleChange}
-                      placeholder="Describe your artwork, inspiration, and the story behind it..."
+                      placeholder={t("artistDashboard.create.descriptionPlaceholder")}
                       rows={4}
                       className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none resize-none"
                       required
@@ -633,7 +639,7 @@ export default function CreateArtworkPage() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Category *
+                        {t("artistDashboard.create.categoryLabel")}
                       </label>
                       <div className="relative">
                         <select
@@ -643,7 +649,7 @@ export default function CreateArtworkPage() {
                           className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none appearance-none bg-white"
                           required
                         >
-                          <option value="">Select category</option>
+                          <option value="">{t("artistDashboard.create.selectCategory")}</option>
                           {categories.map((cat) => (
                             <option key={cat} value={cat}>
                               {cat}
@@ -656,14 +662,14 @@ export default function CreateArtworkPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Dimensions *
+                        {t("artistDashboard.create.dimensionsLabel")}
                       </label>
                       <input
                         type="text"
                         name="dimensions"
                         value={formData.dimensions}
                         onChange={handleChange}
-                        placeholder="e.g., 60cm x 80cm"
+                        placeholder={t("artistDashboard.create.dimensionsPlaceholder")}
                         className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
                         required
                       />
@@ -680,10 +686,10 @@ export default function CreateArtworkPage() {
                   </div>
                   <div>
                     <h2 className="font-semibold text-gray-900">
-                      AI Listing Assistant
+                      {t("artistDashboard.create.listingAssistantHeading")}
                     </h2>
                     <p className="text-sm text-gray-500">
-                      Add an image, title, dimensions, description, and category, then get suggestions to improve your listing.
+                      {t("artistDashboard.create.listingAssistantSubtitle")}
                     </p>
                   </div>
                 </div>
@@ -697,18 +703,18 @@ export default function CreateArtworkPage() {
                   {isLoadingAiSuggestions ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Getting AI Suggestions...
+                      {t("artistDashboard.create.gettingAiSuggestions")}
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-5 h-5" />
-                      Get AI Suggestions
+                      {t("artistDashboard.create.getAiSuggestions")}
                     </>
                   )}
                 </button>
                 {!listingReady && (
                   <p className="mt-2 text-xs text-blue-700">
-                    Still needed: {listingMissing().join(", ")}.
+                    {t("artistDashboard.create.stillNeeded", { fields: listingMissing().join(", ") })}
                   </p>
                 )}
 
@@ -721,14 +727,14 @@ export default function CreateArtworkPage() {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
                             <Lightbulb className="w-4 h-4 text-blue-600" />
-                            Suggested Title
+                            {t("artistDashboard.create.suggestedTitle")}
                           </span>
                           <button
                             type="button"
                             onClick={applyTitleSuggestion}
                             className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
                           >
-                            Use This
+                            {t("artistDashboard.create.useThis")}
                           </button>
                         </div>
                         <p className="text-gray-900 font-medium">{aiListingSuggestions.titleSuggestion}</p>
@@ -740,14 +746,14 @@ export default function CreateArtworkPage() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-blue-600" />
-                          Improved Description
+                          {t("artistDashboard.create.improvedDescription")}
                         </span>
                         <button
                           type="button"
                           onClick={applyImprovedDescription}
                           className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
                         >
-                          Use This
+                          {t("artistDashboard.create.useThis")}
                         </button>
                       </div>
                       <p className="text-gray-700 text-sm whitespace-pre-wrap">
@@ -760,29 +766,29 @@ export default function CreateArtworkPage() {
                     <div className="p-4 bg-white rounded-lg border border-blue-200">
                       <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-3">
                         <Ruler className="w-4 h-4 text-blue-600" />
-                        Suggested Dimensions
+                        {t("artistDashboard.create.suggestedDimensions")}
                       </span>
                       <div className="grid sm:grid-cols-2 gap-3">
                         <div className="rounded-lg border border-gray-200 p-3">
-                          <p className="text-xs font-medium text-gray-500">2D / Wall-mounted</p>
+                          <p className="text-xs font-medium text-gray-500">{t("artistDashboard.create.dimension2dLabel")}</p>
                           <p className="mt-1 font-medium text-gray-900">{aiListingSuggestions.dimensionSuggestions.twoD}</p>
                           <button
                             type="button"
                             onClick={() => applyDimensionSuggestion(aiListingSuggestions.dimensionSuggestions.twoD)}
                             className="mt-2 w-full rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200"
                           >
-                            Use 2D
+                            {t("artistDashboard.create.use2d")}
                           </button>
                         </div>
                         <div className="rounded-lg border border-gray-200 p-3">
-                          <p className="text-xs font-medium text-gray-500">3D / Free-standing</p>
+                          <p className="text-xs font-medium text-gray-500">{t("artistDashboard.create.dimension3dLabel")}</p>
                           <p className="mt-1 font-medium text-gray-900">{aiListingSuggestions.dimensionSuggestions.threeD}</p>
                           <button
                             type="button"
                             onClick={() => applyDimensionSuggestion(aiListingSuggestions.dimensionSuggestions.threeD)}
                             className="mt-2 w-full rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200"
                           >
-                            Use 3D
+                            {t("artistDashboard.create.use3d")}
                           </button>
                         </div>
                       </div>
@@ -792,7 +798,7 @@ export default function CreateArtworkPage() {
                     <div className="p-4 bg-white rounded-lg border border-blue-200">
                       <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
                         <Tag className="w-4 h-4 text-blue-600" />
-                        Suggested Tags
+                        {t("artistDashboard.create.suggestedTags")}
                       </span>
                       <div className="flex flex-wrap gap-2">
                         {aiListingSuggestions.suggestedTags.map((tag) => (
@@ -811,7 +817,7 @@ export default function CreateArtworkPage() {
                       <div className="p-4 bg-white rounded-lg border border-blue-200">
                         <span className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
                           <Lightbulb className="w-4 h-4 text-blue-600" />
-                          Marketing Tips
+                          {t("artistDashboard.create.marketingTips")}
                         </span>
                         <ul className="space-y-2">
                           {aiListingSuggestions.marketingTips.map((tip, index) => (
@@ -825,7 +831,7 @@ export default function CreateArtworkPage() {
                     )}
 
                     <p className="text-xs text-gray-500">
-                      Pricing suggestions are available on the Pricing step.
+                      {t("artistDashboard.create.pricingOnPricingStep")}
                     </p>
                   </div>
                 )}
@@ -837,7 +843,7 @@ export default function CreateArtworkPage() {
                   onClick={goToStep2}
                   className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
                 >
-                  Continue to Materials
+                  {t("artistDashboard.create.continueToMaterials")}
                 </button>
               </div>
             </div>
@@ -848,11 +854,10 @@ export default function CreateArtworkPage() {
             <div className="space-y-6">
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="font-semibold text-gray-900 mb-2">
-                  Recycled Materials Used *
+                  {t("artistDashboard.create.recycledMaterialsHeading")}
                 </h2>
                 <p className="text-sm text-gray-500 mb-4">
-                  Select all materials used in this artwork. This helps track
-                  environmental impact.
+                  {t("artistDashboard.create.recycledMaterialsHint")}
                 </p>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -888,13 +893,13 @@ export default function CreateArtworkPage() {
 
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="font-semibold text-gray-900 mb-4">
-                  Material Details
+                  {t("artistDashboard.create.materialDetailsHeading")}
                 </h2>
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Estimated Weight (kg) *
+                      {t("artistDashboard.create.estimatedWeightLabel")}
                     </label>
                     <div className="relative">
                       <Scale className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -903,7 +908,7 @@ export default function CreateArtworkPage() {
                         name="materialWeight"
                         value={formData.materialWeight}
                         onChange={handleChange}
-                        placeholder="e.g., 2.5"
+                        placeholder={t("artistDashboard.create.weightPlaceholder")}
                         step="0.1"
                         min="0"
                         className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
@@ -911,13 +916,13 @@ export default function CreateArtworkPage() {
                       />
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Total weight of recycled materials used
+                      {t("artistDashboard.create.weightHint")}
                     </p>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Material Source *
+                      {t("artistDashboard.create.materialSourceLabel")}
                     </label>
                     <div className="relative">
                       <select
@@ -927,10 +932,10 @@ export default function CreateArtworkPage() {
                         className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none appearance-none bg-white"
                         required
                       >
-                        <option value="">Select source</option>
+                        <option value="">{t("artistDashboard.create.selectSource")}</option>
                         {materialSources.map((source) => (
-                          <option key={source} value={source}>
-                            {source}
+                          <option key={source.value} value={source.value}>
+                            {t(`artistDashboard.create.${source.labelKey}`)}
                           </option>
                         ))}
                       </select>
@@ -943,12 +948,11 @@ export default function CreateArtworkPage() {
                   <div className="flex items-center gap-2 text-green-700">
                     <Recycle className="w-5 h-5" />
                     <span className="font-medium">
-                      {formData.materialWeight || "0"} kg of waste will be
-                      diverted
+                      {t("artistDashboard.create.wasteDiverted", { weight: formData.materialWeight || "0" })}
                     </span>
                   </div>
                   <p className="text-sm text-green-600 mt-1">
-                    This contributes to measurable environmental impact
+                    {t("artistDashboard.create.wasteDivertedHint")}
                   </p>
                 </div>
               </div>
@@ -959,14 +963,14 @@ export default function CreateArtworkPage() {
                   onClick={() => setStep(1)}
                   className="px-6 py-3 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                 >
-                  Back
+                  {t("artistDashboard.create.back")}
                 </button>
                 <button
                   type="button"
                   onClick={goToStep3}
                   className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
                 >
-                  Continue to Pricing
+                  {t("artistDashboard.create.continueToPricing")}
                 </button>
               </div>
             </div>
@@ -983,10 +987,10 @@ export default function CreateArtworkPage() {
                   </div>
                   <div>
                     <h2 className="font-semibold text-gray-900">
-                      AI Pricing Assistant
+                      {t("artistDashboard.create.pricingAssistantHeading")}
                     </h2>
                     <p className="text-sm text-gray-500">
-                      Get a suggested price range based on your artwork details
+                      {t("artistDashboard.create.pricingAssistantSubtitle")}
                     </p>
                   </div>
                 </div>
@@ -995,7 +999,7 @@ export default function CreateArtworkPage() {
                 <div className="grid sm:grid-cols-2 gap-4 mb-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Your Experience Level *
+                      {t("artistDashboard.create.experienceLevelLabel")}
                     </label>
                     <div className="space-y-2">
                       {experienceLevels.map((level) => (
@@ -1015,10 +1019,10 @@ export default function CreateArtworkPage() {
                           }`}
                         >
                           <p className="font-medium text-gray-900 text-sm">
-                            {level.label}
+                            {t(`artistDashboard.create.${level.labelKey}`)}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {level.description}
+                            {t(`artistDashboard.create.${level.descriptionKey}`)}
                           </p>
                         </button>
                       ))}
@@ -1027,7 +1031,7 @@ export default function CreateArtworkPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Artwork Complexity *
+                      {t("artistDashboard.create.complexityLabel")}
                     </label>
                     <div className="space-y-2">
                       {complexityLevels.map((level) => (
@@ -1045,11 +1049,11 @@ export default function CreateArtworkPage() {
                         >
                           <div className="flex items-center justify-between">
                             <p className="font-medium text-gray-900 text-sm">
-                              {level.label}
+                              {t(`artistDashboard.create.${level.labelKey}`)}
                             </p>
                             <span className="text-xs text-gray-500 flex items-center gap-1">
                               <Clock className="w-3 h-3" />
-                              {level.hours}
+                              {t(`artistDashboard.create.${level.hoursKey}`)}
                             </span>
                           </div>
                         </button>
@@ -1061,7 +1065,7 @@ export default function CreateArtworkPage() {
                 {/* Hours Worked */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hours Worked (Optional)
+                    {t("artistDashboard.create.hoursWorkedLabel")}
                   </label>
                   <div className="relative max-w-xs">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -1070,7 +1074,7 @@ export default function CreateArtworkPage() {
                       name="hoursWorked"
                       value={formData.hoursWorked}
                       onChange={handleChange}
-                      placeholder="e.g., 12"
+                      placeholder={t("artistDashboard.create.hoursPlaceholder")}
                       min="0"
                       max="500"
                       className={`w-full pl-10 pr-4 py-3 border rounded-lg outline-none focus:ring-2 ${
@@ -1088,8 +1092,8 @@ export default function CreateArtworkPage() {
                   ) : (
                     <p className="text-xs text-gray-500 mt-1">
                       {formData.complexity
-                        ? `Capped at ${hoursCap} hours for ${complexityLevels.find((c) => c.id === formData.complexity)?.label} complexity.`
-                        : "Helps calculate fair labor compensation"}
+                        ? t("artistDashboard.create.hoursCappedHint", { cap: hoursCap, complexity: complexityLabel })
+                        : t("artistDashboard.create.hoursFairLaborHint")}
                     </p>
                   )}
                 </div>
@@ -1103,12 +1107,12 @@ export default function CreateArtworkPage() {
                   {isLoadingPrice ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Analyzing...
+                      {t("artistDashboard.create.analyzing")}
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-5 h-5" />
-                      Get AI Price Suggestion
+                      {t("artistDashboard.create.getAiPriceSuggestion")}
                     </>
                   )}
                 </button>
@@ -1119,24 +1123,24 @@ export default function CreateArtworkPage() {
                     <div className="flex items-center gap-2 mb-3">
                       <Check className="w-5 h-5 text-green-500" />
                       <span className="font-medium text-gray-900">
-                        Price Suggestion
+                        {t("artistDashboard.create.priceSuggestionTitle")}
                       </span>
                     </div>
                     <div className="flex items-center gap-4 mb-3">
                       <div className="flex-1 text-center p-3 bg-gray-50 rounded-lg">
-                        <p className="text-xs text-gray-500">Min</p>
+                        <p className="text-xs text-gray-500">{t("artistDashboard.create.priceMin")}</p>
                         <p className="font-semibold text-gray-700">
                           {aiPriceSuggestion.min.toLocaleString()}
                         </p>
                       </div>
                       <div className="flex-1 text-center p-3 bg-purple-50 rounded-lg border-2 border-purple-200">
-                        <p className="text-xs text-purple-600">Suggested</p>
+                        <p className="text-xs text-purple-600">{t("artistDashboard.create.priceSuggested")}</p>
                         <p className="font-bold text-purple-700 text-lg">
                           {aiPriceSuggestion.suggested.toLocaleString()}
                         </p>
                       </div>
                       <div className="flex-1 text-center p-3 bg-gray-50 rounded-lg">
-                        <p className="text-xs text-gray-500">Max</p>
+                        <p className="text-xs text-gray-500">{t("artistDashboard.create.priceMax")}</p>
                         <p className="font-semibold text-gray-700">
                           {aiPriceSuggestion.max.toLocaleString()}
                         </p>
@@ -1155,7 +1159,7 @@ export default function CreateArtworkPage() {
                       }
                       className="mt-3 w-full px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium"
                     >
-                      Use Suggested Price
+                      {t("artistDashboard.create.useSuggestedPrice")}
                     </button>
                   </div>
                 )}
@@ -1164,16 +1168,15 @@ export default function CreateArtworkPage() {
               {/* Final Price */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="font-semibold text-gray-900 mb-4">
-                  Set Your Price
+                  {t("artistDashboard.create.setYourPriceHeading")}
                 </h2>
                 <p className="text-sm text-gray-500 mb-4">
-                  You have final control over the price. The AI suggestion is
-                  just a recommendation.
+                  {t("artistDashboard.create.setYourPriceHint")}
                 </p>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price (RWF) *
+                    {t("artistDashboard.create.priceLabel")}
                   </label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
@@ -1184,7 +1187,7 @@ export default function CreateArtworkPage() {
                       name="price"
                       value={formData.price}
                       onChange={handleChange}
-                      placeholder="e.g., 35000"
+                      placeholder={t("artistDashboard.create.pricePlaceholder")}
                       min="0"
                       step="1000"
                       className="w-full pl-14 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-lg font-medium"
@@ -1197,10 +1200,9 @@ export default function CreateArtworkPage() {
                   <div className="flex gap-3">
                     <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-blue-700">
-                      <p className="font-medium">Artist Earnings</p>
+                      <p className="font-medium">{t("artistDashboard.create.artistEarningsTitle")}</p>
                       <p>
-                        You will receive 80% of the sale price. The remaining
-                        covers platform fees, payment processing, and operations.
+                        {t("artistDashboard.create.artistEarningsBody")}
                       </p>
                     </div>
                   </div>
@@ -1210,14 +1212,14 @@ export default function CreateArtworkPage() {
               {/* Additional Notes */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="font-semibold text-gray-900 mb-4">
-                  Additional Notes{" "}
-                  <span className="text-gray-400 font-normal">(Optional)</span>
+                  {t("artistDashboard.create.additionalNotesHeading")}{" "}
+                  <span className="text-gray-400 font-normal">{t("artistDashboard.create.optionalSuffix")}</span>
                 </h2>
                 <textarea
                   name="notes"
                   value={formData.notes}
                   onChange={handleChange}
-                  placeholder="Any special care instructions, framing details, or additional information for buyers..."
+                  placeholder={t("artistDashboard.create.notesPlaceholder")}
                   rows={3}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none resize-none"
                 />
@@ -1229,13 +1231,13 @@ export default function CreateArtworkPage() {
                   onClick={() => setStep(2)}
                   className="px-6 py-3 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                 >
-                  Back
+                  {t("artistDashboard.create.back")}
                 </button>
                 <button
                   type="submit"
                   className="px-8 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
                 >
-                  Submit for Review
+                  {t("artistDashboard.create.submitForReview")}
                 </button>
               </div>
 
@@ -1244,20 +1246,15 @@ export default function CreateArtworkPage() {
                 <div className="flex gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-amber-700">
-                    <p className="font-medium">Review Process</p>
+                    <p className="font-medium">{t("artistDashboard.create.reviewProcessTitle")}</p>
                     <p>
-                      Your artwork will be reviewed by our team before appearing
-                      on the marketplace. This typically takes 1-2 business
-                      days.
+                      {t("artistDashboard.create.reviewProcessBody")}
                     </p>
                     <p className="mt-2">
-                      By submitting, you confirm this is your original work (or
-                      that you hold the rights to it), that it contains no
-                      prohibited or infringing content, and you grant RenewCanvas
-                      Africa a licence to display and promote it on the
-                      marketplace. See our{" "}
-                      <a href="/terms" className="underline">Terms</a> and{" "}
-                      <a href="/privacy" className="underline">Privacy Policy</a>.
+                      {t("artistDashboard.create.submissionTermsPrefix")}{" "}
+                      <a href="/terms" className="underline">{t("artistDashboard.create.termsLink")}</a>{" "}
+                      {t("artistDashboard.create.andWord")}{" "}
+                      <a href="/privacy" className="underline">{t("artistDashboard.create.privacyLink")}</a>.
                     </p>
                   </div>
                 </div>

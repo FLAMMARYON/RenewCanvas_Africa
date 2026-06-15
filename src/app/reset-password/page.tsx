@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Recycle,
   Lock,
@@ -16,6 +17,7 @@ import { confirmPasswordReset } from "@/lib/frontend/auth-api";
 import Navbar from "@/components/Navbar";
 
 export default function ResetPasswordPage() {
+  const { t } = useTranslation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -45,12 +47,12 @@ export default function ResetPasswordPage() {
     setError("");
 
     if (!isPasswordValid) {
-      setError("Please meet all password requirements");
+      setError(t("auth.reset.errReqs"));
       return;
     }
 
     if (!passwordsMatch) {
-      setError("Passwords do not match");
+      setError(t("auth.passwordsNoMatch"));
       return;
     }
 
@@ -60,7 +62,7 @@ export default function ResetPasswordPage() {
       await confirmPasswordReset({ token: resetToken, password });
       setIsReset(true);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Unable to reset password.");
+      setError(error instanceof Error ? error.message : t("auth.reset.errFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -113,11 +115,10 @@ export default function ResetPasswordPage() {
                   <Lock className="w-8 h-8 text-teal-600" />
                 </div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  Create new password
+                  {t("auth.reset.title")}
                 </h1>
                 <p className="text-gray-600">
-                  Your new password must be different from previously used
-                  passwords.
+                  {t("auth.reset.subtitle")}
                 </p>
               </div>
 
@@ -133,7 +134,7 @@ export default function ResetPasswordPage() {
                   <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-amber-700">
-                      This reset link is missing a token. Request a new password reset link.
+                      {t("auth.reset.missingToken")}
                     </p>
                   </div>
                 )}
@@ -143,7 +144,7 @@ export default function ResetPasswordPage() {
                     htmlFor="password"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    New Password
+                    {t("auth.newPassword")}
                   </label>
                   <div className="relative">
                     <input
@@ -151,7 +152,7 @@ export default function ResetPasswordPage() {
                       id="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your new password"
+                      placeholder={t("auth.reset.newPlaceholder")}
                       required
                       className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                     />
@@ -173,24 +174,24 @@ export default function ResetPasswordPage() {
                 {password && (
                   <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                     <p className="text-sm font-medium text-gray-700 mb-2">
-                      Password requirements:
+                      {t("auth.reset.requirements")}
                     </p>
                     <PasswordRequirement
                       met={hasMinLength}
-                      label="At least 8 characters"
+                      label={t("auth.reset.req8")}
                     />
                     <PasswordRequirement
                       met={hasUppercase}
-                      label="One uppercase letter"
+                      label={t("auth.reset.reqUpper")}
                     />
                     <PasswordRequirement
                       met={hasLowercase}
-                      label="One lowercase letter"
+                      label={t("auth.reset.reqLower")}
                     />
-                    <PasswordRequirement met={hasNumber} label="One number" />
+                    <PasswordRequirement met={hasNumber} label={t("auth.reset.reqNumber")} />
                     <PasswordRequirement
                       met={hasSpecialChar}
-                      label="One special character"
+                      label={t("auth.reset.reqSpecial")}
                     />
                   </div>
                 )}
@@ -201,7 +202,7 @@ export default function ResetPasswordPage() {
                     htmlFor="confirmPassword"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Confirm New Password
+                    {t("auth.confirmNewPassword")}
                   </label>
                   <div className="relative">
                     <input
@@ -209,7 +210,7 @@ export default function ResetPasswordPage() {
                       id="confirmPassword"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm your new password"
+                      placeholder={t("auth.reset.confirmPlaceholder")}
                       required
                       className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all ${
                         confirmPassword && !passwordsMatch
@@ -233,13 +234,13 @@ export default function ResetPasswordPage() {
                   </div>
                   {confirmPassword && !passwordsMatch && (
                     <p className="mt-1 text-sm text-red-600">
-                      Passwords do not match
+                      {t("auth.passwordsNoMatch")}
                     </p>
                   )}
                   {confirmPassword && passwordsMatch && (
                     <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
                       <Check className="w-4 h-4" />
-                      Passwords match
+                      {t("auth.passwordsMatch")}
                     </p>
                   )}
                 </div>
@@ -252,10 +253,10 @@ export default function ResetPasswordPage() {
                   {isSubmitting ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Resetting...
+                      {t("auth.reset.submitting")}
                     </>
                   ) : (
-                    "Reset Password"
+                    t("auth.reset.submit")
                   )}
                 </button>
               </form>
@@ -266,17 +267,16 @@ export default function ResetPasswordPage() {
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Password reset successful!
+                {t("auth.reset.successTitle")}
               </h2>
               <p className="text-gray-600 mb-8">
-                Your password has been successfully reset. You can now sign in
-                with your new password.
+                {t("auth.reset.successBody")}
               </p>
               <Link
                 href="/login"
                 className="inline-flex items-center justify-center w-full py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
               >
-                Continue to Sign In
+                {t("auth.reset.continueSignIn")}
               </Link>
             </div>
           )}
@@ -286,7 +286,7 @@ export default function ResetPasswordPage() {
         {!isReset && (
           <div className="text-center mt-6">
             <p className="text-sm text-gray-500">
-              For security reasons, this link will expire in 1 hour.
+              {t("auth.reset.expiry")}
             </p>
           </div>
         )}

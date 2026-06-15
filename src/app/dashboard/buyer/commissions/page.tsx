@@ -2,7 +2,8 @@
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { useEffect, useState } from "react";
-import { ClipboardList, DollarSign, Ruler, Send, Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { ClipboardList, Ruler, Send, Shield } from "lucide-react";
 
 type CommissionRequest = {
   id: string;
@@ -19,13 +20,14 @@ type CommissionRequest = {
 };
 
 const sizeOptions = [
-  { value: "small", label: "Small" },
-  { value: "medium", label: "Medium" },
-  { value: "large", label: "Large" },
-  { value: "custom", label: "Specific dimensions" },
+  { value: "small", label: "dashboard.buyer.commissions.sizeSmall" },
+  { value: "medium", label: "dashboard.buyer.commissions.sizeMedium" },
+  { value: "large", label: "dashboard.buyer.commissions.sizeLarge" },
+  { value: "custom", label: "dashboard.buyer.commissions.specificDimensions" },
 ];
 
 export default function BuyerCommissionsPage() {
+  const { t } = useTranslation();
   const [requests, setRequests] = useState<CommissionRequest[]>([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -67,8 +69,8 @@ export default function BuyerCommissionsPage() {
         }),
       });
       const body = await response.json();
-      if (!response.ok || !body.ok) throw new Error(body.message ?? "Unable to submit request.");
-      setMessage("Commission request sent to RenewCanvas admins.");
+      if (!response.ok || !body.ok) throw new Error(body.message ?? t("dashboard.buyer.commissions.submitError"));
+      setMessage(t("dashboard.buyer.commissions.submitSuccess"));
       setForm({
         title: "",
         description: "",
@@ -79,7 +81,7 @@ export default function BuyerCommissionsPage() {
       });
       await loadRequests();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Unable to submit request.");
+      setError(error instanceof Error ? error.message : t("dashboard.buyer.commissions.submitError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -89,14 +91,14 @@ export default function BuyerCommissionsPage() {
     <DashboardLayout role="buyer" userName="Buyer">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Commissioned Work</h1>
-          <p className="text-gray-500">Request a custom upcycled artwork through RenewCanvas admin mediation.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("dashboard.buyer.commissions.title")}</h1>
+          <p className="text-gray-500">{t("dashboard.buyer.commissions.subtitle")}</p>
         </div>
 
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
           <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
           <p className="text-sm text-blue-700">
-            Your request goes straight to admins. RenewCanvas selects and coordinates with an artist; buyer and artist contact details stay private.
+            {t("dashboard.buyer.commissions.infoBanner")}
           </p>
         </div>
 
@@ -105,58 +107,58 @@ export default function BuyerCommissionsPage() {
           {message && <div className="rounded-lg bg-green-50 border border-green-100 px-4 py-3 text-sm text-green-700">{message}</div>}
 
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Project title</label>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">{t("dashboard.buyer.commissions.projectTitle")}</label>
             <input id="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required />
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Describe what you want</label>
-            <textarea id="description" rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Explain the product, purpose, style, deadline, and any important details." required />
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">{t("dashboard.buyer.commissions.describe")}</label>
+            <textarea id="description" rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder={t("dashboard.buyer.commissions.describePlaceholder")} required />
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="materials" className="block text-sm font-medium text-gray-700 mb-1">Preferred materials</label>
-              <input id="materials" value={form.preferredMaterials} onChange={(e) => setForm({ ...form, preferredMaterials: e.target.value })} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Plastic, metal, fabric..." />
+              <label htmlFor="materials" className="block text-sm font-medium text-gray-700 mb-1">{t("dashboard.buyer.commissions.preferredMaterials")}</label>
+              <input id="materials" value={form.preferredMaterials} onChange={(e) => setForm({ ...form, preferredMaterials: e.target.value })} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder={t("dashboard.buyer.commissions.preferredMaterialsPlaceholder")} />
             </div>
             <div>
-              <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-1">Budget willing to pay (RWF)</label>
+              <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-1">{t("dashboard.buyer.commissions.budget")}</label>
               <input id="budget" type="number" min="1" value={form.budgetAmount} onChange={(e) => setForm({ ...form, budgetAmount: e.target.value })} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" required />
             </div>
             <div>
-              <label htmlFor="size" className="block text-sm font-medium text-gray-700 mb-1">Approximate size</label>
+              <label htmlFor="size" className="block text-sm font-medium text-gray-700 mb-1">{t("dashboard.buyer.commissions.approxSize")}</label>
               <select id="size" value={form.sizeCategory} onChange={(e) => setForm({ ...form, sizeCategory: e.target.value })} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white">
-                {sizeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                {sizeOptions.map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}
               </select>
             </div>
           </div>
 
           {form.sizeCategory === "custom" && (
             <div>
-              <label htmlFor="dimensions" className="block text-sm font-medium text-gray-700 mb-1">Specific dimensions</label>
-              <input id="dimensions" value={form.dimensions} onChange={(e) => setForm({ ...form, dimensions: e.target.value })} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Example: 80cm x 120cm" required />
+              <label htmlFor="dimensions" className="block text-sm font-medium text-gray-700 mb-1">{t("dashboard.buyer.commissions.specificDimensions")}</label>
+              <input id="dimensions" value={form.dimensions} onChange={(e) => setForm({ ...form, dimensions: e.target.value })} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder={t("dashboard.buyer.commissions.dimensionsPlaceholder")} required />
             </div>
           )}
 
           <button type="submit" disabled={isSubmitting} className="inline-flex items-center gap-2 px-5 py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50">
             <Send className="w-4 h-4" />
-            {isSubmitting ? "Sending..." : "Send to Admin"}
+            {isSubmitting ? t("dashboard.buyer.commissions.sending") : t("dashboard.buyer.commissions.sendToAdmin")}
           </button>
         </form>
 
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-gray-900">Your Requests</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t("dashboard.buyer.commissions.yourRequests")}</h2>
           {requests.map((request) => (
             <div key={request.id} className="bg-white border border-gray-100 rounded-xl p-4">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
                   <p className="font-medium text-gray-900">{request.title}</p>
-                  <p className="text-sm text-gray-500">{request.assignedArtist ? `Assigned to ${request.assignedArtist.name}` : "Awaiting admin assignment"}</p>
+                  <p className="text-sm text-gray-500">{request.assignedArtist ? t("dashboard.buyer.commissions.assignedTo", { name: request.assignedArtist.name }) : t("dashboard.buyer.commissions.awaitingAssignment")}</p>
                 </div>
                 <span className="w-fit rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700">{request.status}</span>
               </div>
               <div className="mt-3 grid sm:grid-cols-3 gap-3 text-sm text-gray-600">
-                <span className="inline-flex items-center gap-2"><DollarSign className="w-4 h-4" /> {request.budgetAmount.toLocaleString()} {request.currency}</span>
+                <span className="inline-flex items-center gap-2">{request.budgetAmount.toLocaleString()} {request.currency}</span>
                 <span className="inline-flex items-center gap-2"><Ruler className="w-4 h-4" /> {request.dimensions ?? request.sizeCategory}</span>
                 <span className="inline-flex items-center gap-2"><ClipboardList className="w-4 h-4" /> {new Date(request.createdAt).toLocaleDateString()}</span>
               </div>

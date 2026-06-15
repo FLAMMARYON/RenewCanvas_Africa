@@ -32,6 +32,7 @@ import {
   type FrontendSession,
 } from "@/lib/frontend/auth-api";
 import AnimatedLogo from "@/components/AnimatedLogo";
+import { useTranslation } from "react-i18next";
 
 type UserRole = "buyer" | "artist" | "admin";
 
@@ -50,78 +51,78 @@ type NavigationItem = {
 
 const navigationItems: Record<UserRole, NavigationItem[]> = {
   buyer: [
-    { name: "Dashboard", href: "/dashboard/buyer", icon: LayoutDashboard },
-    { name: "My Orders", href: "/dashboard/buyer/orders", icon: ShoppingBag },
-    { name: "Commissions", href: "/dashboard/buyer/commissions", icon: FileText },
-    { name: "Wishlist", href: "/dashboard/buyer/wishlist", icon: Heart },
-    { name: "Profile", href: "/dashboard/buyer/profile", icon: User },
-    { name: "Settings", href: "/dashboard/buyer/settings", icon: Settings },
+    { name: "dashboard.nav.dashboard", href: "/dashboard/buyer", icon: LayoutDashboard },
+    { name: "dashboard.nav.myOrders", href: "/dashboard/buyer/orders", icon: ShoppingBag },
+    { name: "dashboard.nav.commissions", href: "/dashboard/buyer/commissions", icon: FileText },
+    { name: "dashboard.nav.wishlist", href: "/dashboard/buyer/wishlist", icon: Heart },
+    { name: "dashboard.nav.profile", href: "/dashboard/buyer/profile", icon: User },
+    { name: "dashboard.nav.settings", href: "/dashboard/buyer/settings", icon: Settings },
   ],
   artist: [
-    { name: "Dashboard", href: "/dashboard/artist", icon: LayoutDashboard },
-    { name: "My Artworks", href: "/dashboard/artist/artworks", icon: Palette },
+    { name: "dashboard.nav.dashboard", href: "/dashboard/artist", icon: LayoutDashboard },
+    { name: "dashboard.nav.myArtworks", href: "/dashboard/artist/artworks", icon: Palette },
     {
-      name: "Create Artwork",
+      name: "dashboard.nav.createArtwork",
       href: "/dashboard/artist/artworks/create",
       icon: Plus,
     },
-    { name: "Orders", href: "/dashboard/artist/orders", icon: ShoppingBag },
-    { name: "Commissions", href: "/dashboard/artist/commissions", icon: FileText },
-    { name: "Analytics", href: "/dashboard/artist/analytics", icon: BarChart3 },
-    { name: "Profile", href: "/dashboard/artist/profile", icon: User },
-    { name: "Settings", href: "/dashboard/artist/settings", icon: Settings },
+    { name: "dashboard.nav.orders", href: "/dashboard/artist/orders", icon: ShoppingBag },
+    { name: "dashboard.nav.commissions", href: "/dashboard/artist/commissions", icon: FileText },
+    { name: "dashboard.nav.analytics", href: "/dashboard/artist/analytics", icon: BarChart3 },
+    { name: "dashboard.nav.profile", href: "/dashboard/artist/profile", icon: User },
+    { name: "dashboard.nav.settings", href: "/dashboard/artist/settings", icon: Settings },
   ],
   admin: [
-    { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard, group: "Overview" },
-    { name: "Messages", href: "/dashboard/admin/messages", icon: MessageSquare, group: "Overview" },
-    { name: "Users", href: "/dashboard/admin/users", icon: Users, group: "People" },
+    { name: "dashboard.nav.dashboard", href: "/dashboard/admin", icon: LayoutDashboard, group: "Overview" },
+    { name: "dashboard.nav.messages", href: "/dashboard/admin/messages", icon: MessageSquare, group: "Overview" },
+    { name: "dashboard.nav.users", href: "/dashboard/admin/users", icon: Users, group: "People" },
     {
-      name: "Artist Verification",
+      name: "dashboard.nav.artistVerification",
       href: "/dashboard/admin/artists",
       icon: CheckSquare,
       group: "People",
     },
     {
-      name: "Artwork Moderation",
+      name: "dashboard.nav.artworkModeration",
       href: "/dashboard/admin/artworks",
       icon: Palette,
       group: "Marketplace",
     },
     {
-      name: "Create Artwork",
+      name: "dashboard.nav.createArtwork",
       href: "/dashboard/admin/artworks/create",
       icon: Plus,
       group: "Marketplace",
     },
     {
-      name: "Auctions",
+      name: "dashboard.nav.auctions",
       href: "/dashboard/admin/auctions",
       icon: Gavel,
       group: "Marketplace",
     },
     {
-      name: "Material Records",
+      name: "dashboard.nav.materialRecords",
       href: "/dashboard/admin/materials",
       icon: Recycle,
       group: "Operations",
     },
     {
-      name: "Impact Dashboard",
+      name: "dashboard.nav.impactDashboard",
       href: "/dashboard/admin/impact",
       icon: BarChart3,
       group: "Operations",
     },
-    { name: "Orders", href: "/dashboard/admin/orders", icon: Package, group: "Operations" },
-    { name: "Commissions", href: "/dashboard/admin/commissions", icon: FileText, group: "Operations" },
-    { name: "Profile", href: "/dashboard/admin/profile", icon: User, group: "Account" },
-    { name: "Settings", href: "/dashboard/admin/settings", icon: Settings, group: "Account" },
+    { name: "dashboard.nav.orders", href: "/dashboard/admin/orders", icon: Package, group: "Operations" },
+    { name: "dashboard.nav.commissions", href: "/dashboard/admin/commissions", icon: FileText, group: "Operations" },
+    { name: "dashboard.nav.profile", href: "/dashboard/admin/profile", icon: User, group: "Account" },
+    { name: "dashboard.nav.settings", href: "/dashboard/admin/settings", icon: Settings, group: "Account" },
   ],
 };
 
-const roleLabels = {
-  buyer: "Buyer Account",
-  artist: "Artist Account",
-  admin: "Admin Panel",
+const roleLabelKeys: Record<UserRole, string> = {
+  buyer: "dashboard.layout.roleBuyer",
+  artist: "dashboard.layout.roleArtist",
+  admin: "dashboard.layout.roleAdmin",
 };
 
 export default function DashboardLayout({
@@ -129,6 +130,7 @@ export default function DashboardLayout({
   role,
   userName = "User",
 }: DashboardLayoutProps) {
+  const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [session, setSession] = useState<FrontendSession | null>(null);
@@ -185,7 +187,7 @@ export default function DashboardLayout({
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
         <AnimatedLogo size={80} animate />
-        <p className="mt-4 text-sm text-gray-500">Checking account access...</p>
+        <p className="mt-4 text-sm text-gray-500">{t("dashboard.layout.checkingAccess")}</p>
       </div>
     );
   }
@@ -233,7 +235,7 @@ export default function DashboardLayout({
             {role === "buyer" && <ShoppingBag className="w-3 h-3" />}
             {role === "artist" && <Palette className="w-3 h-3" />}
             {role === "admin" && <Scale className="w-3 h-3" />}
-            {roleLabels[role]}
+            {t(roleLabelKeys[role])}
           </span>
         </div>
 
@@ -245,9 +247,9 @@ export default function DashboardLayout({
             const showGroup = role === "admin" && item.group && item.group !== previousGroup;
             return (
               <div key={item.name} className={showGroup ? "mt-4 first:mt-0" : ""}>
-                {showGroup && (
+                {showGroup && item.group && (
                   <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                    {item.group}
+                    {t(`dashboard.navGroups.${item.group}`)}
                   </p>
                 )}
                 <Link
@@ -263,7 +265,7 @@ export default function DashboardLayout({
                       isActive ? "text-[#007A68]" : "text-gray-400"
                     }`}
                   />
-                  <span className="truncate">{item.name}</span>
+                  <span className="truncate">{t(item.name)}</span>
                 </Link>
               </div>
             );
@@ -277,7 +279,7 @@ export default function DashboardLayout({
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
           >
             <FileText className="w-5 h-5 text-gray-400" />
-            Back to Website
+            {t("dashboard.layout.backToWebsite")}
           </Link>
           <button
             type="button"
@@ -285,7 +287,7 @@ export default function DashboardLayout({
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors mt-1"
           >
             <LogOut className="w-5 h-5" />
-            Sign Out
+            {t("dashboard.layout.signOut")}
           </button>
         </div>
       </aside>
@@ -305,8 +307,10 @@ export default function DashboardLayout({
           {/* Page Title - Hidden on mobile */}
           <div className="hidden lg:block">
             <h1 className="text-lg font-semibold text-gray-900">
-              {navItems.find((item) => item.href === pathname)?.name ||
-                "Dashboard"}
+              {t(
+                navItems.find((item) => item.href === pathname)?.name ??
+                  "dashboard.layout.dashboardTitle"
+              )}
             </h1>
           </div>
 
@@ -332,13 +336,13 @@ export default function DashboardLayout({
                   href={`/dashboard/${role}/profile`}
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
-                  My Profile
+                  {t("dashboard.layout.myProfile")}
                 </Link>
                 <Link
                   href={`/dashboard/${role}/settings`}
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
-                  Settings
+                  {t("dashboard.layout.settings")}
                 </Link>
                 <hr className="my-1" />
                 <button
@@ -346,7 +350,7 @@ export default function DashboardLayout({
                   onClick={handleSignOut}
                   className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                 >
-                  Sign Out
+                  {t("dashboard.layout.signOut")}
                 </button>
               </div>
             )}

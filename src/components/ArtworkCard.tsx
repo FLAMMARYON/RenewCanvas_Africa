@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Heart, Leaf, Package } from "lucide-react";
 import { addToWishlist } from "@/lib/frontend/wishlist-api";
@@ -20,6 +21,25 @@ export function ArtworkCard({
   onStatus: (message: string) => void;
 }) {
   const image = artwork.images[0];
+  // Optimistic wishlist state: heart fills and the count increments on click,
+  // before the API responds; we revert if the save fails.
+  const [saved, setSaved] = useState(false);
+  const [favourites, setFavourites] = useState(artwork.favouriteCount);
+
+  const handleSave = async () => {
+    if (saved) return;
+    setSaved(true);
+    setFavourites((current) => current + 1);
+    try {
+      await addToWishlist(artwork.id);
+      onStatus("Artwork saved to your wishlist.");
+    } catch (error) {
+      setSaved(false);
+      setFavourites((current) => current - 1);
+      onStatus(error instanceof Error ? error.message : "Sign in as a buyer to save artwork.");
+    }
+  };
+
   return (
     <article
       className={`group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
@@ -62,18 +82,14 @@ export function ArtworkCard({
           <span className="font-bold text-gray-900">{artwork.priceAmount.toLocaleString()} RWF</span>
           <button
             type="button"
-            onClick={async () => {
-              try {
-                await addToWishlist(artwork.id);
-                onStatus("Artwork saved to your wishlist.");
-              } catch (error) {
-                onStatus(error instanceof Error ? error.message : "Sign in as a buyer to save artwork.");
-              }
-            }}
-            className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-rose-50 hover:text-rose-600"
+            onClick={handleSave}
+            aria-label="Save to wishlist"
+            className={`flex items-center gap-1 rounded-lg px-2 py-1 text-sm hover:bg-rose-50 hover:text-rose-600 ${
+              saved ? "text-rose-600" : "text-gray-500"
+            }`}
           >
-            <Heart className="h-4 w-4" />
-            {artwork.favouriteCount}
+            <Heart className={`h-4 w-4 ${saved ? "fill-rose-600 text-rose-600" : ""}`} />
+            {favourites}
           </button>
         </div>
       </div>

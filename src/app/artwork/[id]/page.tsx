@@ -1,6 +1,7 @@
 "use client";
 
 import { readArtwork, recordArtworkView, type FrontendArtwork } from "@/lib/frontend/artworks-api";
+import { addToWishlist } from "@/lib/frontend/wishlist-api";
 import {
   Award,
   ChevronLeft,
@@ -27,6 +28,34 @@ export default function ArtworkDetailPage() {
   const [artwork, setArtwork] = useState<FrontendArtwork | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [statusMessage, setStatusMessage] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [toast, setToast] = useState("");
+
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(""), 2500);
+    return () => clearTimeout(id);
+  }, [toast]);
+
+  const handleSave = async () => {
+    if (!artwork) return;
+    try {
+      await addToWishlist(artwork.id);
+      setSaved(true);
+      setToast("Saved to your wishlist");
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Sign in as a buyer to save artwork.");
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setToast("Link copied");
+    } catch {
+      setToast("Could not copy link");
+    }
+  };
 
   useEffect(() => {
     readArtwork(params.id)
@@ -72,6 +101,12 @@ export default function ArtworkDetailPage() {
     <div className="min-h-screen bg-white">
       <Navbar />
       <div className="h-16" />
+
+      {toast && (
+        <div className="fixed right-4 top-20 z-50 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-800 shadow-lg">
+          {toast}
+        </div>
+      )}
 
       <main>
         <div className="bg-gray-50">
@@ -167,11 +202,21 @@ export default function ArtworkDetailPage() {
                   <ShoppingCart className="h-5 w-5" />
                   {t("artwork.buyNow")}
                 </Link>
-                <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 px-6 py-4 text-gray-700">
-                  <Heart className="h-5 w-5" />
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-6 py-4 ${
+                    saved ? "bg-rose-50 text-rose-600" : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  <Heart className={`h-5 w-5 ${saved ? "fill-rose-600 text-rose-600" : ""}`} />
                   {t("artwork.save")}
                 </button>
-                <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 px-6 py-4 text-gray-700">
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 px-6 py-4 text-gray-700"
+                >
                   <Share2 className="h-5 w-5" />
                   {t("artwork.share")}
                 </button>

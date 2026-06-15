@@ -61,44 +61,44 @@ function validateField(
 ) {
   if (field === "fullName") {
     const value = formData.fullName.trim();
-    if (!value) return "Full name is required.";
-    if (value.length < 2) return "Full name must be at least 2 characters.";
+    if (!value) return "checkout.errFullNameRequired";
+    if (value.length < 2) return "checkout.errFullNameShort";
     return "";
   }
 
   if (field === "email") {
     const value = formData.email.trim();
-    if (!value) return "Email address is required.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Enter a valid email address.";
+    if (!value) return "checkout.errEmailRequired";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "checkout.errEmailInvalid";
     return "";
   }
 
   if (field === "phone") {
     const value = formData.phone.replace(/[\s-]/g, "");
-    if (!value) return "Phone number is required.";
+    if (!value) return "checkout.errPhoneRequired";
     if (!/^(\+2507\d{8}|07\d{8})$/.test(value)) {
-      return "Enter a valid Rwanda phone number, e.g. +2507XXXXXXXX or 07XXXXXXXX.";
+      return "checkout.errPhoneInvalid";
     }
     return "";
   }
 
   if (field === "address") {
-    if (!formData.address.trim()) return "Delivery address is required.";
+    if (!formData.address.trim()) return "checkout.errAddressRequired";
     return "";
   }
 
   if (field === "city") {
-    if (!formData.city.trim()) return "City is required.";
+    if (!formData.city.trim()) return "checkout.errCityRequired";
     return "";
   }
 
   if (field === "paymentMethod") {
-    if (!paymentMethod) return "Select a payment method.";
+    if (!paymentMethod) return "checkout.errPaymentRequired";
     return "";
   }
 
   if (field === "termsAccepted") {
-    if (!termsAccepted) return "You must accept the terms and refund policy.";
+    if (!termsAccepted) return "checkout.errTermsRequired";
     return "";
   }
 
@@ -130,12 +130,12 @@ function CheckoutContent() {
   useEffect(() => {
     const artworkId = searchParams.get("artworkId");
     if (!artworkId) {
-      setStatusMessage("Choose an artwork before checkout.");
+      setStatusMessage(t("checkout.errNoArtwork"));
       return;
     }
     readArtwork(artworkId)
       .then(setArtwork)
-      .catch((error) => setStatusMessage(error instanceof Error ? error.message : "Could not load artwork for checkout."));
+      .catch((error) => setStatusMessage(error instanceof Error ? error.message : t("checkout.errLoadArtwork")));
   }, [searchParams]);
 
   const handleChange = (
@@ -235,7 +235,7 @@ function CheckoutContent() {
       });
       router.push(`/order-confirmation?order=${encodeURIComponent(order.id)}&payment=${encodeURIComponent(payment.id)}`);
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "Could not place order.");
+      setStatusMessage(error instanceof Error ? error.message : t("checkout.errPlaceOrder"));
     } finally {
       setIsSubmitting(false);
     }
@@ -246,7 +246,7 @@ function CheckoutContent() {
       <main className="min-h-screen bg-gray-50 px-4 py-24">
         <div className="mx-auto max-w-2xl rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-800">
           {statusMessage}
-          <Link href="/marketplace" className="mt-4 block font-medium text-teal-700">Back to marketplace</Link>
+          <Link href="/marketplace" className="mt-4 block font-medium text-teal-700">{t("checkout.backToMarketplace")}</Link>
         </div>
       </main>
     );
@@ -266,24 +266,21 @@ function CheckoutContent() {
       name: t("checkout.momoName"),
       description: t("checkout.momoDesc"),
       icon: Smartphone,
-      instructions:
-        "After submitting your order, RenewCanvas Africa will send a MoMo approval prompt to your phone. Confirm it with your PIN to complete payment. If the prompt is unavailable, support will provide USSD fallback details tied to your order reference.",
+      instructions: t("checkout.momoInstructions"),
     },
     {
       id: "bank" as PaymentMethod,
       name: t("checkout.bankName"),
       description: t("checkout.bankDesc"),
       icon: Building2,
-      instructions:
-        "RenewCanvas Africa bank details will be provided after order submission. Payment must be completed within 48 hours.",
+      instructions: t("checkout.bankInstructions"),
     },
     {
       id: "card" as PaymentMethod,
       name: t("checkout.cardName"),
       description: t("checkout.cardDesc"),
       icon: CreditCard,
-      instructions:
-        "You will be redirected to a secure RenewCanvas Africa payment page to complete your transaction.",
+      instructions: t("checkout.cardInstructions"),
     },
   ];
 
@@ -296,7 +293,7 @@ function CheckoutContent() {
 
   const errorText = (field: CheckoutField) =>
     touched[field] && errors[field] ? (
-      <p className="mt-1 text-sm text-red-600">{errors[field]}</p>
+      <p className="mt-1 text-sm text-red-600">{t(errors[field]!)}</p>
     ) : null;
 
   return (
@@ -711,23 +708,17 @@ function CheckoutContent() {
                     <h3 className="text-sm font-semibold text-amber-800">{t("checkout.beforeConfirm")}</h3>
                     <ul className="text-sm text-amber-900/80 space-y-2 list-disc pl-5">
                       <li>
-                        <strong>Recycled-art materials:</strong> each piece is handmade from cleaned,
-                        upcycled waste. Minor variations in texture, colour, and finish are part of the
-                        character of the work, not defects.
+                        <strong>{t("checkout.disclosureMaterialsLabel")}</strong> {t("checkout.disclosureMaterials")}
                       </li>
                       <li>
-                        <strong>Totals:</strong> the order summary shows the item price and any delivery
-                        amount. No hidden fees are added at payment; any applicable taxes are included in
-                        the displayed total.
+                        <strong>{t("checkout.disclosureTotalsLabel")}</strong> {t("checkout.disclosureTotals")}
                       </li>
                       <li>
-                        <strong>Delivery:</strong> we&apos;ll confirm your delivery timeline by email after
-                        the order is placed. Local (Rwanda) delivery first; international on request.
+                        <strong>{t("checkout.disclosureDeliveryLabel")}</strong> {t("checkout.disclosureDelivery")}
                       </li>
                       <li>
-                        <strong>Refunds &amp; cancellations:</strong> you can request a cancellation before
-                        payment is confirmed, or a return/refund within the window in our{" "}
-                        <Link href="/refund-policy" className="text-teal-700 underline">Refund Policy</Link>.
+                        <strong>{t("checkout.disclosureRefundsLabel")}</strong> {t("checkout.disclosureRefunds")}{" "}
+                        <Link href="/refund-policy" className="text-teal-700 underline">{t("checkout.refundPolicy")}</Link>.
                       </li>
                     </ul>
                   </div>
@@ -746,28 +737,25 @@ function CheckoutContent() {
                         className="w-5 h-5 mt-0.5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
                       />
                       <span className="text-sm text-gray-600">
-                        I agree to the{" "}
+                        {t("checkout.termsAgreePrefix")}{" "}
                         <Link
                           href="/terms"
                           className="text-teal-600 hover:underline"
                         >
-                          Terms of Service
+                          {t("checkout.termsOfService")}
                         </Link>{" "}
                         ,{" "}
                         <Link
                           href="/refund-policy"
                           className="text-teal-600 hover:underline"
                         >
-                          Refund Policy
+                          {t("checkout.refundPolicy")}
                         </Link>
-                        , and{" "}
+                        , {t("checkout.termsConnectorAnd")}{" "}
                         <Link href="/privacy" className="text-teal-600 hover:underline">
-                          Privacy Policy
+                          {t("checkout.privacyPolicy")}
                         </Link>
-                        . I understand that RenewCanvas Africa will send payment
-                        instructions after submitting this order, manages payment
-                        and delivery communication, and releases artist payouts
-                        after the return request window.
+                        {t("checkout.termsAgreeSuffix")}
                       </span>
                     </label>
                     {errorText("termsAccepted")}

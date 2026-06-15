@@ -47,6 +47,7 @@ interface PayoutSettings {
 }
 
 export default function ArtistSettingsPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>("notifications");
   const [userName, setUserName] = useState("User");
   const [isSaving, setIsSaving] = useState(false);
@@ -77,7 +78,7 @@ export default function ArtistSettingsPage() {
       if (!res.ok) throw new Error("save_failed");
     } catch {
       setNotifications((prev) => ({ ...prev, [key]: !value }));
-      setStatusMessage({ type: "error", message: "Could not save that preference. Please try again." });
+      setStatusMessage({ type: "error", message: t("artistDashboard.settings.prefSaveError") });
     }
   };
 
@@ -151,26 +152,26 @@ export default function ArtistSettingsPage() {
       if (!payoutRes.ok) {
         throw new Error("save_failed");
       }
-      setStatusMessage({ type: "success", message: "Settings saved successfully!" });
+      setStatusMessage({ type: "success", message: t("artistDashboard.settings.saveSuccess") });
     } catch {
-      setStatusMessage({ type: "error", message: "Failed to save settings. Please try again." });
+      setStatusMessage({ type: "error", message: t("artistDashboard.settings.saveError") });
     } finally {
       setIsSaving(false);
     }
   };
 
   const tabs = [
-    { id: "notifications" as const, label: "Notifications", icon: Bell },
-    { id: "payouts" as const, label: "Payouts", icon: Wallet },
-    { id: "account" as const, label: "Account", icon: User },
+    { id: "notifications" as const, label: t("artistDashboard.settings.tabNotifications"), icon: Bell },
+    { id: "payouts" as const, label: t("artistDashboard.settings.tabPayouts"), icon: Wallet },
+    { id: "account" as const, label: t("artistDashboard.settings.tabAccount"), icon: User },
   ];
 
   return (
     <DashboardLayout role="artist" userName={userName}>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-500">Manage your account, payout preferences, and privacy settings</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("artistDashboard.settings.title")}</h1>
+          <p className="text-gray-500">{t("artistDashboard.settings.subtitle")}</p>
         </div>
 
         {statusMessage && (
@@ -227,10 +228,10 @@ export default function ArtistSettingsPage() {
               {isSaving ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Saving...
+                  {t("artistDashboard.settings.saving")}
                 </>
               ) : (
-                "Save Changes"
+                t("artistDashboard.settings.saveChanges")
               )}
             </button>
           </div>
@@ -247,6 +248,7 @@ function NotificationsTab({
   notifications: NotificationSettings;
   onToggle: (key: NotificationKey, value: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const Toggle = ({
     checked,
     onChange,
@@ -284,44 +286,44 @@ function NotificationsTab({
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Mail className="w-5 h-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Email Notifications</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t("artistDashboard.settings.emailNotifications")}</h3>
         </div>
         <div className="divide-y divide-gray-100">
           <Toggle
             checked={notifications.emailNewOrders}
             onChange={(checked) => onToggle("emailNewOrders", checked)}
-            label="New Orders"
-            description="Get notified when someone purchases your artwork"
+            label={t("artistDashboard.settings.emailNewOrdersLabel")}
+            description={t("artistDashboard.settings.emailNewOrdersDesc")}
           />
           <Toggle
             checked={notifications.emailCommissionRequests}
             onChange={(checked) => onToggle("emailCommissionRequests", checked)}
-            label="Commission Requests"
-            description="Receive alerts for new custom artwork requests"
+            label={t("artistDashboard.settings.emailCommissionRequestsLabel")}
+            description={t("artistDashboard.settings.emailCommissionRequestsDesc")}
           />
           <Toggle
             checked={notifications.emailArtworkStatus}
             onChange={(checked) => onToggle("emailArtworkStatus", checked)}
-            label="Artwork Status"
-            description="Get notified when your artwork is approved or needs changes"
+            label={t("artistDashboard.settings.emailArtworkStatusLabel")}
+            description={t("artistDashboard.settings.emailArtworkStatusDesc")}
           />
           <Toggle
             checked={notifications.emailPayoutUpdates}
             onChange={(checked) => onToggle("emailPayoutUpdates", checked)}
-            label="Payout Updates"
-            description="Receive notifications when payouts are processed"
+            label={t("artistDashboard.settings.emailPayoutUpdatesLabel")}
+            description={t("artistDashboard.settings.emailPayoutUpdatesDesc")}
           />
           <Toggle
             checked={notifications.emailAuctionBids}
             onChange={(checked) => onToggle("emailAuctionBids", checked)}
-            label="Auction Updates"
-            description="Get notified about bids on your auctioned artworks"
+            label={t("artistDashboard.settings.emailAuctionBidsLabel")}
+            description={t("artistDashboard.settings.emailAuctionBidsDesc")}
           />
           <Toggle
             checked={notifications.emailNewsletter}
             onChange={(checked) => onToggle("emailNewsletter", checked)}
-            label="Newsletter"
-            description="Receive platform updates, tips, and community news"
+            label={t("artistDashboard.settings.emailNewsletterLabel")}
+            description={t("artistDashboard.settings.emailNewsletterDesc")}
           />
         </div>
       </div>
@@ -329,26 +331,26 @@ function NotificationsTab({
       <div className="pt-4 border-t border-gray-200">
         <div className="flex items-center gap-2 mb-4">
           <Smartphone className="w-5 h-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Push Notifications</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t("artistDashboard.settings.pushNotifications")}</h3>
         </div>
         <div className="divide-y divide-gray-100">
           <Toggle
             checked={notifications.pushNewOrders}
             onChange={(checked) => onToggle("pushNewOrders", checked)}
-            label="New Orders"
-            description="Receive real-time alerts for new orders"
+            label={t("artistDashboard.settings.pushNewOrdersLabel")}
+            description={t("artistDashboard.settings.pushNewOrdersDesc")}
           />
           <Toggle
             checked={notifications.pushCommissionRequests}
             onChange={(checked) => onToggle("pushCommissionRequests", checked)}
-            label="Commission Requests"
-            description="Get instant alerts for new commission requests"
+            label={t("artistDashboard.settings.pushCommissionRequestsLabel")}
+            description={t("artistDashboard.settings.pushCommissionRequestsDesc")}
           />
           <Toggle
             checked={notifications.pushPayoutProcessed}
             onChange={(checked) => onToggle("pushPayoutProcessed", checked)}
-            label="Payout Processed"
-            description="Get notified when your payout is sent"
+            label={t("artistDashboard.settings.pushPayoutProcessedLabel")}
+            description={t("artistDashboard.settings.pushPayoutProcessedDesc")}
           />
         </div>
       </div>
@@ -363,12 +365,13 @@ function PayoutsTab({
   payouts: PayoutSettings;
   setPayouts: React.Dispatch<React.SetStateAction<PayoutSettings>>;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Wallet className="w-5 h-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Payout Method</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t("artistDashboard.settings.payoutMethod")}</h3>
         </div>
 
         <div className="flex gap-4 mb-6">
@@ -382,8 +385,8 @@ function PayoutsTab({
             }`}
           >
             <Phone className={`w-6 h-6 mb-2 ${payouts.payoutMethod === "mobile_money" ? "text-teal-600" : "text-gray-400"}`} />
-            <p className="font-medium text-gray-900">Mobile Money</p>
-            <p className="text-sm text-gray-500">MTN MoMo, Airtel Money</p>
+            <p className="font-medium text-gray-900">{t("artistDashboard.settings.mobileMoney")}</p>
+            <p className="text-sm text-gray-500">{t("artistDashboard.settings.mobileMoneyProviders")}</p>
           </button>
           <button
             type="button"
@@ -395,8 +398,8 @@ function PayoutsTab({
             }`}
           >
             <Building2 className={`w-6 h-6 mb-2 ${payouts.payoutMethod === "bank" ? "text-teal-600" : "text-gray-400"}`} />
-            <p className="font-medium text-gray-900">Bank Transfer</p>
-            <p className="text-sm text-gray-500">Direct bank deposit</p>
+            <p className="font-medium text-gray-900">{t("artistDashboard.settings.bankTransfer")}</p>
+            <p className="text-sm text-gray-500">{t("artistDashboard.settings.bankTransferDesc")}</p>
           </button>
         </div>
 
@@ -404,7 +407,7 @@ function PayoutsTab({
           <div className="space-y-4">
             <div>
               <label htmlFor="mobileProvider" className="block text-sm font-medium text-gray-700 mb-2">
-                Mobile Provider
+                {t("artistDashboard.settings.mobileProvider")}
               </label>
               <select
                 id="mobileProvider"
@@ -418,7 +421,7 @@ function PayoutsTab({
             </div>
             <div>
               <label htmlFor="mobileNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                Mobile Number
+                {t("artistDashboard.settings.mobileNumber")}
               </label>
               <input
                 type="tel"
@@ -436,7 +439,7 @@ function PayoutsTab({
           <div className="space-y-4">
             <div>
               <label htmlFor="bankName" className="block text-sm font-medium text-gray-700 mb-2">
-                Bank Name
+                {t("artistDashboard.settings.bankName")}
               </label>
               <select
                 id="bankName"
@@ -444,39 +447,39 @@ function PayoutsTab({
                 onChange={(e) => setPayouts((prev) => ({ ...prev, bankName: e.target.value }))}
                 className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
-                <option value="">Select a bank</option>
+                <option value="">{t("artistDashboard.settings.selectBank")}</option>
                 <option value="bank_of_kigali">Bank of Kigali</option>
                 <option value="equity_bank">Equity Bank</option>
                 <option value="i_and_m_bank">I&M Bank</option>
                 <option value="kcb_bank">KCB Bank</option>
                 <option value="cogebanque">Cogebanque</option>
                 <option value="access_bank">Access Bank</option>
-                <option value="other">Other</option>
+                <option value="other">{t("artistDashboard.settings.bankOther")}</option>
               </select>
             </div>
             <div>
               <label htmlFor="accountName" className="block text-sm font-medium text-gray-700 mb-2">
-                Account Holder Name
+                {t("artistDashboard.settings.accountHolderName")}
               </label>
               <input
                 type="text"
                 id="accountName"
                 value={payouts.accountName}
                 onChange={(e) => setPayouts((prev) => ({ ...prev, accountName: e.target.value }))}
-                placeholder="As shown on bank account"
+                placeholder={t("artistDashboard.settings.accountHolderNamePlaceholder")}
                 className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
             <div>
               <label htmlFor="accountNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                Account Number
+                {t("artistDashboard.settings.accountNumber")}
               </label>
               <input
                 type="text"
                 id="accountNumber"
                 value={payouts.accountNumber}
                 onChange={(e) => setPayouts((prev) => ({ ...prev, accountNumber: e.target.value }))}
-                placeholder="Enter account number"
+                placeholder={t("artistDashboard.settings.accountNumberPlaceholder")}
                 className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
@@ -486,7 +489,7 @@ function PayoutsTab({
 
       <div className="p-4 rounded-lg border border-blue-200 bg-blue-50">
         <p className="text-sm text-blue-800">
-          <strong>Note:</strong> RenewCanvas takes a 20% platform commission. You receive 80% of each sale. Commission is automatically deducted before payout.
+          <strong>{t("artistDashboard.settings.commissionNoteLabel")}</strong> {t("artistDashboard.settings.commissionNoteBody")}
         </p>
       </div>
     </div>
@@ -494,6 +497,7 @@ function PayoutsTab({
 }
 
 function AccountTab() {
+  const { t } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [currentEmail, setCurrentEmail] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -522,12 +526,12 @@ function AccountTab() {
         body: JSON.stringify({ email: newEmail }),
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok || !body.ok) throw new Error(body.message || "Could not update email.");
+      if (!res.ok || !body.ok) throw new Error(body.message || t("artistDashboard.settings.emailUpdateError"));
       setCurrentEmail(body.email);
       setNewEmail("");
-      setEmailMsg({ type: "success", text: "Email updated." });
+      setEmailMsg({ type: "success", text: t("artistDashboard.settings.emailUpdated") });
     } catch (err) {
-      setEmailMsg({ type: "error", text: err instanceof Error ? err.message : "Could not update email." });
+      setEmailMsg({ type: "error", text: err instanceof Error ? err.message : t("artistDashboard.settings.emailUpdateError") });
     } finally {
       setEmailSaving(false);
     }
@@ -538,10 +542,10 @@ function AccountTab() {
     setDeleteError("");
     try {
       const res = await fetch("/api/account/delete", { method: "POST", credentials: "include" });
-      if (!res.ok) throw new Error("Could not delete account.");
+      if (!res.ok) throw new Error(t("artistDashboard.settings.deleteAccountError"));
       window.location.href = "/";
     } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : "Could not delete account.");
+      setDeleteError(err instanceof Error ? err.message : t("artistDashboard.settings.deleteAccountError"));
       setDeleting(false);
     }
   };
@@ -551,31 +555,31 @@ function AccountTab() {
       <LanguageSection />
 
       <div className="pt-6 border-t border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Management</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("artistDashboard.settings.accountManagement")}</h3>
 
         <div className="space-y-4">
           <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-gray-900">Change Password</p>
-                <p className="text-sm text-gray-500">Update your password for security</p>
+                <p className="font-medium text-gray-900">{t("artistDashboard.settings.changePassword")}</p>
+                <p className="text-sm text-gray-500">{t("artistDashboard.settings.changePasswordDesc")}</p>
               </div>
               <a href="/forgot-password" className="px-4 py-2 text-sm font-medium text-teal-600 hover:text-teal-700">
-                Change Password
+                {t("artistDashboard.settings.changePassword")}
               </a>
             </div>
           </div>
 
           <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
-            <p className="font-medium text-gray-900">Email Address</p>
-            <p className="text-sm text-gray-500 mb-3">Current: {currentEmail || "—"}</p>
+            <p className="font-medium text-gray-900">{t("artistDashboard.settings.emailAddress")}</p>
+            <p className="text-sm text-gray-500 mb-3">{t("artistDashboard.settings.currentEmail", { email: currentEmail || "—" })}</p>
             <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="email"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="new@email.com"
-                aria-label="New email address"
+                placeholder={t("artistDashboard.settings.newEmailPlaceholder")}
+                aria-label={t("artistDashboard.settings.newEmailAriaLabel")}
                 className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
               <button
@@ -584,7 +588,7 @@ function AccountTab() {
                 disabled={emailSaving || !newEmail.trim()}
                 className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
               >
-                {emailSaving ? "Updating…" : "Update Email"}
+                {emailSaving ? t("artistDashboard.settings.updating") : t("artistDashboard.settings.updateEmail")}
               </button>
             </div>
             {emailMsg && (
@@ -597,21 +601,21 @@ function AccountTab() {
       <div className="pt-6 border-t border-gray-200">
         <div className="flex items-center gap-2 mb-4">
           <Trash2 className="w-5 h-5 text-red-600" />
-          <h3 className="text-lg font-semibold text-red-600">Danger Zone</h3>
+          <h3 className="text-lg font-semibold text-red-600">{t("artistDashboard.settings.dangerZone")}</h3>
         </div>
 
         <div className="p-4 rounded-lg border border-red-200 bg-red-50">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="font-medium text-red-900">Delete Account</p>
-              <p className="text-sm text-red-700">Permanently delete your artist data. This action cannot be undone.</p>
+              <p className="font-medium text-red-900">{t("artistDashboard.settings.deleteAccount")}</p>
+              <p className="text-sm text-red-700">{t("artistDashboard.settings.deleteAccountDesc")}</p>
             </div>
             <button
               type="button"
               onClick={() => setShowDeleteConfirm(true)}
               className="px-4 py-2 text-sm font-medium text-red-600 border border-red-300 rounded-lg hover:bg-red-100 whitespace-nowrap"
             >
-              Delete Account
+              {t("artistDashboard.settings.deleteAccount")}
             </button>
           </div>
         </div>
@@ -619,16 +623,16 @@ function AccountTab() {
         {showDeleteConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="bg-white rounded-xl p-6 max-w-md w-full">
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">Are you sure?</h4>
-              <p className="text-gray-600 mb-3">This permanently deletes:</p>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">{t("artistDashboard.settings.deleteConfirmTitle")}</h4>
+              <p className="text-gray-600 mb-3">{t("artistDashboard.settings.deleteConfirmIntro")}</p>
               <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-gray-700">
-                <li>Your account (you will be signed out and cannot sign back in)</li>
-                <li>Your artist profile</li>
-                <li>Your artworks</li>
-                <li>Your orders history</li>
-                <li>Your payout information</li>
+                <li>{t("artistDashboard.settings.deleteItemAccount")}</li>
+                <li>{t("artistDashboard.settings.deleteItemProfile")}</li>
+                <li>{t("artistDashboard.settings.deleteItemArtworks")}</li>
+                <li>{t("artistDashboard.settings.deleteItemOrders")}</li>
+                <li>{t("artistDashboard.settings.deleteItemPayout")}</li>
               </ul>
-              <p className="mb-4 text-sm text-gray-500">This action cannot be undone.</p>
+              <p className="mb-4 text-sm text-gray-500">{t("artistDashboard.settings.deleteCannotUndo")}</p>
               {deleteError && <p className="mb-3 text-sm text-red-600">{deleteError}</p>}
               <div className="flex gap-3 justify-end">
                 <button
@@ -637,7 +641,7 @@ function AccountTab() {
                   disabled={deleting}
                   className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
-                  Cancel
+                  {t("artistDashboard.settings.cancel")}
                 </button>
                 <button
                   type="button"
@@ -645,7 +649,7 @@ function AccountTab() {
                   disabled={deleting}
                   className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
                 >
-                  {deleting ? "Deleting…" : "Yes, Delete Account"}
+                  {deleting ? t("artistDashboard.settings.deleting") : t("artistDashboard.settings.confirmDelete")}
                 </button>
               </div>
             </div>
@@ -662,7 +666,7 @@ function AccountTab() {
  * applyLocale helper. English, French, Kinyarwanda, Swahili only.
  */
 function LanguageSection() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [saved, setSaved] = useState(false);
   const current: AppLocale = isSupportedLocale(i18n.language) ? i18n.language : "en";
 
@@ -678,16 +682,16 @@ function LanguageSection() {
     <div>
       <div className="flex items-center gap-2 mb-2">
         <Globe className="w-5 h-5 text-gray-600" />
-        <h3 className="text-lg font-semibold text-gray-900">Language</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{t("artistDashboard.settings.language")}</h3>
       </div>
       <p className="text-sm text-gray-500 mb-3">
-        Choose your language. The site is translated instantly and your choice is saved to your account.
+        {t("artistDashboard.settings.languageDesc")}
       </p>
       <div className="flex items-center gap-3">
         <select
           value={current}
           onChange={onChange}
-          aria-label="Site language"
+          aria-label={t("artistDashboard.settings.siteLanguageAriaLabel")}
           className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
         >
           {SUPPORTED_LOCALES.map((locale) => (
@@ -696,7 +700,7 @@ function LanguageSection() {
             </option>
           ))}
         </select>
-        {saved && <span className="text-sm text-green-600">Saved</span>}
+        {saved && <span className="text-sm text-green-600">{t("artistDashboard.settings.saved")}</span>}
       </div>
     </div>
   );

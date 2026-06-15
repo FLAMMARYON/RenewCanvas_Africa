@@ -16,6 +16,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { readProfile, saveProfile } from "@/lib/frontend/profile-api";
 
 const initialProfile = {
@@ -43,12 +44,85 @@ function booleanValue(value: unknown, fallback: boolean): boolean {
 }
 
 export default function BuyerProfilePage() {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState(initialProfile);
-  const [activeTab, setActiveTab] = useState<"profile" | "notifications" | "security">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "security">("profile");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [userName, setUserName] = useState("User");
+
+  // Avatar upload (persisted via /api/profile/avatar → BuyerProfile.avatarUrl).
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  // Password change.
+  const [pw, setPw] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Account deletion.
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  const uploadAvatar = async (file: File) => {
+    setAvatarUploading(true);
+    setStatusMessage("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/profile/avatar", { method: "POST", body: fd, credentials: "include" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.ok) throw new Error(body.message || t("dashboard.buyer.profile.uploadError"));
+      setAvatarUrl(body.avatarUrl);
+    } catch (err) {
+      setStatusMessage(err instanceof Error ? err.message : t("dashboard.buyer.profile.uploadError"));
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const updatePassword = async () => {
+    setPwMsg(null);
+    if (pw.newPassword !== pw.confirmPassword) {
+      setPwMsg({ type: "error", text: t("dashboard.buyer.profile.pwMismatch") });
+      return;
+    }
+    setPwSaving(true);
+    try {
+      const res = await fetch("/api/auth/password-change", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ currentPassword: pw.currentPassword, newPassword: pw.newPassword }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.ok) {
+        const msg = body?.errors ? Object.values(body.errors).flat().join(" ") : body.message;
+        throw new Error(msg || t("dashboard.buyer.profile.pwUpdateError"));
+      }
+      // All sessions were revoked server-side — send the user to sign in again.
+      window.location.href = "/login";
+    } catch (err) {
+      setPwMsg({ type: "error", text: err instanceof Error ? err.message : t("dashboard.buyer.profile.pwUpdateError") });
+      setPwSaving(false);
+    }
+  };
+
+  const deleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch("/api/account/delete", { method: "POST", credentials: "include" });
+      if (!res.ok) throw new Error(t("dashboard.buyer.profile.deleteError"));
+      window.location.href = "/";
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : t("dashboard.buyer.profile.deleteError"));
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     let isCurrent = true;
@@ -60,6 +134,7 @@ export default function BuyerProfilePage() {
         const profileData = payload.profile;
         const address = payload.address;
 
+        setAvatarUrl(typeof profileData.avatarUrl === "string" ? profileData.avatarUrl : null);
         setProfile({
           firstName: stringValue(profileData.firstName),
           lastName: stringValue(profileData.lastName),
@@ -85,7 +160,7 @@ export default function BuyerProfilePage() {
         }
       } catch (error) {
         if (isCurrent) {
-          setStatusMessage(error instanceof Error ? error.message : "Could not load profile.");
+          setStatusMessage(error instanceof Error ? error.message : t("dashboard.buyer.profile.loadError"));
         }
       }
     }
@@ -120,7 +195,6 @@ export default function BuyerProfilePage() {
         firstName: profile.firstName,
         lastName: profile.lastName,
         phone: profile.phone,
-        notifications: profile.notifications,
         address: {
           line1: profile.address,
           city: profile.city,
@@ -130,16 +204,15 @@ export default function BuyerProfilePage() {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "Could not save profile.");
+      setStatusMessage(error instanceof Error ? error.message : t("dashboard.buyer.profile.saveError"));
     } finally {
       setIsSaving(false);
     }
   };
 
   const tabs = [
-    { id: "profile", label: "Profile", icon: User },
-    { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "security", label: "Security", icon: Shield },
+    { id: "profile", label: t("dashboard.buyer.profile.tabProfile"), icon: User },
+    { id: "security", label: t("dashboard.buyer.profile.tabSecurity"), icon: Shield },
   ];
 
   return (
@@ -148,9 +221,9 @@ export default function BuyerProfilePage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("dashboard.buyer.profile.title")}</h1>
             <p className="text-gray-500">
-              Manage your account settings and preferences
+              {t("dashboard.buyer.profile.subtitle")}
             </p>
           </div>
           <button
@@ -161,17 +234,17 @@ export default function BuyerProfilePage() {
             {isSaving ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Saving...
+                {t("dashboard.buyer.profile.saving")}
               </>
             ) : saveSuccess ? (
               <>
                 <CheckCircle className="w-4 h-4" />
-                Saved!
+                {t("dashboard.buyer.profile.saved")}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Save Changes
+                {t("dashboard.buyer.profile.saveChanges")}
               </>
             )}
           </button>
@@ -209,35 +282,64 @@ export default function BuyerProfilePage() {
                 {/* Profile Photo */}
                 <div className="flex flex-col sm:flex-row items-start gap-6">
                   <div className="relative">
-                    <div className="w-24 h-24 bg-gradient-to-br from-teal-100 to-amber-100 rounded-full flex items-center justify-center">
-                      <User className="w-12 h-12 text-teal-400" />
+                    <div className="w-24 h-24 overflow-hidden bg-gradient-to-br from-teal-100 to-amber-100 rounded-full flex items-center justify-center">
+                      {avatarPreview || avatarUrl ? (
+                        <img src={avatarPreview ?? avatarUrl ?? ""} alt={t("dashboard.buyer.profile.profilePhotoAlt")} className="h-full w-full object-cover" />
+                      ) : (
+                        <User className="w-12 h-12 text-teal-400" />
+                      )}
                     </div>
-                    <button className="absolute bottom-0 right-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center hover:bg-teal-700 transition-colors shadow-lg">
+                    <label className="absolute bottom-0 right-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center hover:bg-teal-700 transition-colors shadow-lg cursor-pointer">
                       <Camera className="w-4 h-4" />
-                    </button>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        aria-label={t("dashboard.buyer.profile.uploadPhotoAria")}
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.currentTarget.files?.[0];
+                          if (!f) return;
+                          setAvatarPreview(URL.createObjectURL(f));
+                          uploadAvatar(f);
+                        }}
+                      />
+                    </label>
                   </div>
                   <div>
                     <h3 className="font-medium text-gray-900 mb-1">
-                      Profile Photo
+                      {t("dashboard.buyer.profile.profilePhoto")}
                     </h3>
                     <p className="text-sm text-gray-500 mb-3">
-                      This will be displayed on your profile
+                      {t("dashboard.buyer.profile.profilePhotoDesc")}
                     </p>
-                    <button className="text-sm text-teal-600 hover:text-teal-700 font-medium">
-                      Upload Photo
-                    </button>
+                    <label className="inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700 font-medium cursor-pointer">
+                      {avatarUploading ? t("dashboard.buyer.profile.uploading") : t("dashboard.buyer.profile.uploadPhoto")}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        aria-label={t("dashboard.buyer.profile.uploadPhotoAria")}
+                        className="hidden"
+                        disabled={avatarUploading}
+                        onChange={(e) => {
+                          const f = e.currentTarget.files?.[0];
+                          if (!f) return;
+                          setAvatarPreview(URL.createObjectURL(f));
+                          uploadAvatar(f);
+                        }}
+                      />
+                    </label>
                   </div>
                 </div>
 
                 {/* Personal Info */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-4">
-                    Personal Information
+                    {t("dashboard.buyer.profile.personalInfo")}
                   </h3>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        First Name
+                        {t("dashboard.buyer.profile.firstName")}
                       </label>
                       <input
                         type="text"
@@ -250,7 +352,7 @@ export default function BuyerProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Last Name
+                        {t("dashboard.buyer.profile.lastName")}
                       </label>
                       <input
                         type="text"
@@ -264,7 +366,7 @@ export default function BuyerProfilePage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         <Mail className="w-4 h-4 inline mr-1" />
-                        Email Address
+                        {t("dashboard.buyer.profile.email")}
                       </label>
                       <input
                         type="email"
@@ -276,7 +378,7 @@ export default function BuyerProfilePage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         <Phone className="w-4 h-4 inline mr-1" />
-                        Phone Number
+                        {t("dashboard.buyer.profile.phone")}
                       </label>
                       <input
                         type="tel"
@@ -294,12 +396,12 @@ export default function BuyerProfilePage() {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-4">
                     <MapPin className="w-4 h-4 inline mr-1" />
-                    Default Delivery Address
+                    {t("dashboard.buyer.profile.deliveryAddress")}
                   </h3>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Street Address
+                        {t("dashboard.buyer.profile.streetAddress")}
                       </label>
                       <input
                         type="text"
@@ -312,7 +414,7 @@ export default function BuyerProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        City
+                        {t("dashboard.buyer.profile.city")}
                       </label>
                       <input
                         type="text"
@@ -325,9 +427,10 @@ export default function BuyerProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Country
+                        {t("dashboard.buyer.profile.country")}
                       </label>
                       <select
+                        aria-label={t("dashboard.buyer.profile.country")}
                         value={profile.country}
                         onChange={(e) =>
                           handleInputChange("country", e.target.value)
@@ -346,144 +449,65 @@ export default function BuyerProfilePage() {
               </div>
             )}
 
-            {/* Notifications Tab */}
-            {activeTab === "notifications" && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4">
-                    Email Notifications
-                  </h3>
-                  <div className="space-y-4">
-                    <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                      <div>
-                        <p className="font-medium text-gray-900">Order Updates</p>
-                        <p className="text-sm text-gray-500">
-                          Get notified about your order status changes
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={profile.notifications.orderUpdates}
-                        onChange={() => handleNotificationChange("orderUpdates")}
-                        className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                      <div>
-                        <p className="font-medium text-gray-900">New Artworks</p>
-                        <p className="text-sm text-gray-500">
-                          Be notified when artists you follow post new work
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={profile.notifications.newArtworks}
-                        onChange={() => handleNotificationChange("newArtworks")}
-                        className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                      <div>
-                        <p className="font-medium text-gray-900">Artist Updates</p>
-                        <p className="text-sm text-gray-500">
-                          News and updates from your favourite artists
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={profile.notifications.artistUpdates}
-                        onChange={() => handleNotificationChange("artistUpdates")}
-                        className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          Promotions & Offers
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Special deals and promotional offers
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={profile.notifications.promotions}
-                        onChange={() => handleNotificationChange("promotions")}
-                        className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                      />
-                    </label>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Security Tab */}
             {activeTab === "security" && (
               <div className="space-y-8">
                 {/* Change Password */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-4">
-                    Change Password
+                    {t("dashboard.buyer.profile.changePassword")}
                   </h3>
                   <div className="space-y-4 max-w-md">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Current Password
+                      <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                        {t("dashboard.buyer.profile.currentPassword")}
                       </label>
                       <input
+                        id="currentPassword"
                         type="password"
+                        value={pw.currentPassword}
+                        onChange={(e) => setPw((p) => ({ ...p, currentPassword: e.target.value }))}
                         placeholder="••••••••"
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        New Password
+                      <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                        {t("dashboard.buyer.profile.newPassword")}
                       </label>
                       <input
+                        id="newPassword"
                         type="password"
+                        value={pw.newPassword}
+                        onChange={(e) => setPw((p) => ({ ...p, newPassword: e.target.value }))}
                         placeholder="••••••••"
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Confirm New Password
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                        {t("dashboard.buyer.profile.confirmNewPassword")}
                       </label>
                       <input
+                        id="confirmPassword"
                         type="password"
+                        value={pw.confirmPassword}
+                        onChange={(e) => setPw((p) => ({ ...p, confirmPassword: e.target.value }))}
                         placeholder="••••••••"
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                     </div>
-                    <button className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
-                      Update Password
+                    {pwMsg && (
+                      <p className={`text-sm ${pwMsg.type === "success" ? "text-green-600" : "text-red-600"}`}>{pwMsg.text}</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={updatePassword}
+                      disabled={pwSaving || !pw.currentPassword || !pw.newPassword}
+                      className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
+                    >
+                      {pwSaving ? t("dashboard.buyer.profile.updating") : t("dashboard.buyer.profile.updatePassword")}
                     </button>
-                  </div>
-                </div>
-
-                {/* Two-Factor Authentication */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4">
-                    Two-Factor Authentication
-                  </h3>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          Protect your account with 2FA
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Add an extra layer of security to your account
-                        </p>
-                      </div>
-                      <button className="px-4 py-2 border border-teal-600 text-teal-600 rounded-lg hover:bg-teal-50 transition-colors">
-                        Enable
-                      </button>
-                    </div>
                   </div>
                 </div>
 
@@ -491,25 +515,62 @@ export default function BuyerProfilePage() {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-red-600">
                     <AlertCircle className="w-5 h-5" />
-                    Danger Zone
+                    {t("dashboard.buyer.profile.dangerZone")}
                   </h3>
                   <div className="p-4 bg-red-50 border border-red-100 rounded-lg">
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-medium text-red-900">
-                          Delete your account
+                          {t("dashboard.buyer.profile.deleteYourAccount")}
                         </p>
                         <p className="text-sm text-red-600 mt-1">
-                          This action is permanent and cannot be undone
+                          {t("dashboard.buyer.profile.deletePermanent")}
                         </p>
                       </div>
-                      <button className="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2 whitespace-nowrap"
+                      >
                         <Trash2 className="w-4 h-4" />
-                        Delete Account
+                        {t("dashboard.buyer.profile.deleteAccount")}
                       </button>
                     </div>
                   </div>
                 </div>
+
+                {showDeleteConfirm && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white rounded-xl p-6 max-w-md w-full">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">{t("dashboard.deleteModal.title")}</h4>
+                      <p className="text-gray-600 mb-3">{t("dashboard.deleteModal.intro")}</p>
+                      <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-gray-700">
+                        <li>{t("dashboard.deleteModal.bullet1")}</li>
+                        <li>{t("dashboard.deleteModal.bullet2")}</li>
+                        <li>{t("dashboard.deleteModal.bullet3")}</li>
+                      </ul>
+                      {deleteError && <p className="mb-3 text-sm text-red-600">{deleteError}</p>}
+                      <div className="flex gap-3 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setShowDeleteConfirm(false)}
+                          disabled={deleting}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                        >
+                          {t("dashboard.deleteModal.cancel")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={deleteAccount}
+                          disabled={deleting}
+                          className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {deleting ? t("dashboard.deleteModal.deleting") : t("dashboard.deleteModal.confirm")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

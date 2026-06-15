@@ -65,3 +65,47 @@ export async function deleteArtistAccount(db: PrismaClient, user: AuthPublicUser
     });
   });
 }
+
+/**
+ * Delete a buyer's account. Uses the soft-delete / anonymise approach
+ * consistently for every buyer (FK-safe regardless of history): personal data
+ * that no one else needs is removed, but orders, payments, shipments,
+ * commissions, bids, and return requests are RETAINED — artists and admins still
+ * need that purchase history. The account is then anonymised + deactivated and
+ * all sessions revoked, so the credentials can no longer sign in.
+ *
+ * This avoids the foreign-key constraint error a naive db.user.delete() would
+ * throw against the Restrict relations (Order/Payment/Shipment/Commission/etc.)
+ * and never leaves orphaned rows. Runs in a $transaction so a partial failure
+ * rolls back.
+ */
+export async function deleteBuyerAccount(db: PrismaClient, user: AuthPublicUser): Promise<void> {
+  await db.$transaction(async (tx) => {
+    // Personal data that only the buyer needs — safe to hard-delete.
+    await tx.wishlistItem.deleteMany({ where: { buyerId: user.id } });
+    await tx.notification.deleteMany({ where: { userId: user.id } });
+    await tx.notificationPreference.deleteMany({ where: { userId: user.id } });
+    await tx.analyticsEvent.deleteMany({ where: { userId: user.id } });
+    await tx.virtualRoomState.deleteMany({ where: { userId: user.id } });
+    await tx.address.deleteMany({ where: { userId: user.id } });
+    await tx.buyerProfile.deleteMany({ where: { userId: user.id } });
+
+    // Anonymise + deactivate; revoke all sessions. Orders/payments/commissions
+    // remain referenced and intact.
+    await tx.user.update({
+      where: { id: user.id },
+      data: {
+        email: `deleted-${user.id}@deleted.invalid`,
+        name: "Deleted user",
+        passwordHash: null,
+        status: "deleted",
+        deletedAt: new Date(),
+      },
+    });
+    await tx.authSession.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date() } });
+
+    await tx.auditLog.create({
+      data: { actorId: user.id, action: "account.deleted", entity: "User", entityId: user.id },
+    });
+  });
+}

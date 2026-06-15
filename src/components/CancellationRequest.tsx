@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /**
  * Post-payment cancellation request.
@@ -20,6 +21,7 @@ export function CancellationRequest({
   buyerEmail?: string;
   buyerName?: string;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -33,11 +35,11 @@ export function CancellationRequest({
     const reason = String(fd.get("reason") ?? "").trim();
 
     if (!email) {
-      setStatus({ type: "error", message: "Please provide your email so we can confirm." });
+      setStatus({ type: "error", message: t("orderConfirmation.cancelErrEmail") });
       return;
     }
     if (reason.length < 10) {
-      setStatus({ type: "error", message: "Please tell us a little more (at least 10 characters)." });
+      setStatus({ type: "error", message: t("orderConfirmation.cancelErrReason") });
       return;
     }
 
@@ -57,16 +59,16 @@ export function CancellationRequest({
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(body.error ?? "We couldn't submit your request. Please try again.");
+        throw new Error(body.error ?? t("orderConfirmation.cancelErrSubmit"));
       }
       setStatus({
         type: "success",
-        message: "Cancellation request received. Our team will email you shortly to confirm.",
+        message: t("orderConfirmation.cancelSuccess"),
       });
     } catch (error) {
       setStatus({
         type: "error",
-        message: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        message: error instanceof Error ? error.message : t("orderConfirmation.cancelErrGeneric"),
       });
     } finally {
       setSubmitting(false);
@@ -77,9 +79,9 @@ export function CancellationRequest({
     <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="font-semibold text-gray-900">Need to cancel this order?</h2>
+          <h2 className="font-semibold text-gray-900">{t("orderConfirmation.cancelHeading")}</h2>
           <p className="text-sm text-gray-500">
-            Before payment you can simply leave checkout. After payment, request a cancellation here.
+            {t("orderConfirmation.cancelDescription")}
           </p>
         </div>
         {!open && (
@@ -89,7 +91,7 @@ export function CancellationRequest({
             className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
           >
             <XCircle className="h-4 w-4" />
-            Request cancellation
+            {t("orderConfirmation.cancelRequestButton")}
           </button>
         )}
       </div>
@@ -100,14 +102,14 @@ export function CancellationRequest({
             <input
               name="name"
               defaultValue={buyerName}
-              placeholder="Your name"
+              placeholder={t("orderConfirmation.cancelNamePlaceholder")}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
             <input
               name="email"
               type="email"
               defaultValue={buyerEmail}
-              placeholder="Your email *"
+              placeholder={t("orderConfirmation.cancelEmailPlaceholder")}
               required
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
@@ -115,7 +117,7 @@ export function CancellationRequest({
           <textarea
             name="reason"
             rows={3}
-            placeholder="Reason for cancellation *"
+            placeholder={t("orderConfirmation.cancelReasonPlaceholder")}
             required
             className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
@@ -134,14 +136,14 @@ export function CancellationRequest({
               disabled={submitting}
               className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
             >
-              {submitting ? "Submitting..." : "Submit request"}
+              {submitting ? t("orderConfirmation.cancelSubmitting") : t("orderConfirmation.cancelSubmit")}
             </button>
             <button
               type="button"
               onClick={() => setOpen(false)}
               className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
             >
-              Cancel
+              {t("orderConfirmation.cancelCancel")}
             </button>
           </div>
         </form>

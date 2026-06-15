@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { readProfile, saveProfile } from "@/lib/frontend/profile-api";
 
 const initialProfile = {
@@ -116,12 +117,13 @@ function completionPercentage(profile: typeof initialProfile): number {
 }
 
 export default function ArtistProfilePage() {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState(initialProfile);
   const [activeTab, setActiveTab] = useState<"profile" | "payout">("profile");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-  const [userName, setUserName] = useState("Artist");
+  const [userName, setUserName] = useState(t("artistDashboard.profile.defaultUserName"));
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -134,11 +136,11 @@ export default function ArtistProfilePage() {
       fd.append("file", file);
       const res = await fetch("/api/profile/avatar", { method: "POST", body: fd, credentials: "include" });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok || !body.ok) throw new Error(body.message || "Could not upload photo.");
+      if (!res.ok || !body.ok) throw new Error(body.message || t("artistDashboard.profile.errUploadPhoto"));
       setAvatarUrl(body.avatarUrl);
-      setStatusMessage("Profile photo updated.");
+      setStatusMessage(t("artistDashboard.profile.photoUpdated"));
     } catch (err) {
-      setStatusMessage(err instanceof Error ? err.message : "Could not upload photo.");
+      setStatusMessage(err instanceof Error ? err.message : t("artistDashboard.profile.errUploadPhoto"));
     } finally {
       setAvatarUploading(false);
     }
@@ -180,10 +182,10 @@ export default function ArtistProfilePage() {
           ...nextProfile,
           completionPercentage: completionPercentage(nextProfile),
         });
-        setUserName(nextProfile.firstName ? `${nextProfile.firstName} ${nextProfile.lastName}`.trim() : "Artist");
+        setUserName(nextProfile.firstName ? `${nextProfile.firstName} ${nextProfile.lastName}`.trim() : t("artistDashboard.profile.defaultUserName"));
       } catch (error) {
         if (isCurrent) {
-          setStatusMessage(error instanceof Error ? error.message : "Could not load profile.");
+          setStatusMessage(error instanceof Error ? error.message : t("artistDashboard.profile.errLoadProfile"));
         }
       }
     }
@@ -241,15 +243,15 @@ export default function ArtistProfilePage() {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "Could not save profile.");
+      setStatusMessage(error instanceof Error ? error.message : t("artistDashboard.profile.errSaveProfile"));
     } finally {
       setIsSaving(false);
     }
   };
 
   const tabs = [
-    { id: "profile", label: "Profile Info", icon: User },
-    { id: "payout", label: "Payout Info", icon: CreditCard },
+    { id: "profile", label: t("artistDashboard.profile.tabProfileInfo"), icon: User },
+    { id: "payout", label: t("artistDashboard.profile.tabPayoutInfo"), icon: CreditCard },
   ];
 
   return (
@@ -258,9 +260,9 @@ export default function ArtistProfilePage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Artist Profile</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("artistDashboard.profile.title")}</h1>
             <p className="text-gray-500">
-              Complete your profile to attract more buyers
+              {t("artistDashboard.profile.subtitle")}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -288,7 +290,7 @@ export default function ArtistProfilePage() {
                 </svg>
               </div>
               <span className="text-sm font-medium text-teal-700">
-                {profile.completionPercentage}% Complete
+                {t("artistDashboard.profile.percentComplete", { percent: profile.completionPercentage })}
               </span>
             </div>
             <button
@@ -299,17 +301,17 @@ export default function ArtistProfilePage() {
               {isSaving ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Saving...
+                  {t("artistDashboard.profile.saving")}
                 </>
               ) : saveSuccess ? (
                 <>
                   <CheckCircle className="w-4 h-4" />
-                  Saved!
+                  {t("artistDashboard.profile.saved")}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  Save Profile
+                  {t("artistDashboard.profile.saveProfile")}
                 </>
               )}
             </button>
@@ -350,7 +352,7 @@ export default function ArtistProfilePage() {
                   <div className="relative">
                     <div className="w-32 h-32 overflow-hidden bg-gradient-to-br from-teal-100 to-amber-100 rounded-full flex items-center justify-center">
                       {avatarPreview || avatarUrl ? (
-                        <img src={avatarPreview ?? avatarUrl ?? ""} alt="Profile photo" className="h-full w-full object-cover" />
+                        <img src={avatarPreview ?? avatarUrl ?? ""} alt={t("artistDashboard.profile.profilePhotoAlt")} className="h-full w-full object-cover" />
                       ) : (
                         <User className="w-16 h-16 text-teal-400" />
                       )}
@@ -359,7 +361,7 @@ export default function ArtistProfilePage() {
                       <Camera className="w-5 h-5" />
                       <input
                         type="file"
-                        accept="image/png,image/jpeg,image/webp" aria-label="Upload profile photo"
+                        accept="image/png,image/jpeg,image/webp" aria-label={t("artistDashboard.profile.uploadPhotoAria")}
                         className="hidden"
                         onChange={(e) => {
                           const f = e.currentTarget.files?.[0];
@@ -371,16 +373,16 @@ export default function ArtistProfilePage() {
                     </label>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900 mb-2">Profile Photo</h3>
+                    <h3 className="font-medium text-gray-900 mb-2">{t("artistDashboard.profile.profilePhoto")}</h3>
                     <p className="text-sm text-gray-500 mb-4">
-                      Upload a professional photo (square, ~400×400). This helps build trust with buyers.
+                      {t("artistDashboard.profile.profilePhotoHint")}
                     </p>
                     <label className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
                       <Upload className="w-4 h-4" />
-                      {avatarUploading ? "Uploading…" : "Upload Photo"}
+                      {avatarUploading ? t("artistDashboard.profile.uploading") : t("artistDashboard.profile.uploadPhoto")}
                       <input
                         type="file"
-                        accept="image/png,image/jpeg,image/webp" aria-label="Upload profile photo"
+                        accept="image/png,image/jpeg,image/webp" aria-label={t("artistDashboard.profile.uploadPhotoAria")}
                         className="hidden"
                         disabled={avatarUploading}
                         onChange={(e) => {
@@ -397,12 +399,12 @@ export default function ArtistProfilePage() {
                 {/* Basic Info */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-4">
-                    Basic Information
+                    {t("artistDashboard.profile.basicInformation")}
                   </h3>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        First Name
+                        {t("artistDashboard.profile.firstName")}
                       </label>
                       <input
                         type="text"
@@ -415,7 +417,7 @@ export default function ArtistProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Last Name
+                        {t("artistDashboard.profile.lastName")}
                       </label>
                       <input
                         type="text"
@@ -429,7 +431,7 @@ export default function ArtistProfilePage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         <Mail className="w-4 h-4 inline mr-1" />
-                        Email
+                        {t("artistDashboard.profile.email")}
                       </label>
                       <input
                         type="email"
@@ -441,7 +443,7 @@ export default function ArtistProfilePage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         <Phone className="w-4 h-4 inline mr-1" />
-                        Phone Number
+                        {t("artistDashboard.profile.phoneNumber")}
                       </label>
                       <input
                         type="tel"
@@ -455,7 +457,7 @@ export default function ArtistProfilePage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         <MapPin className="w-4 h-4 inline mr-1" />
-                        Location
+                        {t("artistDashboard.profile.location")}
                       </label>
                       <input
                         type="text"
@@ -468,7 +470,7 @@ export default function ArtistProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Years of Experience
+                        {t("artistDashboard.profile.yearsOfExperience")}
                       </label>
                       <select
                         value={profile.yearsExperience}
@@ -480,11 +482,11 @@ export default function ArtistProfilePage() {
                         }
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
                       >
-                        <option value={0}>Less than 1 year</option>
-                        <option value={1}>1-2 years</option>
-                        <option value={3}>3-5 years</option>
-                        <option value={5}>5-10 years</option>
-                        <option value={10}>10+ years</option>
+                        <option value={0}>{t("artistDashboard.profile.expLessThan1")}</option>
+                        <option value={1}>{t("artistDashboard.profile.exp1to2")}</option>
+                        <option value={3}>{t("artistDashboard.profile.exp3to5")}</option>
+                        <option value={5}>{t("artistDashboard.profile.exp5to10")}</option>
+                        <option value={10}>{t("artistDashboard.profile.exp10plus")}</option>
                       </select>
                     </div>
                   </div>
@@ -493,30 +495,30 @@ export default function ArtistProfilePage() {
                 {/* Bio */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Bio / Artist Statement
+                    {t("artistDashboard.profile.bioLabel")}
                   </label>
                   <textarea
                     value={profile.bio}
                     onChange={(e) => handleInputChange("bio", e.target.value)}
                     rows={4}
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
-                    placeholder="Tell buyers about yourself, your artistic journey, and what inspires your work..."
+                    placeholder={t("artistDashboard.profile.bioPlaceholder")}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    {profile.bio.length}/500 characters
+                    {t("artistDashboard.profile.bioCharCount", { count: profile.bio.length })}
                   </p>
                 </div>
 
                 {/* Social Links */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-4">
-                    Social & Web Links
+                    {t("artistDashboard.profile.socialWebLinks")}
                   </h3>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         <Globe className="w-4 h-4 inline mr-1" />
-                        Website
+                        {t("artistDashboard.profile.website")}
                       </label>
                       <input
                         type="url"
@@ -524,14 +526,14 @@ export default function ArtistProfilePage() {
                         onChange={(e) =>
                           handleInputChange("website", e.target.value)
                         }
-                        placeholder="www.yoursite.com"
+                        placeholder={t("artistDashboard.profile.websitePlaceholder")}
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         <Camera className="w-4 h-4 inline mr-1" />
-                        Instagram
+                        {t("artistDashboard.profile.instagram")}
                       </label>
                       <input
                         type="text"
@@ -539,14 +541,14 @@ export default function ArtistProfilePage() {
                         onChange={(e) =>
                           handleInputChange("instagram", e.target.value)
                         }
-                        placeholder="@username"
+                        placeholder={t("artistDashboard.profile.usernamePlaceholder")}
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         <MessageCircle className="w-4 h-4 inline mr-1" />
-                        Twitter / X
+                        {t("artistDashboard.profile.twitter")}
                       </label>
                       <input
                         type="text"
@@ -554,14 +556,14 @@ export default function ArtistProfilePage() {
                         onChange={(e) =>
                           handleInputChange("twitter", e.target.value)
                         }
-                        placeholder="@username"
+                        placeholder={t("artistDashboard.profile.usernamePlaceholder")}
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         <Users className="w-4 h-4 inline mr-1" />
-                        Facebook
+                        {t("artistDashboard.profile.facebook")}
                       </label>
                       <input
                         type="text"
@@ -569,7 +571,7 @@ export default function ArtistProfilePage() {
                         onChange={(e) =>
                           handleInputChange("facebook", e.target.value)
                         }
-                        placeholder="facebook.com/username"
+                        placeholder={t("artistDashboard.profile.facebookPlaceholder")}
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                     </div>
@@ -579,10 +581,10 @@ export default function ArtistProfilePage() {
                 {/* Specialties */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">
-                    Art Specialties
+                    {t("artistDashboard.profile.artSpecialties")}
                   </h3>
                   <p className="text-sm text-gray-500 mb-4">
-                    Select the types of art you create
+                    {t("artistDashboard.profile.artSpecialtiesHint")}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {availableSpecialties.map((specialty) => (
@@ -604,10 +606,10 @@ export default function ArtistProfilePage() {
                 {/* Techniques */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">
-                    Techniques Used
+                    {t("artistDashboard.profile.techniquesUsed")}
                   </h3>
                   <p className="text-sm text-gray-500 mb-4">
-                    Select the techniques you use in your work
+                    {t("artistDashboard.profile.techniquesUsedHint")}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {availableTechniques.map((technique) => (
@@ -630,10 +632,10 @@ export default function ArtistProfilePage() {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">
                     <Recycle className="w-4 h-4 inline mr-1" />
-                    Preferred Recycled Materials
+                    {t("artistDashboard.profile.preferredRecycledMaterials")}
                   </h3>
                   <p className="text-sm text-gray-500 mb-4">
-                    Select the materials you typically work with
+                    {t("artistDashboard.profile.preferredRecycledMaterialsHint")}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {availableMaterials.map((material) => (
@@ -663,24 +665,22 @@ export default function ArtistProfilePage() {
                   <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
                   <div>
                     <h3 className="font-semibold text-blue-900">
-                      Private artist payout details
+                      {t("artistDashboard.profile.privatePayoutDetails")}
                     </h3>
                     <p className="text-sm text-blue-700 mt-1">
-                      This information is visible only to you and authorized
-                      RenewCanvas admins. Buyers never see artist payment
-                      details, and artists do not receive buyer contact details.
+                      {t("artistDashboard.profile.privatePayoutDetailsHint")}
                     </p>
                   </div>
                 </div>
 
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-4">
-                    Payout Method
+                    {t("artistDashboard.profile.payoutMethod")}
                   </h3>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Preferred Payout Method
+                        {t("artistDashboard.profile.preferredPayoutMethod")}
                       </label>
                       <select
                         value={profile.payoutMethod}
@@ -691,12 +691,12 @@ export default function ArtistProfilePage() {
                       >
                         <option value="MTN Mobile Money">MTN Mobile Money</option>
                         <option value="Airtel Money">Airtel Money</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Bank Transfer">{t("artistDashboard.profile.payoutBankTransfer")}</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Account Holder Name
+                        {t("artistDashboard.profile.accountHolderName")}
                       </label>
                       <input
                         type="text"
@@ -709,7 +709,7 @@ export default function ArtistProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Mobile Number or Account Number
+                        {t("artistDashboard.profile.mobileOrAccountNumber")}
                       </label>
                       <input
                         type="text"
@@ -722,8 +722,8 @@ export default function ArtistProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Bank Name{" "}
-                        <span className="text-gray-400">(if bank transfer)</span>
+                        {t("artistDashboard.profile.bankName")}{" "}
+                        <span className="text-gray-400">{t("artistDashboard.profile.bankNameHint")}</span>
                       </label>
                       <input
                         type="text"
@@ -731,7 +731,7 @@ export default function ArtistProfilePage() {
                         onChange={(e) =>
                           handleInputChange("payoutBankName", e.target.value)
                         }
-                        placeholder="Bank of Kigali, Equity Bank, etc."
+                        placeholder={t("artistDashboard.profile.bankNamePlaceholder")}
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                     </div>
@@ -740,13 +740,10 @@ export default function ArtistProfilePage() {
 
                 <div className="p-4 bg-teal-50 border border-teal-100 rounded-xl">
                   <h3 className="font-semibold text-teal-900 mb-2">
-                    Payout Release Rule
+                    {t("artistDashboard.profile.payoutReleaseRule")}
                   </h3>
                   <p className="text-sm text-teal-700">
-                    Buyers pay RenewCanvas Africa directly. RenewCanvas holds
-                    your payout until 48 hours after delivery. If no eligible
-                    return request is opened during that window, admins release
-                    your payout to the method saved here.
+                    {t("artistDashboard.profile.payoutReleaseRuleText")}
                   </p>
                 </div>
               </div>
