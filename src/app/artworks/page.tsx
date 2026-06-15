@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { ArrowLeft, Recycle } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -11,6 +12,7 @@ import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api"
 const PAGE_SIZE = 24;
 
 export default function AllArtworksPage() {
+  const { t } = useTranslation();
   const [artworks, setArtworks] = useState<FrontendArtwork[]>([]);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
@@ -32,7 +34,7 @@ export default function AllArtworksPage() {
         setTotal(result.pagination.total);
       })
       .catch(() => {
-        if (active) setStatusMessage("We couldn't load artworks. Please try again.");
+        if (active) setStatusMessage(t("allArtworks.errorLoad"));
       })
       .finally(() => {
         if (active) setIsLoading(false);
@@ -52,7 +54,7 @@ export default function AllArtworksPage() {
         setPage(result.pagination.page);
         setPageCount(result.pagination.pageCount);
       })
-      .catch(() => setStatusMessage("We couldn't load more artworks. Please try again."))
+      .catch(() => setStatusMessage(t("allArtworks.errorLoadMore")))
       .finally(() => setIsLoadingMore(false));
   };
 
@@ -64,11 +66,15 @@ export default function AllArtworksPage() {
         <div className="mb-8">
           <Link href="/marketplace" className="inline-flex items-center gap-2 text-sm font-medium text-teal-700 hover:text-teal-800">
             <ArrowLeft className="h-4 w-4" />
-            Back to Marketplace
+            {t("allArtworks.backToMarketplace")}
           </Link>
-          <h1 className="mt-4 text-3xl sm:text-4xl font-bold text-gray-900">All Artworks</h1>
+          <h1 className="mt-4 text-3xl sm:text-4xl font-bold text-gray-900">{t("allArtworks.title")}</h1>
           <p className="mt-2 text-gray-600">
-            {isLoading ? "Loading the full collection…" : `Browse every available piece${total ? ` (${total})` : ""}.`}
+            {isLoading
+              ? t("allArtworks.loadingCollection")
+              : total
+              ? t("allArtworks.subheadingCount", { count: total })
+              : t("allArtworks.subheading")}
           </p>
         </div>
 
@@ -80,7 +86,7 @@ export default function AllArtworksPage() {
 
         {isLoading ? (
           /* Skeleton grid — mirrors the artwork card layout. */
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Loading artworks">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label={t("allArtworks.loadingAriaLabel")}>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="overflow-hidden rounded-xl border border-gray-200 bg-white">
                 <div className="aspect-[4/3] w-full animate-pulse bg-gray-200" />
@@ -111,7 +117,7 @@ export default function AllArtworksPage() {
                   disabled={isLoadingMore}
                   className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-3 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {isLoadingMore ? "Loading…" : "Load more"}
+                  {isLoadingMore ? t("allArtworks.loadingMore") : t("allArtworks.loadMore")}
                 </button>
               </div>
             )}
@@ -121,13 +127,13 @@ export default function AllArtworksPage() {
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-teal-50">
               <Recycle className="h-8 w-8 text-teal-600" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900">No artworks yet</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t("allArtworks.emptyTitle")}</h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-gray-500">
-              We are curating our first collection of unique upcycled artwork. Check back soon.
+              {t("allArtworks.emptyDescription")}
             </p>
             <div className="mt-6">
               <Link href="/contact" className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-teal-700">
-                Get Notified
+                {t("allArtworks.getNotified")}
               </Link>
             </div>
           </div>

@@ -16,6 +16,7 @@ import {
   Truck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 
@@ -79,6 +80,7 @@ export default function ImpactPage() {
    HERO SECTION
    ============================================ */
 function HeroSection() {
+  const { t } = useTranslation();
   return (
     <section className="relative pt-32 pb-20 overflow-hidden">
       {/* Background */}
@@ -92,17 +94,15 @@ function HeroSection() {
         <div className="text-center max-w-3xl mx-auto text-white">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-6">
             <BarChart3 className="w-4 h-4" />
-            <span>Real Impact, Real Numbers</span>
+            <span>{t("impact.heroBadge")}</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-6">
-            Measuring Our <span className="text-amber-400">Impact</span>
+            {t("impact.heroTitlePrefix")} <span className="text-amber-400">{t("impact.heroTitleHighlight")}</span>
           </h1>
 
           <p className="text-lg text-teal-100 mb-8">
-            Every artwork on RenewCanvas Africa contributes to measurable
-            environmental and social change. Here is the difference we are making
-            together.
+            {t("impact.heroSubtitle")}
           </p>
 
           <div className="group flex flex-wrap justify-center gap-4">
@@ -110,14 +110,14 @@ function HeroSection() {
               href="#metrics"
               className="inline-flex items-center gap-2 px-6 py-3 text-teal-700 bg-white rounded-lg group-hover:bg-teal-600 group-hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium group-hover:scale-105"
             >
-              See Our Impact
+              {t("impact.heroCtaPrimary")}
               <ArrowRight className="w-5 h-5" />
             </a>
             <a
               href="/marketplace"
               className="inline-flex items-center gap-2 px-6 py-3 text-white border-2 border-white/50 rounded-lg group-hover:bg-white group-hover:text-teal-700 group-hover:border-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium group-hover:scale-105"
             >
-              Support the Cause
+              {t("impact.heroCtaSecondary")}
             </a>
           </div>
         </div>
@@ -136,6 +136,7 @@ function KeyMetricsSection({
   metrics: PlatformMetrics | null;
   loading: boolean;
 }) {
+  const { t } = useTranslation();
   // Format metric value - show "-" for zero/null, otherwise format nicely
   const formatValue = (value: number | undefined): string => {
     if (loading) return "...";
@@ -156,29 +157,29 @@ function KeyMetricsSection({
   const metricsList = [
     {
       value: formatValue(metrics?.kgDiverted),
-      label: "Kg Waste Diverted",
-      description: "Recyclable materials transformed into art",
+      label: t("impact.metricKgDivertedLabel"),
+      description: t("impact.metricKgDivertedDesc"),
       icon: Recycle,
       color: "teal",
     },
     {
       value: formatValue(metrics?.artistCount),
-      label: "Artists Onboarded",
-      description: "Talented creators joining our platform",
+      label: t("impact.metricArtistsLabel"),
+      description: t("impact.metricArtistsDesc"),
       icon: Users,
       color: "amber",
     },
     {
       value: formatValue(metrics?.artworkCount),
-      label: "Artworks Created",
-      description: "Unique pieces with verified impact stories",
+      label: t("impact.metricArtworksLabel"),
+      description: t("impact.metricArtworksDesc"),
       icon: Palette,
       color: "purple",
     },
     {
       value: formatRwf(metrics?.artistIncomeRwf),
-      label: "Artist Earnings",
-      description: "Income generated for local artists",
+      label: t("impact.metricEarningsLabel"),
+      description: t("impact.metricEarningsDesc"),
       icon: DollarSign,
       color: "green",
     },
@@ -197,14 +198,13 @@ function KeyMetricsSection({
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-teal-600 font-semibold text-sm uppercase tracking-wider">
-            Key Metrics
+            {t("impact.keyMetricsEyebrow")}
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2 mb-4">
-            Our Impact in Numbers
+            {t("impact.keyMetricsTitle")}
           </h2>
           <p className="text-gray-600">
-            These numbers represent real change - every kilogram diverted,
-            every artist supported, every artwork created.
+            {t("impact.keyMetricsSubtitle")}
           </p>
         </div>
 
@@ -258,6 +258,7 @@ function EnvironmentalImpactSection({
   metrics: PlatformMetrics | null;
   loading: boolean;
 }) {
+  const { t } = useTranslation();
   const formatValue = (value: number | undefined): string => {
     if (loading) return "...";
     if (!value || value === 0) return "-";
@@ -270,8 +271,8 @@ function EnvironmentalImpactSection({
     {
       icon: Wind,
       value: formatValue(metrics?.co2SavedKg),
-      label: "Kg CO2 Prevented",
-      description: "Carbon emissions avoided through recycling",
+      label: t("impact.co2Label"),
+      description: t("impact.co2Desc"),
     },
   ];
 
@@ -282,15 +283,13 @@ function EnvironmentalImpactSection({
           {/* Content */}
           <div>
             <span className="text-green-600 font-semibold text-sm uppercase tracking-wider">
-              Environmental Impact
+              {t("impact.envEyebrow")}
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2 mb-6">
-              Healing the Planet, <span className="text-green-600">One Artwork at a Time</span>
+              {t("impact.envTitlePrefix")} <span className="text-green-600">{t("impact.envTitleHighlight")}</span>
             </h2>
             <p className="text-gray-600 mb-8">
-              Every piece of art created through RenewCanvas Africa represents
-              materials that would otherwise pollute our environment. We track
-              and verify every gram of waste diverted.
+              {t("impact.envSubtitle")}
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -319,7 +318,7 @@ function EnvironmentalImpactSection({
             <div className="group aspect-square rounded-xl overflow-hidden shadow-xl cursor-pointer transition-shadow duration-300 hover:shadow-2xl">
               <img
                 src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&q=80"
-                alt="Environmental conservation"
+                alt={t("impact.envImageAlt")}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               {/* Green hue overlay */}
@@ -338,8 +337,8 @@ function EnvironmentalImpactSection({
                     <Leaf className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">Zero Waste Vision</p>
-                    <p className="text-sm text-gray-600">Every material finds new purpose</p>
+                    <p className="font-semibold text-gray-900">{t("impact.zeroWasteTitle")}</p>
+                    <p className="text-sm text-gray-600">{t("impact.zeroWasteSubtitle")}</p>
                   </div>
                 </div>
               </div>
@@ -444,30 +443,31 @@ function ImpactStoriesSection() {
    GOALS SECTION
    ============================================ */
 function GoalsSection() {
+  const { t } = useTranslation();
   const goals = [
     {
       target: "100 kg",
       current: "0 kg",
       percentage: 0,
-      label: "Waste Diverted",
+      label: t("impact.goalWasteDiverted"),
     },
     {
       target: "100",
       current: "0",
       percentage: 0,
-      label: "Artists Onboarded",
+      label: t("impact.goalArtistsOnboarded"),
     },
     {
       target: "100",
       current: "0",
       percentage: 0,
-      label: "Artworks Created",
+      label: t("impact.goalArtworksCreated"),
     },
     {
       target: "$1,000",
       current: "$0",
       percentage: 0,
-      label: "Artist Earnings",
+      label: t("impact.goalArtistEarnings"),
     },
   ];
 
@@ -478,14 +478,13 @@ function GoalsSection() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-6">
             <Target className="w-4 h-4" />
-            <span>Our Goals</span>
+            <span>{t("impact.goalsBadge")}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Where We Are Headed
+            {t("impact.goalsTitle")}
           </h2>
           <p className="text-teal-100">
-            We have ambitious goals for the future. Here is our progress and where
-            we aim to be.
+            {t("impact.goalsSubtitle")}
           </p>
         </div>
 
@@ -498,7 +497,7 @@ function GoalsSection() {
             >
               <div className="mb-4">
                 <p className="text-3xl font-bold">{goal.current}</p>
-                <p className="text-sm text-teal-200">of {goal.target}</p>
+                <p className="text-sm text-teal-200">{t("impact.goalOfTarget", { target: goal.target })}</p>
               </div>
 
               <p className="font-medium mb-3">{goal.label}</p>
@@ -510,7 +509,7 @@ function GoalsSection() {
                   style={{ width: `${goal.percentage}%` }}
                 />
               </div>
-              <p className="text-xs text-teal-200 mt-2">{goal.percentage}% achieved</p>
+              <p className="text-xs text-teal-200 mt-2">{t("impact.goalPercentAchieved", { percentage: goal.percentage })}</p>
             </div>
           ))}
         </div>
@@ -523,15 +522,15 @@ function GoalsSection() {
    CTA SECTION
    ============================================ */
 function CTASection() {
+  const { t } = useTranslation();
   return (
     <section className="py-20 bg-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-          Be Part of the Impact
+          {t("impact.ctaTitle")}
         </h2>
         <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-          Every purchase, every artwork, every kilogram of waste diverted adds
-          to our collective impact. Join us in creating a more sustainable future.
+          {t("impact.ctaSubtitle")}
         </p>
 
         <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center">
@@ -539,14 +538,14 @@ function CTASection() {
             href="/marketplace"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white bg-teal-600 rounded-lg hover:bg-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium shadow-lg shadow-teal-600/30 text-lg hover:scale-105"
           >
-            Shop with Impact
+            {t("impact.ctaShopButton")}
             <ArrowRight className="w-5 h-5" />
           </a>
           <a
             href="/register?role=artist"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-teal-100 rounded-lg hover:bg-teal-600 hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium text-lg hover:scale-105"
           >
-            Join as Artist
+            {t("impact.ctaArtistButton")}
             <Palette className="w-5 h-5" />
           </a>
           <a
@@ -554,7 +553,7 @@ function CTASection() {
             className="inline-flex items-center justify-center gap-2 px-8 py-4 text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-500 hover:text-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium text-lg hover:scale-105"
           >
             <Truck className="w-5 h-5" />
-            Book a Collection
+            {t("impact.ctaBookButton")}
           </a>
         </div>
 

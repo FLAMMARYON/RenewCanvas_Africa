@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { Compass, Home, Info, List, Map as MapIcon, Maximize2, RotateCcw, Share2, ShoppingBag, Volume2, VolumeX, X } from "lucide-react";
 import { useNarration } from "@/lib/frontend/useNarration";
 import * as THREE from "three";
@@ -405,6 +406,9 @@ function addBox(
 }
 
 export default function VirtualRoomPage() {
+  const { t } = useTranslation();
+  // Translated room label for a given room key (used in JSX + 3D canvases).
+  const roomLabel = (key: RoomKey) => t(`virtualRoom.room_${key}`);
   const galleryData = useGalleryData();
   const mountRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -437,12 +441,12 @@ export default function VirtualRoomPage() {
     if (!selectedArtwork || !narrationEnabled) return;
     const parts = [
       selectedArtwork.title,
-      selectedArtwork.ownerType !== "renewcanvas" ? `by ${selectedArtwork.artist}` : "",
-      selectedArtwork.materials.length ? `Made from ${selectedArtwork.materials.join(", ")}.` : "",
-      `${selectedArtwork.kgDiverted} kilograms of waste diverted.`,
+      selectedArtwork.ownerType !== "renewcanvas" ? t("virtualRoom.narrationByArtist", { artist: selectedArtwork.artist }) : "",
+      selectedArtwork.materials.length ? t("virtualRoom.narrationMadeFrom", { materials: selectedArtwork.materials.join(", ") }) : "",
+      t("virtualRoom.narrationWasteDiverted", { kg: selectedArtwork.kgDiverted }),
     ].filter(Boolean);
     narrationSpeak(parts.join(". "));
-  }, [selectedArtwork, narrationEnabled, narrationSpeak]);
+  }, [selectedArtwork, narrationEnabled, narrationSpeak, t]);
   const [mapOpen, setMapOpen] = useState(true);
   const [infoOpen, setInfoOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
@@ -454,10 +458,9 @@ export default function VirtualRoomPage() {
     () => (galleryData.status === "success" ? flattenGalleryRooms(galleryData.data.rooms) : []),
     [galleryData]
   );
-  const currentStation = useMemo(() => stationFor(room, wing), [room, wing]);
   const currentDoors = doors[room];
   const accessiblePlacements = useMemo(() => getArtworkPlacements(artworks), [artworks]);
-  const accessibilitySummary = `${artworks.length} listed marketplace artworks grouped into category-based rooms.`;
+  const accessibilitySummary = t("virtualRoom.accessibilitySummary", { count: artworks.length });
 
   useEffect(() => {
     roomRef.current = room;
@@ -628,7 +631,7 @@ export default function VirtualRoomPage() {
       brandBand.name = `RenewCanvas Africa wall band ${roomKey}`;
 
       const brandTexture = new THREE.CanvasTexture(
-        createTextCanvas("RenewCanvas Africa", `${wingName(wingIndex)} ${station.label}`, "#f4eadb")
+        createTextCanvas("RenewCanvas Africa", `${wingName(wingIndex)} ${roomLabel(roomKey)}`, "#f4eadb")
       );
       const brandSign = new THREE.Mesh(
         new THREE.PlaneGeometry(3.7, 1.38),
@@ -790,7 +793,7 @@ export default function VirtualRoomPage() {
       scene.add(hotspot);
       clickablesRef.current.push(hotspot);
 
-      const labelCanvas = createTextCanvas(target.label, "Walk through", "#f7dfad");
+      const labelCanvas = createTextCanvas(roomLabel(target.room), t("virtualRoom.walkThrough"), "#f7dfad");
       const texture = new THREE.CanvasTexture(labelCanvas);
       const label = new THREE.Mesh(
         new THREE.PlaneGeometry(2.2, 0.82),
@@ -802,7 +805,7 @@ export default function VirtualRoomPage() {
     }
 
     function addArtwork(placement: ArtworkPlacement) {
-      const { artwork, slotIndex, roomKey, wingIndex, curationRoomTitle, curationGrouping, curationExplanation } = placement;
+      const { artwork, slotIndex, roomKey, wingIndex, curationGrouping } = placement;
       const station = stationFor(roomKey, wingIndex);
       const wallSlots = wallPlacementsForRoom(roomKey);
       const wallSlot = wallSlots[slotIndex % wallSlots.length] ?? { x: 0, z: -ROOM_D / 2 + FRAME_DEPTH / 2, rotY: 0 };
@@ -841,7 +844,7 @@ export default function VirtualRoomPage() {
       plaque.renderOrder = 10;
       group.add(plaque);
 
-      const categoryTexture = new THREE.CanvasTexture(createTextCanvas(curationRoomTitle, curationGrouping, "#dff6f3"));
+      const categoryTexture = new THREE.CanvasTexture(createTextCanvas(roomLabel(roomKey), curationGrouping, "#dff6f3"));
       categoryTexture.colorSpace = THREE.SRGBColorSpace;
       const categoryPlaque = new THREE.Mesh(
         new THREE.PlaneGeometry(1.45, 0.34),
@@ -851,7 +854,14 @@ export default function VirtualRoomPage() {
       categoryPlaque.renderOrder = 10;
       group.add(categoryPlaque);
 
-      group.userData = { type: "artwork", artwork: { ...artwork, curationExplanation, curationRoomTitle } };
+      group.userData = {
+        type: "artwork",
+        artwork: {
+          ...artwork,
+          curationExplanation: t("virtualRoom.curationExplanation", { title: artwork.title, room: roomLabel(roomKey) }),
+          curationRoomTitle: roomLabel(roomKey),
+        },
+      };
       clickablesRef.current.push(group);
     }
 
@@ -1152,7 +1162,7 @@ export default function VirtualRoomPage() {
       buildingShell.add(signPanel);
       // Entrance signboard carries the brand tagline: "ANYTHING IS ART IN THE RIGHT EYES".
       const signTexture = new THREE.CanvasTexture(
-        createSignTexture("Anything is art in the right eyes")
+        createSignTexture(t("virtualRoom.tagline"))
       );
       signTexture.colorSpace = THREE.SRGBColorSpace;
       signTexture.anisotropy = 4;
@@ -1225,7 +1235,7 @@ export default function VirtualRoomPage() {
         ctx.font = "bold 72px system-ui";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText("ENTER MUSEUM", 512, 80);
+        ctx.fillText(t("virtualRoom.enterMuseum"), 512, 80);
       });
       const enterLabel = new THREE.Mesh(
         new THREE.PlaneGeometry(2, 0.4),
@@ -1591,7 +1601,7 @@ export default function VirtualRoomPage() {
       mount.removeChild(renderer.domElement);
       renderer.dispose();
     };
-  }, [galleryData, hasWebGL, artworks]);
+  }, [galleryData, hasWebGL, artworks, t]);
 
   const goToRoom = (nextRoom: RoomKey, nextWing = wing) => {
     const station = stationFor(nextRoom, nextWing);
@@ -1611,7 +1621,7 @@ export default function VirtualRoomPage() {
       credentials: "include",
       body: JSON.stringify({
         id: savedRoomIdRef.current ?? undefined,
-        name: `${currentStation.label} visit`,
+        name: t("virtualRoom.visitName", { room: roomLabel(room) }),
         isPublic,
         viewedArtworkIds: selectedArtwork ? [selectedArtwork.id] : [],
         roomState: {
@@ -1629,7 +1639,7 @@ export default function VirtualRoomPage() {
     });
     const payload = (await response.json()) as { ok?: boolean; room?: { id: string; shareToken?: string | null }; message?: string };
     if (!response.ok || !payload.ok || !payload.room) {
-      throw new Error(payload.message ?? "Could not save room state.");
+      throw new Error(payload.message ?? t("virtualRoom.errorSaveRoom"));
     }
     savedRoomIdRef.current = payload.room.id;
     return payload.room;
@@ -1644,7 +1654,7 @@ export default function VirtualRoomPage() {
         credentials: "include",
         body: JSON.stringify({
           id: savedRoomIdRef.current ?? undefined,
-          name: `${currentStation.label} shared visit`,
+          name: t("virtualRoom.sharedVisitName", { room: roomLabel(room) }),
           viewedArtworkIds: selectedArtwork ? [selectedArtwork.id] : [],
           roomState: {
             activeRoom: room,
@@ -1661,15 +1671,15 @@ export default function VirtualRoomPage() {
       });
       const payload = (await response.json()) as { ok?: boolean; room?: { id: string; shareToken?: string | null }; message?: string };
       if (!response.ok || !payload.ok || !payload.room?.shareToken) {
-        throw new Error(payload.message ?? "Could not create share link.");
+        throw new Error(payload.message ?? t("virtualRoom.errorShareLink"));
       }
       const savedRoom = payload.room;
       savedRoomIdRef.current = savedRoom.id;
       const url = `${window.location.origin}/api/virtual-room/share/${savedRoom.shareToken}`;
       await navigator.clipboard.writeText(url);
-      setShareMessage("Share link copied.");
+      setShareMessage(t("virtualRoom.shareLinkCopied"));
     } catch (error) {
-      setShareMessage(error instanceof Error ? error.message : "Could not create share link.");
+      setShareMessage(error instanceof Error ? error.message : t("virtualRoom.errorShareLink"));
     }
   };
 
@@ -1677,9 +1687,9 @@ export default function VirtualRoomPage() {
     setSaveMessage("");
     try {
       await saveRoomState(false);
-      setSaveMessage("Room state saved.");
+      setSaveMessage(t("virtualRoom.roomStateSaved"));
     } catch (error) {
-      setSaveMessage(error instanceof Error ? error.message : "Could not save room state.");
+      setSaveMessage(error instanceof Error ? error.message : t("virtualRoom.errorSaveRoom"));
     }
   };
 
@@ -1691,7 +1701,7 @@ export default function VirtualRoomPage() {
   };
 
   if (galleryData.status === "loading") {
-    return <GalleryLoadingScreen message="Loading marketplace artworks..." />;
+    return <GalleryLoadingScreen message={t("virtualRoom.loadingArtworks")} />;
   }
 
   if (galleryData.status === "error") {
@@ -1699,7 +1709,7 @@ export default function VirtualRoomPage() {
   }
 
   if (hasWebGL === null) {
-    return <GalleryLoadingScreen message="Initializing virtual museum..." />;
+    return <GalleryLoadingScreen message={t("virtualRoom.initializingMuseum")} />;
   }
 
   if (!hasWebGL) {
@@ -1715,22 +1725,22 @@ export default function VirtualRoomPage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <Link href="/marketplace" className="pointer-events-auto flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm font-medium backdrop-blur hover:bg-white/15">
             <Home className="h-4 w-4" />
-            Exit Museum
+            {t("virtualRoom.exitMuseum")}
           </Link>
           <div className="text-center">
-            <h1 className="text-lg font-semibold">Infinite Museum</h1>
+            <h1 className="text-lg font-semibold">{t("virtualRoom.infiniteMuseum")}</h1>
             <p className="hidden text-xs text-white/65 sm:block">
-              {wingName(wing)} Wing {wing + 1} / {currentStation.label}
+              {t("virtualRoom.wingLabel", { wing: wingName(wing), number: wing + 1, room: roomLabel(room) })}
             </p>
           </div>
           <div className="flex gap-2">
-            <button type="button" onClick={saveCurrentRoom} className="pointer-events-auto rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold backdrop-blur hover:bg-white/15" title="Save current room state">
-              Save
+            <button type="button" onClick={saveCurrentRoom} className="pointer-events-auto rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold backdrop-blur hover:bg-white/15" title={t("virtualRoom.saveRoomTitle")}>
+              {t("virtualRoom.save")}
             </button>
-            <button type="button" onClick={shareRoom} className="pointer-events-auto rounded-lg bg-white/10 p-2 backdrop-blur hover:bg-white/15" title="Copy share link">
+            <button type="button" onClick={shareRoom} className="pointer-events-auto rounded-lg bg-white/10 p-2 backdrop-blur hover:bg-white/15" title={t("virtualRoom.copyShareLink")}>
               <Share2 className="h-5 w-5" />
             </button>
-            <button type="button" onClick={() => setMapOpen((value) => !value)} className="pointer-events-auto rounded-lg bg-white/10 p-2 backdrop-blur hover:bg-white/15" title="Toggle map">
+            <button type="button" onClick={() => setMapOpen((value) => !value)} className="pointer-events-auto rounded-lg bg-white/10 p-2 backdrop-blur hover:bg-white/15" title={t("virtualRoom.toggleMap")}>
               <MapIcon className="h-5 w-5" />
             </button>
             {narration.supported && (
@@ -1738,14 +1748,14 @@ export default function VirtualRoomPage() {
                 type="button"
                 onClick={narration.toggle}
                 className={`pointer-events-auto rounded-lg p-2 backdrop-blur ${narration.enabled ? "bg-teal-500/30 hover:bg-teal-500/40" : "bg-white/10 hover:bg-white/15"}`}
-                title={narration.enabled ? "Turn narration off" : "Turn narration on"}
+                title={narration.enabled ? t("virtualRoom.narrationOff") : t("virtualRoom.narrationOn")}
                 aria-pressed={narration.enabled ? "true" : "false"}
-                aria-label={narration.enabled ? "Turn narration off" : "Turn narration on"}
+                aria-label={narration.enabled ? t("virtualRoom.narrationOff") : t("virtualRoom.narrationOn")}
               >
                 {narration.enabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
               </button>
             )}
-            <button type="button" onClick={reset} className="pointer-events-auto rounded-lg bg-white/10 p-2 backdrop-blur hover:bg-white/15" title="Return to entrance">
+            <button type="button" onClick={reset} className="pointer-events-auto rounded-lg bg-white/10 p-2 backdrop-blur hover:bg-white/15" title={t("virtualRoom.returnToEntrance")}>
               <RotateCcw className="h-5 w-5" />
             </button>
           </div>
@@ -1758,9 +1768,9 @@ export default function VirtualRoomPage() {
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Compass className="h-4 w-4 text-teal-300" />
-              Map
+              {t("virtualRoom.map")}
             </div>
-            <button type="button" onClick={() => setMapOpen(false)} className="rounded-full p-1 hover:bg-white/10" title="Close map">
+            <button type="button" onClick={() => setMapOpen(false)} className="rounded-full p-1 hover:bg-white/10" title={t("virtualRoom.closeMap")}>
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -1779,7 +1789,7 @@ export default function VirtualRoomPage() {
                   key={station.key}
                   type="button"
                   onClick={() => goToRoom(station.key)}
-                  title={station.label}
+                  title={roomLabel(station.key)}
                   className={`absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border shadow ${
                     active ? "border-white bg-teal-700" : "border-[#6b573f]/60 bg-white/90 hover:bg-amber-100"
                   }`}
@@ -1799,8 +1809,8 @@ export default function VirtualRoomPage() {
             setListOpen(false);
           }}
           className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/62 shadow-2xl backdrop-blur-md hover:bg-black/75"
-          title="Museum controls"
-          aria-label="Museum controls"
+          title={t("virtualRoom.museumControls")}
+          aria-label={t("virtualRoom.museumControls")}
         >
           <Info className="h-5 w-5" />
         </button>
@@ -1811,8 +1821,8 @@ export default function VirtualRoomPage() {
             setInfoOpen(false);
           }}
           className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/62 shadow-2xl backdrop-blur-md hover:bg-black/75"
-          title={listOpen ? "Hide accessible artwork list" : "Show accessible artwork list"}
-          aria-label={listOpen ? "Hide accessible artwork list" : "Show accessible artwork list"}
+          title={listOpen ? t("virtualRoom.hideArtworkList") : t("virtualRoom.showArtworkList")}
+          aria-label={listOpen ? t("virtualRoom.hideArtworkList") : t("virtualRoom.showArtworkList")}
           aria-pressed={listOpen ? "true" : "false"}
         >
           <List className="h-5 w-5" />
@@ -1820,8 +1830,8 @@ export default function VirtualRoomPage() {
 
         {infoOpen && (
           <section className="absolute bottom-14 left-0 w-[min(88vw,360px)] rounded-xl border border-white/10 bg-black/78 p-4 shadow-2xl backdrop-blur-md">
-            <p className="text-sm font-medium">Scroll or press W to walk through the doorway you face. Drag or use A/D to look around. Click glowing circles or artworks.</p>
-            <p className="mt-2 text-xs text-white/65">Current room: {currentStation.label}. Routes: {currentDoors.map((door) => door.label).join(", ")}.</p>
+            <p className="text-sm font-medium">{t("virtualRoom.controlsHelp")}</p>
+            <p className="mt-2 text-xs text-white/65">{t("virtualRoom.currentRoomRoutes", { room: roomLabel(room), routes: currentDoors.map((door) => roomLabel(door.room)).join(", ") })}</p>
           </section>
         )}
       </div>
@@ -1831,7 +1841,7 @@ export default function VirtualRoomPage() {
           type="button"
           onClick={() => setMapOpen(true)}
           className="fixed bottom-5 right-5 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/62 shadow-2xl backdrop-blur-md hover:bg-black/75"
-          title="Open map"
+          title={t("virtualRoom.openMap")}
         >
           <MapIcon className="h-5 w-5" />
         </button>
@@ -1839,27 +1849,27 @@ export default function VirtualRoomPage() {
 
       {listOpen && (
         <section className="fixed bottom-36 left-5 z-[60] max-h-[46vh] w-[min(92vw,430px)] overflow-auto rounded-xl border border-white/10 bg-black/78 p-4 text-sm shadow-2xl backdrop-blur-md">
-          <h2 className="font-semibold">Artwork List</h2>
+          <h2 className="font-semibold">{t("virtualRoom.artworkList")}</h2>
           <p className="mt-1 text-xs text-white/65">{accessibilitySummary}</p>
           <ul className="mt-3 space-y-3">
             {accessiblePlacements.map((placement) => (
-              <li key={`${placement.artwork.id}-${placement.curationRoomTitle}`} className="border-b border-white/10 pb-3 last:border-b-0">
+              <li key={`${placement.artwork.id}-${placement.roomKey}`} className="border-b border-white/10 pb-3 last:border-b-0">
                 <p className="font-medium">{placement.artwork.title}</p>
-                <p className="text-xs text-white/65">by {placement.artwork.artist} / {placement.curationRoomTitle}</p>
-                <p className="mt-1 text-xs text-white/55">{placement.curationExplanation}</p>
+                <p className="text-xs text-white/65">{t("virtualRoom.byArtistInRoom", { artist: placement.artwork.artist, room: roomLabel(placement.roomKey) })}</p>
+                <p className="mt-1 text-xs text-white/55">{t("virtualRoom.curationExplanation", { title: placement.artwork.title, room: roomLabel(placement.roomKey) })}</p>
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      <section className="sr-only" aria-label="Accessible museum artwork list">
-        <h2>Infinite Museum artwork list</h2>
+      <section className="sr-only" aria-label={t("virtualRoom.accessibleListLabel")}>
+        <h2>{t("virtualRoom.accessibleListHeading")}</h2>
         <p>{accessibilitySummary}</p>
         <ul>
           {accessiblePlacements.map((placement) => (
-            <li key={`${placement.artwork.id}-${placement.curationRoomTitle}`}>
-              {placement.artwork.title} by {placement.artwork.artist}. Room: {placement.curationRoomTitle}. {placement.curationExplanation}
+            <li key={`${placement.artwork.id}-${placement.roomKey}`}>
+              {t("virtualRoom.srArtworkLine", { title: placement.artwork.title, artist: placement.artwork.artist, room: roomLabel(placement.roomKey), explanation: t("virtualRoom.curationExplanation", { title: placement.artwork.title, room: roomLabel(placement.roomKey) }) })}
             </li>
           ))}
         </ul>
@@ -1868,7 +1878,7 @@ export default function VirtualRoomPage() {
       {selectedArtwork && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm" onClick={() => setSelectedArtwork(null)}>
           <div className="relative grid max-h-[85vh] w-full max-w-2xl overflow-hidden rounded-xl bg-[#15191c] shadow-2xl md:grid-cols-2" onClick={(event) => event.stopPropagation()}>
-            <button type="button" onClick={() => setSelectedArtwork(null)} className="absolute right-2 top-2 z-10 rounded-full bg-black/50 p-1.5 hover:bg-black/70" title="Close">
+            <button type="button" onClick={() => setSelectedArtwork(null)} className="absolute right-2 top-2 z-10 rounded-full bg-black/50 p-1.5 hover:bg-black/70" title={t("virtualRoom.close")}>
               <X className="h-4 w-4" />
             </button>
             <div className="h-48 bg-black overflow-hidden flex items-center justify-center md:h-auto md:max-h-[85vh]">
@@ -1876,18 +1886,18 @@ export default function VirtualRoomPage() {
             </div>
             <div className="flex flex-col max-h-[85vh] overflow-y-auto p-4 sm:p-5">
               <div className="flex-1">
-                <p className="mb-1 text-xs font-medium text-teal-300">On view in Infinite Museum</p>
+                <p className="mb-1 text-xs font-medium text-teal-300">{t("virtualRoom.onViewInMuseum")}</p>
                 <h2 className="text-xl font-bold leading-tight">{selectedArtwork.title}</h2>
                 {selectedArtwork.ownerType !== "renewcanvas" && (
-                  <p className="mt-1 text-sm text-white/65">by {selectedArtwork.artist}</p>
+                  <p className="mt-1 text-sm text-white/65">{t("virtualRoom.byArtist", { artist: selectedArtwork.artist })}</p>
                 )}
                 <div className="mt-4 space-y-3 text-sm">
                   <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                    <span className="text-white/55">Price</span>
+                    <span className="text-white/55">{t("virtualRoom.price")}</span>
                     <span className="font-bold text-amber-300">{selectedArtwork.price.toLocaleString()} RWF</span>
                   </div>
                   <div className="border-b border-white/10 pb-2">
-                    <span className="text-white/55">Materials</span>
+                    <span className="text-white/55">{t("virtualRoom.materials")}</span>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {selectedArtwork.materials.map((material) => (
                         <span key={material} className="rounded-full bg-teal-400/15 px-2 py-0.5 text-xs text-teal-200">{material}</span>
@@ -1895,12 +1905,12 @@ export default function VirtualRoomPage() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                    <span className="text-white/55">Impact</span>
-                    <span className="font-semibold text-green-300">{selectedArtwork.kgDiverted} kg diverted</span>
+                    <span className="text-white/55">{t("virtualRoom.impact")}</span>
+                    <span className="font-semibold text-green-300">{t("virtualRoom.kgDiverted", { kg: selectedArtwork.kgDiverted })}</span>
                   </div>
                   {selectedArtwork.curationExplanation && (
                     <div className="border-b border-white/10 pb-2">
-                      <span className="text-white/55">Curated Room</span>
+                      <span className="text-white/55">{t("virtualRoom.curatedRoom")}</span>
                       <p className="mt-1 font-semibold text-teal-200">{selectedArtwork.curationRoomTitle}</p>
                       <p className="mt-0.5 text-xs text-white/70">{selectedArtwork.curationExplanation}</p>
                     </div>
@@ -1910,11 +1920,11 @@ export default function VirtualRoomPage() {
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 <Link href={`/artwork/${selectedArtwork.id}`} className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-sm font-semibold hover:bg-teal-700">
                   <Maximize2 className="h-4 w-4" />
-                  View Details
+                  {t("virtualRoom.viewDetails")}
                 </Link>
                 <Link href={`/checkout?artworkId=${encodeURIComponent(selectedArtwork.id)}`} className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-400">
                   <ShoppingBag className="h-4 w-4" />
-                  Buy Now
+                  {t("virtualRoom.buyNow")}
                 </Link>
               </div>
             </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
 import {
   Gavel,
@@ -130,11 +131,17 @@ const pastAuctions = [
   },
 ];
 
-function formatTimeRemaining(endTime: Date) {
+type TimeRemaining =
+  | { key: "ended" }
+  | { key: "days"; days: number; hours: number }
+  | { key: "hoursMinutes"; hours: number; minutes: number }
+  | { key: "minutesSeconds"; minutes: number; seconds: number };
+
+function getTimeRemaining(endTime: Date): TimeRemaining {
   const now = new Date();
   const diff = endTime.getTime() - now.getTime();
 
-  if (diff <= 0) return "Ended";
+  if (diff <= 0) return { key: "ended" };
 
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -142,29 +149,39 @@ function formatTimeRemaining(endTime: Date) {
 
   if (hours > 24) {
     const days = Math.floor(hours / 24);
-    return `${days}d ${hours % 24}h`;
+    return { key: "days", days, hours: hours % 24 };
   }
 
   if (hours > 0) {
-    return `${hours}h ${minutes}m`;
+    return { key: "hoursMinutes", hours, minutes };
   }
 
-  return `${minutes}m ${seconds}s`;
+  return { key: "minutesSeconds", minutes, seconds };
 }
 
 function AuctionCard({ auction, isLive = true }: { auction: typeof liveAuctions[0]; isLive?: boolean }) {
-  const [timeLeft, setTimeLeft] = useState(formatTimeRemaining(auction.endTime));
+  const { t } = useTranslation();
+  const [timeLeft, setTimeLeft] = useState<TimeRemaining>(getTimeRemaining(auction.endTime));
   const [isWatching, setIsWatching] = useState(false);
 
   useEffect(() => {
     if (!isLive) return;
 
     const timer = setInterval(() => {
-      setTimeLeft(formatTimeRemaining(auction.endTime));
+      setTimeLeft(getTimeRemaining(auction.endTime));
     }, 1000);
 
     return () => clearInterval(timer);
   }, [auction.endTime, isLive]);
+
+  const timeLeftLabel =
+    timeLeft.key === "ended"
+      ? t("auctionsPublic.timeEnded")
+      : timeLeft.key === "days"
+        ? t("auctionsPublic.timeDays", { days: timeLeft.days, hours: timeLeft.hours })
+        : timeLeft.key === "hoursMinutes"
+          ? t("auctionsPublic.timeHoursMinutes", { hours: timeLeft.hours, minutes: timeLeft.minutes })
+          : t("auctionsPublic.timeMinutesSeconds", { minutes: timeLeft.minutes, seconds: timeLeft.seconds });
 
   const isEndingSoon = auction.endTime.getTime() - Date.now() < 60 * 60 * 1000; // Less than 1 hour
 
@@ -184,7 +201,7 @@ function AuctionCard({ auction, isLive = true }: { auction: typeof liveAuctions[
             isEndingSoon ? "bg-red-500" : "bg-green-500"
           }`}>
             <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-            {isEndingSoon ? "Ending Soon" : "Live"}
+            {isEndingSoon ? t("auctionsPublic.statusEndingSoon") : t("auctionsPublic.statusLive")}
           </div>
         )}
 
@@ -192,13 +209,15 @@ function AuctionCard({ auction, isLive = true }: { auction: typeof liveAuctions[
         {auction.isHot && (
           <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 bg-orange-500 text-white rounded-full text-xs font-medium">
             <Flame className="w-3 h-3" />
-            Hot
+            {t("auctionsPublic.badgeHot")}
           </div>
         )}
 
         {/* Watch Button */}
         <button
           onClick={() => setIsWatching(!isWatching)}
+          aria-label={isWatching ? t("auctionsPublic.unwatchAria") : t("auctionsPublic.watchAria")}
+          title={isWatching ? t("auctionsPublic.unwatchAria") : t("auctionsPublic.watchAria")}
           className={`absolute bottom-3 right-3 p-2 rounded-full transition-colors ${
             isWatching
               ? "bg-red-500 text-white"
@@ -214,7 +233,7 @@ function AuctionCard({ auction, isLive = true }: { auction: typeof liveAuctions[
             isEndingSoon ? "bg-red-500/90 text-white" : "bg-white/90 text-gray-900"
           }`}>
             <Timer className="w-4 h-4" />
-            {timeLeft}
+            {timeLeftLabel}
           </div>
         )}
       </div>
@@ -254,13 +273,13 @@ function AuctionCard({ auction, isLive = true }: { auction: typeof liveAuctions[
         {/* Bidding Info */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">Current Bid</span>
+            <span className="text-sm text-gray-500">{t("auctionsPublic.currentBid")}</span>
             <span className="text-lg font-bold text-gray-900">
               {auction.currentBid.toLocaleString()} RWF
             </span>
           </div>
           <div className="flex items-center justify-between text-sm text-gray-500">
-            <span>Starting: {auction.startingPrice.toLocaleString()} RWF</span>
+            <span>{t("auctionsPublic.startingLabel", { price: auction.startingPrice.toLocaleString() })}</span>
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1">
                 <Gavel className="w-4 h-4" />
@@ -279,7 +298,7 @@ function AuctionCard({ auction, isLive = true }: { auction: typeof liveAuctions[
           href={`/auctions/${auction.id}`}
           className="mt-4 w-full flex items-center justify-center gap-2 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-medium transition-colors"
         >
-          Place Bid
+          {t("auctionsPublic.placeBid")}
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
@@ -288,6 +307,7 @@ function AuctionCard({ auction, isLive = true }: { auction: typeof liveAuctions[
 }
 
 export default function AuctionsPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [filter, setFilter] = useState<"all" | "ending-soon" | "hot">("all");
   const [activeTab, setActiveTab] = useState<"live" | "upcoming" | "past">("live");
@@ -322,17 +342,17 @@ export default function AuctionsPage() {
             className="inline-flex items-center gap-2 text-teal-100 hover:text-white mb-6 transition-colors"
           >
             <ArrowRight className="w-4 h-4 rotate-180" />
-            Back
+            {t("auctionsPublic.back")}
           </button>
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <Gavel className="w-10 h-10" />
-                <h1 className="text-4xl font-bold">Live Auctions</h1>
+                <h1 className="text-4xl font-bold">{t("auctionsPublic.heroTitle")}</h1>
               </div>
               <p className="text-teal-100 text-lg">
-                Bid on exclusive upcycled artworks and own a piece of sustainable African art
+                {t("auctionsPublic.heroSubtitle")}
               </p>
             </div>
 
@@ -340,17 +360,17 @@ export default function AuctionsPage() {
             <div className="flex gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold">{liveAuctions.length}</div>
-                <div className="text-teal-200 text-sm">Live Auctions</div>
+                <div className="text-teal-200 text-sm">{t("auctionsPublic.statLiveAuctions")}</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold">{upcomingAuctions.length}</div>
-                <div className="text-teal-200 text-sm">Upcoming</div>
+                <div className="text-teal-200 text-sm">{t("auctionsPublic.statUpcoming")}</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold">
                   {liveAuctions.reduce((sum, a) => sum + a.totalBids, 0)}
                 </div>
-                <div className="text-teal-200 text-sm">Total Bids</div>
+                <div className="text-teal-200 text-sm">{t("auctionsPublic.statTotalBids")}</div>
               </div>
             </div>
           </div>
@@ -362,9 +382,9 @@ export default function AuctionsPage() {
         {/* Tabs */}
         <div className="flex items-center gap-4 mb-8 border-b border-gray-200">
           {[
-            { id: "live", label: "Live Auctions", icon: Clock, count: liveAuctions.length },
-            { id: "upcoming", label: "Upcoming", icon: Timer, count: upcomingAuctions.length },
-            { id: "past", label: "Past Auctions", icon: Award, count: pastAuctions.length },
+            { id: "live", labelKey: "tabLive", icon: Clock, count: liveAuctions.length },
+            { id: "upcoming", labelKey: "tabUpcoming", icon: Timer, count: upcomingAuctions.length },
+            { id: "past", labelKey: "tabPast", icon: Award, count: pastAuctions.length },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -376,7 +396,7 @@ export default function AuctionsPage() {
               }`}
             >
               <tab.icon className="w-5 h-5" />
-              {tab.label}
+              {t(`auctionsPublic.${tab.labelKey}`)}
               <span className={`px-2 py-0.5 rounded-full text-xs ${
                 activeTab === tab.id ? "bg-teal-100 text-teal-700" : "bg-gray-100 text-gray-600"
               }`}>
@@ -392,9 +412,9 @@ export default function AuctionsPage() {
             <Filter className="w-5 h-5 text-gray-400" />
             <div className="flex gap-2">
               {[
-                { id: "all", label: "All" },
-                { id: "ending-soon", label: "Ending Soon" },
-                { id: "hot", label: "Hot" },
+                { id: "all", labelKey: "filterAll" },
+                { id: "ending-soon", labelKey: "filterEndingSoon" },
+                { id: "hot", labelKey: "filterHot" },
               ].map((f) => (
                 <button
                   key={f.id}
@@ -405,7 +425,7 @@ export default function AuctionsPage() {
                       : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
                   }`}
                 >
-                  {f.label}
+                  {t(`auctionsPublic.${f.labelKey}`)}
                 </button>
               ))}
             </div>
@@ -438,9 +458,9 @@ export default function AuctionsPage() {
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                     <div className="text-center text-white">
                       <Timer className="w-8 h-8 mx-auto mb-2" />
-                      <p className="text-sm">Starts in</p>
+                      <p className="text-sm">{t("auctionsPublic.startsIn")}</p>
                       <p className="text-xl font-bold">
-                        {Math.ceil((auction.startTime.getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days
+                        {t("auctionsPublic.daysCount", { count: Math.ceil((auction.startTime.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) })}
                       </p>
                     </div>
                   </div>
@@ -449,13 +469,13 @@ export default function AuctionsPage() {
                   <h3 className="font-semibold text-gray-900">{auction.title}</h3>
                   <p className="text-sm text-gray-600 mb-3">{auction.artist}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-500">Starting Price</span>
+                    <span className="text-sm text-gray-500">{t("auctionsPublic.startingPrice")}</span>
                     <span className="font-bold text-gray-900">
                       {auction.startingPrice.toLocaleString()} RWF
                     </span>
                   </div>
                   <button className="mt-4 w-full py-2 border border-teal-600 text-teal-600 rounded-lg font-medium hover:bg-teal-50 transition-colors">
-                    Set Reminder
+                    {t("auctionsPublic.setReminder")}
                   </button>
                 </div>
               </div>
@@ -478,7 +498,7 @@ export default function AuctionsPage() {
                     className="w-full h-full object-cover grayscale-[30%]"
                   />
                   <div className="absolute top-3 left-3 px-3 py-1 bg-gray-900 text-white rounded-full text-sm font-medium">
-                    Sold
+                    {t("auctionsPublic.sold")}
                   </div>
                 </div>
                 <div className="p-4">
@@ -486,12 +506,12 @@ export default function AuctionsPage() {
                   <p className="text-sm text-gray-600">{auction.artist}</p>
                   <div className="mt-3 pt-3 border-t border-gray-100">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">Final Price</span>
+                      <span className="text-sm text-gray-500">{t("auctionsPublic.finalPrice")}</span>
                       <span className="font-bold text-green-600">
                         {auction.soldPrice.toLocaleString()} RWF
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">Won by {auction.winner}</p>
+                    <p className="text-xs text-gray-400 mt-1">{t("auctionsPublic.wonBy", { winner: auction.winner })}</p>
                   </div>
                 </div>
               </div>
@@ -502,37 +522,37 @@ export default function AuctionsPage() {
         {/* How Auctions Work */}
         <section className="mt-16 bg-white rounded-xl p-8 border border-gray-100">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-            How Auctions Work
+            {t("auctionsPublic.howItWorksTitle")}
           </h2>
           <div className="grid md:grid-cols-4 gap-6">
             {[
               {
                 step: 1,
-                title: "Browse",
-                description: "Explore live and upcoming auctions for unique artworks",
+                titleKey: "stepBrowseTitle",
+                descKey: "stepBrowseDesc",
               },
               {
                 step: 2,
-                title: "Register",
-                description: "Sign up or log in to participate in bidding",
+                titleKey: "stepRegisterTitle",
+                descKey: "stepRegisterDesc",
               },
               {
                 step: 3,
-                title: "Bid",
-                description: "Place your bid. The minimum bid is the artist's starting price",
+                titleKey: "stepBidTitle",
+                descKey: "stepBidDesc",
               },
               {
                 step: 4,
-                title: "Win",
-                description: "Highest bidder when time expires wins the artwork",
+                titleKey: "stepWinTitle",
+                descKey: "stepWinDesc",
               },
             ].map((item) => (
               <div key={item.step} className="text-center">
                 <div className="w-12 h-12 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">
                   {item.step}
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
-                <p className="text-sm text-gray-600">{item.description}</p>
+                <h3 className="font-semibold text-gray-900 mb-1">{t(`auctionsPublic.${item.titleKey}`)}</h3>
+                <p className="text-sm text-gray-600">{t(`auctionsPublic.${item.descKey}`)}</p>
               </div>
             ))}
           </div>

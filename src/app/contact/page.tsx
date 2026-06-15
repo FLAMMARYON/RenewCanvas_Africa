@@ -34,6 +34,7 @@ const LinkedInIcon = ({ className }: { className?: string }) => (
 );
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 
@@ -69,6 +70,7 @@ export default function ContactPage() {
    HERO SECTION
    ============================================ */
 function HeroSection() {
+  const { t } = useTranslation();
   return (
     <section className="relative pt-32 pb-20 overflow-hidden">
       {/* Background - Light gradient matching RenewCanvas branding */}
@@ -105,16 +107,15 @@ function HeroSection() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-100 text-teal-700 rounded-full text-sm font-medium mb-6">
             <Mail className="w-4 h-4" />
-            Get In Touch
+            {t("contact.heroBadge")}
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
-            Contact <span className="text-teal-600">Us</span>
+            {t("contact.heroHeadingPrefix")} <span className="text-teal-600">{t("contact.heroHeadingHighlight")}</span>
           </h1>
 
           <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Get in touch with us for any enquiries. Let&apos;s work together to
-            transform waste into art and build a sustainable future.
+            {t("contact.heroSubheading")}
           </p>
 
           <div className="group flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -122,7 +123,7 @@ function HeroSection() {
               href="#contact-form"
               className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white border-2 border-teal-600 rounded-xl font-medium group-hover:bg-white group-hover:text-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105 shadow-lg shadow-teal-600/30"
             >
-              Send a Message
+              {t("contact.heroSendMessage")}
               <ArrowRight className="w-5 h-5" />
             </a>
             <a
@@ -130,7 +131,7 @@ function HeroSection() {
               className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white border-2 border-amber-500 rounded-xl font-medium group-hover:bg-white group-hover:text-amber-500 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105 shadow-lg shadow-amber-500/30"
             >
               <Truck className="w-5 h-5" />
-              Book a Collection
+              {t("contact.heroBookCollection")}
             </a>
           </div>
         </div>
@@ -143,35 +144,36 @@ function HeroSection() {
    CONTACT INFO SECTION
    ============================================ */
 function ContactInfoSection() {
+  const { t } = useTranslation();
   const contactInfo = [
     {
       icon: Mail,
-      title: "Email Us",
+      title: t("contact.infoEmailTitle"),
       details: ["hello.renewcanvas@gmail.com"],
       color: "teal",
       href: "mailto:hello.renewcanvas@gmail.com",
     },
     {
       icon: Phone,
-      title: "Call Us",
+      title: t("contact.infoCallTitle"),
       details: ["+250 798 654 776"],
-      subtext: "Mon-Fri, 9am-5pm EAT",
+      subtext: t("contact.infoCallSubtext"),
       color: "purple",
       href: "tel:+250798654776",
     },
     {
       icon: MapPin,
-      title: "Visit Us",
+      title: t("contact.infoVisitTitle"),
       details: ["Kigali, Rwanda"],
-      subtext: "By appointment only",
+      subtext: t("contact.infoVisitSubtext"),
       color: "amber",
       href: "https://maps.google.com/?q=Kigali,Rwanda",
     },
     {
       icon: LinkedInIcon,
-      title: "LinkedIn",
+      title: t("contact.infoLinkedInTitle"),
       details: ["RenewCanvas Africa"],
-      subtext: "Follow us for updates",
+      subtext: t("contact.infoLinkedInSubtext"),
       color: "blue",
       href: "https://www.linkedin.com/company/renewcanvas-africa/",
     },
@@ -224,6 +226,7 @@ function ContactInfoSection() {
    BOOK COLLECTION CTA
    ============================================ */
 function BookCollectionCTA() {
+  const { t } = useTranslation();
   return (
     <section className="py-16 bg-amber-500 relative overflow-hidden">
       {/* Background Pattern */}
@@ -240,14 +243,13 @@ function BookCollectionCTA() {
           <div className="text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-full text-sm font-medium mb-4">
               <Recycle className="w-4 h-4" />
-              Contribute to Sustainability
+              {t("contact.ctaBadge")}
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              Have Recyclable Materials?
+              {t("contact.ctaHeading")}
             </h2>
             <p className="text-white/90 text-lg max-w-xl">
-              Book a collection and contribute your recyclable materials. Earn discounts
-              on artwork purchases while helping our artists create sustainable masterpieces.
+              {t("contact.ctaDescription")}
             </p>
           </div>
 
@@ -257,13 +259,13 @@ function BookCollectionCTA() {
               className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-amber-500 border-2 border-white rounded-xl font-bold group-hover:bg-amber-500 group-hover:text-white group-hover:border-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105 shadow-lg"
             >
               <Truck className="w-5 h-5" />
-              Book a Collection
+              {t("contact.ctaBookCollection")}
             </a>
             <a
               href="/how-it-works#collection"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-teal-600 text-white border-2 border-teal-600 rounded-xl font-medium group-hover:bg-white group-hover:text-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
             >
-              Learn More
+              {t("contact.ctaLearnMore")}
               <ArrowRight className="w-5 h-5" />
             </a>
           </div>
@@ -277,6 +279,7 @@ function BookCollectionCTA() {
    CONTACT FORM SECTION
    ============================================ */
 function ContactFormSection() {
+  const { t } = useTranslation();
   const [selectedInquiry, setSelectedInquiry] = useState("general");
   const [formData, setFormData] = useState({
     name: "",
@@ -313,7 +316,7 @@ function ContactFormSection() {
     if (!formData.name || !formData.email || !formData.message) {
       setSubmitStatus({
         type: "error",
-        message: "Please fill in all required fields (Name, Email, and Message).",
+        message: t("contact.errorRequiredFields"),
       });
       setIsSubmitting(false);
       return;
@@ -352,7 +355,7 @@ function ContactFormSection() {
       if (response.ok) {
         setSubmitStatus({
           type: "success",
-          message: data.message || "Thank you! Your message has been sent successfully.",
+          message: data.message || t("contact.successMessage"),
         });
         // Reset form
         setFormData({
@@ -372,13 +375,13 @@ function ContactFormSection() {
       } else {
         setSubmitStatus({
           type: "error",
-          message: data.error || "Failed to send message. Please try again.",
+          message: data.error || t("contact.errorSendFailed"),
         });
       }
     } catch {
       setSubmitStatus({
         type: "error",
-        message: "Network error. Please check your connection and try again.",
+        message: t("contact.errorNetwork"),
       });
     } finally {
       setIsSubmitting(false);
@@ -386,8 +389,8 @@ function ContactFormSection() {
   };
 
   const inquiryTypes = [
-    { icon: Users, label: "General Inquiry", value: "general", color: "teal" },
-    { icon: Building, label: "Partnership", value: "partnership", color: "amber" },
+    { icon: Users, label: t("contact.inquiryGeneral"), value: "general", color: "teal" },
+    { icon: Building, label: t("contact.inquiryPartnership"), value: "partnership", color: "amber" },
   ];
 
   const inquiryColorClasses: Record<string, { selectedBg: string; icon: string; border: string }> = {
@@ -412,10 +415,10 @@ function ContactFormSection() {
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Send Us a <span className="text-teal-600">Message</span>
+            {t("contact.formHeadingPrefix")} <span className="text-teal-600">{t("contact.formHeadingHighlight")}</span>
           </h2>
           <p className="text-gray-600 text-lg">
-            Choose the type of inquiry and fill out the form below.
+            {t("contact.formSubheading")}
           </p>
         </div>
 
@@ -437,7 +440,7 @@ function ContactFormSection() {
             {/* Inquiry Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                What can we help you with?
+                {t("contact.inquiryLabel")}
               </label>
               <div className="grid sm:grid-cols-3 gap-3">
                 {inquiryTypes.map((type) => {
@@ -474,30 +477,30 @@ function ContactFormSection() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                      Your Name <span className="text-red-500">*</span>
+                      {t("contact.fieldYourName")} <span className="text-red-500">*</span>
                     </label>
-                    <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Your full name" required className={inputClasses} />
+                    <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder={t("contact.placeholderFullName")} required className={inputClasses} />
                   </div>
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address <span className="text-red-500">*</span>
+                      {t("contact.fieldEmailAddress")} <span className="text-red-500">*</span>
                     </label>
-                    <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="you@example.com" required className={inputClasses} />
+                    <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} placeholder={t("contact.placeholderEmail")} required className={inputClasses} />
                   </div>
                 </div>
 
                 <div>
                   <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                    Subject
+                    {t("contact.fieldSubject")}
                   </label>
-                  <input type="text" id="subject" name="subject" value={formData.subject} onChange={handleInputChange} placeholder="How can we help?" className={inputClasses} />
+                  <input type="text" id="subject" name="subject" value={formData.subject} onChange={handleInputChange} placeholder={t("contact.placeholderSubject")} className={inputClasses} />
                 </div>
 
                 <div>
                   <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                    Message <span className="text-red-500">*</span>
+                    {t("contact.fieldMessage")} <span className="text-red-500">*</span>
                   </label>
-                  <textarea id="message" name="message" value={formData.message} onChange={handleInputChange} rows={5} placeholder="Tell us more about your inquiry..." required className={`${inputClasses} resize-none`} />
+                  <textarea id="message" name="message" value={formData.message} onChange={handleInputChange} rows={5} placeholder={t("contact.placeholderMessage")} required className={`${inputClasses} resize-none`} />
                 </div>
               </div>
             )}
@@ -508,22 +511,22 @@ function ContactFormSection() {
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
                   <p className="text-sm text-amber-700">
                     <Building className="w-4 h-4 inline mr-2" />
-                    Partner with us to promote sustainability and support local artists.
+                    {t("contact.partnershipNotice")}
                   </p>
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                      Contact Person <span className="text-red-500">*</span>
+                      {t("contact.fieldContactPerson")} <span className="text-red-500">*</span>
                     </label>
-                    <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Your full name" required className={inputClasses} />
+                    <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder={t("contact.placeholderFullName")} required className={inputClasses} />
                   </div>
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      Business Email <span className="text-red-500">*</span>
+                      {t("contact.fieldBusinessEmail")} <span className="text-red-500">*</span>
                     </label>
-                    <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="contact@company.com" required className={inputClasses} />
+                    <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} placeholder={t("contact.placeholderBusinessEmail")} required className={inputClasses} />
                   </div>
                 </div>
 
@@ -531,41 +534,41 @@ function ContactFormSection() {
                   <div>
                     <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-2">
                       <Briefcase className="w-4 h-4 inline mr-1" />
-                      Organization / Company
+                      {t("contact.fieldOrganization")}
                     </label>
-                    <input type="text" id="organization" name="organization" value={formData.organization} onChange={handleInputChange} placeholder="Company name" className={inputClasses} />
+                    <input type="text" id="organization" name="organization" value={formData.organization} onChange={handleInputChange} placeholder={t("contact.placeholderCompanyName")} className={inputClasses} />
                   </div>
                   <div>
                     <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
                       <Globe className="w-4 h-4 inline mr-1" />
-                      Website
+                      {t("contact.fieldWebsite")}
                     </label>
-                    <input type="url" id="website" name="website" value={formData.website} onChange={handleInputChange} placeholder="https://company.com" className={inputClasses} />
+                    <input type="url" id="website" name="website" value={formData.website} onChange={handleInputChange} placeholder={t("contact.placeholderWebsite")} className={inputClasses} />
                   </div>
                 </div>
 
                 <div>
                   <label htmlFor="partnershipType" className="block text-sm font-medium text-gray-700 mb-2">
-                    Partnership Type
+                    {t("contact.fieldPartnershipType")}
                   </label>
                   <select id="partnershipType" name="partnershipType" value={formData.partnershipType} onChange={handleInputChange} className={inputClasses}>
-                    <option value="">Select partnership type</option>
-                    <option value="sponsor">Sponsorship</option>
-                    <option value="material">Material Supply Partnership</option>
-                    <option value="corporate">Corporate Art Purchases</option>
-                    <option value="event">Event Collaboration</option>
-                    <option value="media">Media / Press Partnership</option>
-                    <option value="ngo">NGO / Non-Profit Collaboration</option>
-                    <option value="other">Other</option>
+                    <option value="">{t("contact.partnershipTypeSelect")}</option>
+                    <option value="sponsor">{t("contact.partnershipTypeSponsor")}</option>
+                    <option value="material">{t("contact.partnershipTypeMaterial")}</option>
+                    <option value="corporate">{t("contact.partnershipTypeCorporate")}</option>
+                    <option value="event">{t("contact.partnershipTypeEvent")}</option>
+                    <option value="media">{t("contact.partnershipTypeMedia")}</option>
+                    <option value="ngo">{t("contact.partnershipTypeNgo")}</option>
+                    <option value="other">{t("contact.partnershipTypeOther")}</option>
                   </select>
                 </div>
 
                 <div>
                   <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
                     <FileText className="w-4 h-4 inline mr-1" />
-                    Partnership Proposal <span className="text-red-500">*</span>
+                    {t("contact.fieldPartnershipProposal")} <span className="text-red-500">*</span>
                   </label>
-                  <textarea id="message" name="message" value={formData.message} onChange={handleInputChange} rows={5} placeholder="Describe your partnership idea, what you hope to achieve, and how we can work together..." required className={`${inputClasses} resize-none`} />
+                  <textarea id="message" name="message" value={formData.message} onChange={handleInputChange} rows={5} placeholder={t("contact.placeholderPartnershipProposal")} required className={`${inputClasses} resize-none`} />
                 </div>
               </div>
             )}
@@ -583,11 +586,11 @@ function ContactFormSection() {
               {isSubmitting ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Sending...
+                  {t("contact.buttonSending")}
                 </>
               ) : (
                 <>
-                  {selectedInquiry === "partnership" ? "Submit Proposal" : "Send Message"}
+                  {selectedInquiry === "partnership" ? t("contact.buttonSubmitProposal") : t("contact.buttonSendMessage")}
                   <Send className="w-5 h-5" />
                 </>
               )}
@@ -603,31 +606,27 @@ function ContactFormSection() {
    FAQ SECTION
    ============================================ */
 function FAQSection() {
+  const { t } = useTranslation();
   const faqs = [
     {
-      question: "How do I become an artist on RenewCanvas?",
-      answer:
-        "You can apply through our artist application form above. We review all applications and look for artists who are passionate about sustainable art and have a portfolio showcasing their work.",
+      question: t("contact.faq1Question"),
+      answer: t("contact.faq1Answer"),
     },
     {
-      question: "What materials do you provide to artists?",
-      answer:
-        "We provide cleaned and sorted recyclable materials including plastic bottles, cardboard, fabric scraps, and more. All materials are sanitized and ready for creative use.",
+      question: t("contact.faq2Question"),
+      answer: t("contact.faq2Answer"),
     },
     {
-      question: "How does the waste-to-discount program work?",
-      answer:
-        "Book a collection through our platform, and we will pick up your recyclable materials. You will receive discount codes based on the weight of materials contributed. The more you contribute, the bigger your discount on artwork purchases.",
+      question: t("contact.faq3Question"),
+      answer: t("contact.faq3Answer"),
     },
     {
-      question: "Do you ship internationally?",
-      answer:
-        "We are starting with local delivery in Rwanda and will expand to international shipping soon. Sign up to be notified when international shipping becomes available.",
+      question: t("contact.faq4Question"),
+      answer: t("contact.faq4Answer"),
     },
     {
-      question: "Can buyers contact artists directly?",
-      answer:
-        "No. RenewCanvas admins handle order, delivery, return, and payment communication. Buyers pay RenewCanvas Africa directly, and artists receive payouts through their private payout details after the 48-hour return request window.",
+      question: t("contact.faq5Question"),
+      answer: t("contact.faq5Answer"),
     },
   ];
 
@@ -637,13 +636,13 @@ function FAQSection() {
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
             <MessageSquare className="w-4 h-4" />
-            <span>FAQ</span>
+            <span>{t("contact.faqBadge")}</span>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Frequently Asked <span className="text-amber-500">Questions</span>
+            {t("contact.faqHeadingPrefix")} <span className="text-amber-500">{t("contact.faqHeadingHighlight")}</span>
           </h2>
           <p className="text-gray-600">
-            Quick answers to common questions about RenewCanvas Africa.
+            {t("contact.faqSubheading")}
           </p>
         </div>
 

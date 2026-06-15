@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { ArrowLeft, FileText, Calendar } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function TermsPage() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -21,7 +23,7 @@ export default function TermsPage() {
             className="inline-flex items-center gap-2 text-gray-600 hover:text-teal-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Home
+            {t("terms.backToHome")}
           </Link>
         </div>
       </header>
@@ -35,215 +37,179 @@ export default function TermsPage() {
               <FileText className="w-8 h-8 text-teal-600" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Terms and Conditions
+              {t("terms.pageTitle")}
             </h1>
             <div className="flex items-center justify-center gap-2 text-gray-500">
               <Calendar className="w-4 h-4" />
-              <span>Last Updated: May 1, 2026</span>
+              <span>{t("terms.lastUpdated", { date: "May 1, 2026" })}</span>
             </div>
           </div>
 
           {/* Content */}
           <div className="prose prose-gray max-w-none">
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              1. Introduction
+              {t("terms.section1Title")}
             </h2>
             <p className="text-gray-600 mb-4">
-              Welcome to RenewCanvas Africa (&quot;Platform&quot;, &quot;we&quot;, &quot;our&quot;, &quot;us&quot;). These Terms
-              and Conditions govern your use of our platform and services. By
-              accessing or using RenewCanvas Africa, you agree to be bound by
-              these terms.
+              {t("terms.section1Body1")}
             </p>
             <p className="text-gray-600 mb-4">
-              RenewCanvas Africa is a circular economy marketplace connecting
-              artists who create sustainable art from recycled materials with
-              buyers who appreciate eco-conscious art.
+              {t("terms.section1Body2")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              2. Definitions
+              {t("terms.section2Title")}
             </h2>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
               <li>
-                <strong>&quot;Artist&quot;</strong> refers to registered users who create
-                and sell artwork on the platform.
+                <strong>{t("terms.section2Term1")}</strong> {t("terms.section2Def1")}
               </li>
               <li>
-                <strong>&quot;Buyer&quot;</strong> refers to registered users who purchase
-                artwork through the platform.
+                <strong>{t("terms.section2Term2")}</strong> {t("terms.section2Def2")}
               </li>
               <li>
-                <strong>&quot;Artwork&quot;</strong> refers to any art piece created from
-                recycled or upcycled materials listed for sale on the platform.
+                <strong>{t("terms.section2Term3")}</strong> {t("terms.section2Def3")}
               </li>
               <li>
-                <strong>&quot;Services&quot;</strong> refers to all features and
-                functionalities provided by RenewCanvas Africa.
+                <strong>{t("terms.section2Term4")}</strong> {t("terms.section2Def4")}
               </li>
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              3. Account Registration
+              {t("terms.section3Title")}
             </h2>
             <p className="text-gray-600 mb-4">
-              To use our services, you must create an account. You agree to:
+              {t("terms.section3Body")}
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Provide accurate and complete information during registration</li>
-              <li>Maintain the security of your account credentials</li>
-              <li>Notify us immediately of any unauthorized access</li>
-              <li>Be at least 18 years old or have parental consent</li>
-              <li>Accept responsibility for all activities under your account</li>
+              <li>{t("terms.section3Item1")}</li>
+              <li>{t("terms.section3Item2")}</li>
+              <li>{t("terms.section3Item3")}</li>
+              <li>{t("terms.section3Item4")}</li>
+              <li>{t("terms.section3Item5")}</li>
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              4. Artist Responsibilities
+              {t("terms.section4Title")}
             </h2>
-            <p className="text-gray-600 mb-4">As an artist on RenewCanvas Africa, you agree to:</p>
+            <p className="text-gray-600 mb-4">{t("terms.section4Body")}</p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>
-                Create original artwork using recycled or upcycled materials
-              </li>
-              <li>
-                Accurately describe your artwork, including materials used and
-                dimensions
-              </li>
-              <li>
-                Provide truthful information about the environmental impact of
-                your materials
-              </li>
-              <li>Fulfill orders within the agreed timeframe</li>
-              <li>Package artwork safely for delivery</li>
-              <li>
-                Maintain the quality standards required by the platform
-              </li>
-              <li>Respond to buyer inquiries promptly</li>
+              <li>{t("terms.section4Item1")}</li>
+              <li>{t("terms.section4Item2")}</li>
+              <li>{t("terms.section4Item3")}</li>
+              <li>{t("terms.section4Item4")}</li>
+              <li>{t("terms.section4Item5")}</li>
+              <li>{t("terms.section4Item6")}</li>
+              <li>{t("terms.section4Item7")}</li>
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              5. Buyer Responsibilities
+              {t("terms.section5Title")}
             </h2>
-            <p className="text-gray-600 mb-4">As a buyer on RenewCanvas Africa, you agree to:</p>
+            <p className="text-gray-600 mb-4">{t("terms.section5Body")}</p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Provide accurate delivery information</li>
-              <li>Complete payment as agreed</li>
-              <li>Inspect artwork upon delivery and report issues promptly</li>
-              <li>Respect the intellectual property rights of artists</li>
+              <li>{t("terms.section5Item1")}</li>
+              <li>{t("terms.section5Item2")}</li>
+              <li>{t("terms.section5Item3")}</li>
+              <li>{t("terms.section5Item4")}</li>
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              6. Pricing and Payments
+              {t("terms.section6Title")}
             </h2>
             <p className="text-gray-600 mb-4">
-              All prices are displayed in Rwandan Francs (RWF). We accept the
-              following payment methods:
+              {t("terms.section6Body")}
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>MTN Mobile Money phone approval, with USSD fallback</li>
-              <li>Bank Transfer</li>
-              <li>Credit/Debit Cards (via Flutterwave)</li>
+              <li>{t("terms.section6Item1")}</li>
+              <li>{t("terms.section6Item2")}</li>
+              <li>{t("terms.section6Item3")}</li>
             </ul>
             <p className="text-gray-600 mb-4">
-              <strong>Commission Structure:</strong> RenewCanvas Africa retains
-              20% of each sale as a platform fee. Artists receive 80% of the sale
-              price.
+              <strong>{t("terms.section6CommissionLabel")}</strong> {t("terms.section6CommissionBody")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              7. Intellectual Property
+              {t("terms.section7Title")}
             </h2>
             <p className="text-gray-600 mb-4">
-              Artists retain full intellectual property rights to their artwork.
-              By listing artwork on our platform, artists grant RenewCanvas Africa
-              a non-exclusive license to display and promote their work.
+              {t("terms.section7Body")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              8. Content Guidelines
+              {t("terms.section8Title")}
             </h2>
-            <p className="text-gray-600 mb-4">All content on the platform must:</p>
+            <p className="text-gray-600 mb-4">{t("terms.section8Body")}</p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Be original or properly licensed</li>
-              <li>Not infringe on any third-party rights</li>
-              <li>Not contain offensive, harmful, or illegal content</li>
-              <li>Accurately represent the artwork being sold</li>
+              <li>{t("terms.section8Item1")}</li>
+              <li>{t("terms.section8Item2")}</li>
+              <li>{t("terms.section8Item3")}</li>
+              <li>{t("terms.section8Item4")}</li>
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              9. Shipping and Delivery
+              {t("terms.section9Title")}
             </h2>
             <p className="text-gray-600 mb-4">
-              Artists are responsible for shipping arrangements unless otherwise
-              specified. Delivery times may vary based on location. RenewCanvas
-              Africa is not responsible for shipping delays caused by third-party
-              carriers.
+              {t("terms.section9Body")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              10. Dispute Resolution
+              {t("terms.section10Title")}
             </h2>
             <p className="text-gray-600 mb-4">
-              In case of disputes between buyers and artists, RenewCanvas Africa
-              will facilitate communication and may mediate to reach a fair
-              resolution. Our decision in such matters shall be final.
+              {t("terms.section10Body")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              11. Limitation of Liability
+              {t("terms.section11Title")}
             </h2>
             <p className="text-gray-600 mb-4">
-              RenewCanvas Africa acts as an intermediary between artists and
-              buyers. We are not liable for:
+              {t("terms.section11Body")}
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Quality or authenticity of artwork</li>
-              <li>Accuracy of environmental impact claims</li>
-              <li>Shipping damages or losses</li>
-              <li>Indirect or consequential damages</li>
+              <li>{t("terms.section11Item1")}</li>
+              <li>{t("terms.section11Item2")}</li>
+              <li>{t("terms.section11Item3")}</li>
+              <li>{t("terms.section11Item4")}</li>
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              12. Account Termination
+              {t("terms.section12Title")}
             </h2>
             <p className="text-gray-600 mb-4">
-              We reserve the right to suspend or terminate accounts that violate
-              these terms, engage in fraudulent activity, or harm the platform
-              community.
+              {t("terms.section12Body")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              13. Changes to Terms
+              {t("terms.section13Title")}
             </h2>
             <p className="text-gray-600 mb-4">
-              We may update these terms periodically. Users will be notified of
-              significant changes. Continued use of the platform after changes
-              constitutes acceptance of the new terms.
+              {t("terms.section13Body")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              14. Governing Law
+              {t("terms.section14Title")}
             </h2>
             <p className="text-gray-600 mb-4">
-              These terms are governed by the laws of the Republic of Rwanda. Any
-              disputes shall be subject to the exclusive jurisdiction of Rwandan
-              courts.
+              {t("terms.section14Body")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              15. Contact Us
+              {t("terms.section15Title")}
             </h2>
             <p className="text-gray-600 mb-4">
-              For questions about these Terms and Conditions, please contact us:
+              {t("terms.section15Body")}
             </p>
             <ul className="list-none text-gray-600 space-y-2 mb-4">
               <li>
-                <strong>Email:</strong> hello.renewcanvas@gmail.com
+                <strong>{t("terms.section15EmailLabel")}</strong> hello.renewcanvas@gmail.com
               </li>
               <li>
-                <strong>Phone:</strong> +250 788 000 000
+                <strong>{t("terms.section15PhoneLabel")}</strong> +250 788 000 000
               </li>
               <li>
-                <strong>Address:</strong> Kigali Innovation City, Kigali, Rwanda
+                <strong>{t("terms.section15AddressLabel")}</strong> {t("terms.section15AddressValue")}
               </li>
             </ul>
           </div>
@@ -255,21 +221,21 @@ export default function TermsPage() {
                 href="/privacy"
                 className="text-teal-600 hover:text-teal-700 font-medium"
               >
-                Privacy Policy
+                {t("terms.footerPrivacy")}
               </Link>
               <span className="text-gray-300">|</span>
               <Link
                 href="/refund-policy"
                 className="text-teal-600 hover:text-teal-700 font-medium"
               >
-                Refund Policy
+                {t("terms.footerRefund")}
               </Link>
               <span className="text-gray-300">|</span>
               <Link
                 href="/contact"
                 className="text-teal-600 hover:text-teal-700 font-medium"
               >
-                Contact Us
+                {t("terms.footerContact")}
               </Link>
             </div>
           </div>

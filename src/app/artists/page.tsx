@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import { useTranslation } from "react-i18next";
 
 export default function ArtistsPage() {
 
@@ -42,6 +43,7 @@ export default function ArtistsPage() {
    HERO SECTION
    ============================================ */
 function HeroSection() {
+  const { t } = useTranslation();
   return (
     <section className="relative pt-32 pb-20 overflow-hidden">
       {/* Background */}
@@ -55,25 +57,25 @@ function HeroSection() {
         <div className="text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-6">
             <Palette className="w-4 h-4" />
-            <span>For Artists</span>
+            <span>{t("artists.heroLabel")}</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight mb-6">
-            Turn Your <span className="text-amber-500">Talent</span> Into{" "}
-            <span className="text-teal-600">Impact</span>
+            {t("artists.heroHeadingPart1")}{" "}
+            <span className="text-amber-500">{t("artists.heroHeadingTalent")}</span>{" "}
+            {t("artists.heroHeadingInto")}{" "}
+            <span className="text-teal-600">{t("artists.heroHeadingImpact")}</span>
           </h1>
 
           <p className="text-lg text-gray-600 mb-8">
-            Join RenewCanvas Africa as an artist and create stunning artwork
-            from recycled materials. Earn fair income while making a real
-            environmental difference.
+            {t("artists.heroSubheading")}
           </p>
 
           <a
             href="/register?role=artist"
             className="inline-flex items-center gap-2 px-6 py-3 text-white bg-amber-500 rounded-lg hover:bg-white hover:text-amber-600 border border-transparent hover:border-amber-500 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-105"
           >
-            Apply as Artist
+            {t("artists.applyAsArtist")}
             <ArrowRight className="w-5 h-5" />
           </a>
         </div>
@@ -86,28 +88,26 @@ function HeroSection() {
    WHY JOIN SECTION
    ============================================ */
 function WhyJoinSection() {
+  const { t } = useTranslation();
   const benefits = [
     {
       icon: Package,
-      title: "Quality Materials Provided",
-      description:
-        "Receive cleaned, sorted recyclable materials ready for your creative process. No need to source your own.",
+      title: t("artists.benefitMaterialsTitle"),
+      description: t("artists.benefitMaterialsDescription"),
       color: "teal",
       comingSoon: false,
     },
     {
       icon: DollarSign,
-      title: "Fair Earnings",
-      description:
-        "We believe artists deserve to be fairly compensated for their work.",
+      title: t("artists.benefitEarningsTitle"),
+      description: t("artists.benefitEarningsDescription"),
       color: "green",
       comingSoon: false,
     },
     {
       icon: Eye,
-      title: "Visibility",
-      description:
-        "Get featured on our platform with a professional profile. Reach buyers who value sustainable art.",
+      title: t("artists.benefitVisibilityTitle"),
+      description: t("artists.benefitVisibilityDescription"),
       color: "blue",
       comingSoon: false,
     },
@@ -128,15 +128,14 @@ function WhyJoinSection() {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-amber-600 font-semibold text-sm uppercase tracking-wider">
-            Why Join Us
+            {t("artists.whyJoinLabel")}
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2 mb-4">
-            Benefits of Being a{" "}
-            <span className="text-amber-500">RenewCanvas Artist</span>
+            {t("artists.whyJoinHeadingPart1")}{" "}
+            <span className="text-amber-500">{t("artists.whyJoinHeadingHighlight")}</span>
           </h2>
           <p className="text-gray-600">
-            We provide everything you need to turn your talent into sustainable
-            income while making a real environmental impact.
+            {t("artists.whyJoinSubheading")}
           </p>
         </div>
 
@@ -151,7 +150,7 @@ function WhyJoinSection() {
               >
                 {benefit.comingSoon && (
                   <span className="absolute top-4 right-4 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
-                    Coming Soon
+                    {t("artists.comingSoon")}
                   </span>
                 )}
                 <div
@@ -176,30 +175,27 @@ function WhyJoinSection() {
    HOW TO JOIN SECTION
    ============================================ */
 function HowToJoinSection() {
+  const { t } = useTranslation();
   const steps = [
     {
       number: "01",
-      title: "Apply Online",
-      description:
-        "Fill out our artist application form with your details, portfolio samples, and artistic background.",
+      title: t("artists.step1Title"),
+      description: t("artists.step1Description"),
     },
     {
       number: "02",
-      title: "Portfolio Review",
-      description:
-        "Our team reviews your work to ensure quality standards and alignment with our sustainable art mission.",
+      title: t("artists.step2Title"),
+      description: t("artists.step2Description"),
     },
     {
       number: "03",
-      title: "Onboarding",
-      description:
-        "Once approved, you will receive an orientation on our platform, materials handling, and impact tracking.",
+      title: t("artists.step3Title"),
+      description: t("artists.step3Description"),
     },
     {
       number: "04",
-      title: "Start Creating",
-      description:
-        "Receive your first batch of materials and begin creating unique, impact-verified artwork for our marketplace.",
+      title: t("artists.step4Title"),
+      description: t("artists.step4Description"),
     },
   ];
 
@@ -210,15 +206,14 @@ function HowToJoinSection() {
           {/* Content */}
           <div>
             <span className="text-teal-600 font-semibold text-sm uppercase tracking-wider">
-              How to Join
+              {t("artists.howToJoinLabel")}
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2 mb-6">
-              Become a <span className="text-teal-600">RenewCanvas Artist</span>
+              {t("artists.howToJoinHeadingPart1")}{" "}
+              <span className="text-teal-600">{t("artists.howToJoinHeadingHighlight")}</span>
             </h2>
             <p className="text-gray-600 mb-8">
-              Joining our platform is simple. We are looking for talented
-              artists who are passionate about sustainability and creating
-              unique artwork from recycled materials.
+              {t("artists.howToJoinSubheading")}
             </p>
 
             <div className="space-y-6">
@@ -244,7 +239,7 @@ function HowToJoinSection() {
                 href="/register?role=artist"
                 className="inline-flex items-center gap-2 px-6 py-3 text-white bg-teal-600 rounded-lg hover:bg-white hover:text-teal-600 border border-transparent hover:border-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-105"
               >
-                Apply Now
+                {t("artists.applyNow")}
                 <ArrowRight className="w-5 h-5" />
               </a>
             </div>
@@ -255,7 +250,7 @@ function HowToJoinSection() {
             <div className="group aspect-square rounded-xl overflow-hidden shadow-xl cursor-pointer transition-shadow duration-300 hover:shadow-2xl">
               <img
                 src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&q=80"
-                alt="Artist at work"
+                alt={t("artists.artistAtWorkAlt")}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               {/* Teal hue overlay */}
@@ -274,8 +269,8 @@ function HowToJoinSection() {
                     <Palette className="w-6 h-6 text-teal-600" />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">Create with Purpose</p>
-                    <p className="text-sm text-gray-600">Turn your passion into impact</p>
+                    <p className="font-semibold text-gray-900">{t("artists.createWithPurpose")}</p>
+                    <p className="text-sm text-gray-600">{t("artists.createWithPurposeSubtitle")}</p>
                   </div>
                 </div>
               </div>
@@ -292,28 +287,27 @@ function HowToJoinSection() {
    CTA SECTION
    ============================================ */
 function CTASection() {
+  const { t } = useTranslation();
   const requirements = [
-    "Portfolio of previous artwork (any medium)",
-    "Based in Rwanda or willing to work with us remotely",
-    "Commitment to sustainable art practices",
-    "Willingness to learn upcycling techniques",
+    t("artists.requirementPortfolio"),
+    t("artists.requirementLocation"),
+    t("artists.requirementCommitment"),
+    t("artists.requirementWillingness"),
   ];
 
   return (
     <section className="py-20 bg-gradient-to-br from-teal-600 to-teal-800 text-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-          Ready to Create with Impact?
+          {t("artists.ctaHeading")}
         </h2>
         <p className="text-lg text-teal-100 mb-8 max-w-2xl mx-auto">
-          Join our growing community of artists who are turning waste into
-          wonder. We are actively seeking talented creators to be part of the
-          RenewCanvas movement.
+          {t("artists.ctaSubheading")}
         </p>
 
         {/* Requirements */}
         <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-8 max-w-xl mx-auto">
-          <h3 className="font-semibold mb-4">What We Look For:</h3>
+          <h3 className="font-semibold mb-4">{t("artists.whatWeLookFor")}</h3>
           <ul className="space-y-3 text-left">
             {requirements.map((req, index) => (
               <li key={index} className="flex items-start gap-3">
@@ -329,14 +323,14 @@ function CTASection() {
             href="/register?role=artist"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 text-teal-700 bg-white rounded-lg group-hover:bg-teal-600 group-hover:text-white group-hover:border-white border border-transparent [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium text-lg group-hover:scale-105"
           >
-            Apply as Artist
+            {t("artists.applyAsArtist")}
             <ArrowRight className="w-5 h-5" />
           </a>
           <a
             href="/contact"
             className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white border-2 border-white/50 rounded-lg group-hover:bg-white group-hover:text-teal-700 group-hover:border-white [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium text-lg group-hover:scale-105"
           >
-            Have Questions?
+            {t("artists.haveQuestions")}
           </a>
         </div>
       </div>

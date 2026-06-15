@@ -22,6 +22,7 @@ import {
   Star,
 } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 // Mock artist data
 const artistData = {
@@ -127,6 +128,7 @@ const artistData = {
 
 export default function ArtistProfilePage() {
   const params = useParams();
+  const { t } = useTranslation();
   const artist = artistData;
 
   return (
@@ -169,7 +171,7 @@ export default function ArtistProfilePage() {
                       {artist.isVerified && (
                         <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full">
                           <CheckCircle className="w-4 h-4" />
-                          <span className="text-xs font-medium">Verified</span>
+                          <span className="text-xs font-medium">{t("artistDetail.verified")}</span>
                         </div>
                       )}
                     </div>
@@ -180,7 +182,7 @@ export default function ArtistProfilePage() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        Joined {artist.joinedAt}
+                        {t("artistDetail.joined", { date: artist.joinedAt })}
                       </span>
                     </div>
                   </div>
@@ -194,7 +196,7 @@ export default function ArtistProfilePage() {
                     </button>
                     <button className="px-5 py-2.5 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors flex items-center gap-2">
                       <Mail className="w-4 h-4" />
-                      Contact
+                      {t("artistDetail.contact")}
                     </button>
                   </div>
                 </div>
@@ -205,31 +207,31 @@ export default function ArtistProfilePage() {
                     <p className="text-2xl font-bold text-gray-900">
                       {artist.stats.artworks}
                     </p>
-                    <p className="text-sm text-gray-500">Artworks</p>
+                    <p className="text-sm text-gray-500">{t("artistDetail.statArtworks")}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-gray-900">
                       {artist.stats.sales}
                     </p>
-                    <p className="text-sm text-gray-500">Sales</p>
+                    <p className="text-sm text-gray-500">{t("artistDetail.statSales")}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-gray-900">
                       {(artist.stats.views / 1000).toFixed(1)}k
                     </p>
-                    <p className="text-sm text-gray-500">Views</p>
+                    <p className="text-sm text-gray-500">{t("artistDetail.statViews")}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-gray-900">
                       {artist.stats.followers}
                     </p>
-                    <p className="text-sm text-gray-500">Followers</p>
+                    <p className="text-sm text-gray-500">{t("artistDetail.statFollowers")}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-green-600">
                       {artist.stats.kgDiverted}
                     </p>
-                    <p className="text-sm text-gray-500">kg Diverted</p>
+                    <p className="text-sm text-gray-500">{t("artistDetail.statKgDiverted")}</p>
                   </div>
                 </div>
               </div>
@@ -242,13 +244,13 @@ export default function ArtistProfilePage() {
           <div className="lg:col-span-2 space-y-8">
             {/* About */}
             <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">About</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("artistDetail.about")}</h2>
               <p className="text-gray-600 leading-relaxed">{artist.bio}</p>
 
               {/* Specialties */}
               <div className="mt-6">
                 <h3 className="text-sm font-medium text-gray-500 mb-2">
-                  Specialties
+                  {t("artistDetail.specialties")}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {artist.specialties.map((specialty) => (
@@ -265,7 +267,7 @@ export default function ArtistProfilePage() {
               {/* Materials */}
               <div className="mt-4">
                 <h3 className="text-sm font-medium text-gray-500 mb-2">
-                  Preferred Materials
+                  {t("artistDetail.preferredMaterials")}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {artist.preferredMaterials.map((material) => (
@@ -284,12 +286,12 @@ export default function ArtistProfilePage() {
             {/* Artworks */}
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">Artworks</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{t("artistDetail.artworks")}</h2>
                 <Link
                   href={`/marketplace?artist=${artist.id}`}
                   className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
                 >
-                  View All
+                  {t("artistDetail.viewAll")}
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -334,12 +336,12 @@ export default function ArtistProfilePage() {
             {/* Reviews */}
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">Reviews</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{t("artistDetail.reviews")}</h2>
                 <div className="flex items-center gap-1">
                   <Star className="w-5 h-5 text-amber-400 fill-current" />
                   <span className="font-semibold text-gray-900">4.8</span>
                   <span className="text-gray-500">
-                    ({artist.reviews.length} reviews)
+                    {t("artistDetail.reviewCount", { count: artist.reviews.length })}
                   </span>
                 </div>
               </div>
@@ -388,22 +390,22 @@ export default function ArtistProfilePage() {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900">
-                    Environmental Impact
+                    {t("artistDetail.environmentalImpact")}
                   </p>
-                  <p className="text-sm text-gray-600">Total waste diverted</p>
+                  <p className="text-sm text-gray-600">{t("artistDetail.totalWasteDiverted")}</p>
                 </div>
               </div>
               <p className="text-4xl font-bold text-green-600 mb-1">
                 {artist.stats.kgDiverted} kg
               </p>
               <p className="text-sm text-gray-600">
-                Equivalent to saving {Math.round(artist.stats.kgDiverted * 2.5)} kg of CO₂
+                {t("artistDetail.co2Equivalent", { kg: Math.round(artist.stats.kgDiverted * 2.5) })}
               </p>
             </div>
 
             {/* Social Links */}
             <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h3 className="font-semibold text-gray-900 mb-4">Connect</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">{t("artistDetail.connect")}</h3>
               <div className="space-y-3">
                 {artist.social.instagram && (
                   <a
@@ -443,27 +445,27 @@ export default function ArtistProfilePage() {
 
             {/* Achievements */}
             <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h3 className="font-semibold text-gray-900 mb-4">Achievements</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">{t("artistDetail.achievements")}</h3>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg">
                   <Award className="w-5 h-5 text-amber-600" />
                   <div>
-                    <p className="font-medium text-gray-900">Top Seller</p>
-                    <p className="text-xs text-gray-500">April 2026</p>
+                    <p className="font-medium text-gray-900">{t("artistDetail.topSeller")}</p>
+                    <p className="text-xs text-gray-500">{t("artistDetail.topSellerDate")}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                   <Recycle className="w-5 h-5 text-green-600" />
                   <div>
-                    <p className="font-medium text-gray-900">Eco Champion</p>
-                    <p className="text-xs text-gray-500">25+ kg diverted</p>
+                    <p className="font-medium text-gray-900">{t("artistDetail.ecoChampion")}</p>
+                    <p className="text-xs text-gray-500">{t("artistDetail.ecoChampionDesc")}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
                   <CheckCircle className="w-5 h-5 text-purple-600" />
                   <div>
-                    <p className="font-medium text-gray-900">Verified Artist</p>
-                    <p className="text-xs text-gray-500">Identity confirmed</p>
+                    <p className="font-medium text-gray-900">{t("artistDetail.verifiedArtist")}</p>
+                    <p className="text-xs text-gray-500">{t("artistDetail.verifiedArtistDesc")}</p>
                   </div>
                 </div>
               </div>

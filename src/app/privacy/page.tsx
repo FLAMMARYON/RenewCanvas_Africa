@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { ArrowLeft, Shield, Calendar } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function PrivacyPage() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -21,7 +23,7 @@ export default function PrivacyPage() {
             className="inline-flex items-center gap-2 text-gray-600 hover:text-teal-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Home
+            {t("privacy.backToHome")}
           </Link>
         </div>
       </header>
@@ -35,276 +37,237 @@ export default function PrivacyPage() {
               <Shield className="w-8 h-8 text-blue-600" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Privacy Policy
+              {t("privacy.pageTitle")}
             </h1>
             <div className="flex items-center justify-center gap-2 text-gray-500">
               <Calendar className="w-4 h-4" />
-              <span>Last Updated: May 1, 2026</span>
+              <span>{t("privacy.lastUpdated", { date: "May 1, 2026" })}</span>
             </div>
           </div>
 
           {/* Content */}
           <div className="prose prose-gray max-w-none">
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              1. Introduction
+              {t("privacy.section1Heading")}
             </h2>
             <p className="text-gray-600 mb-4">
-              RenewCanvas Africa (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is committed to protecting your
-              privacy. This Privacy Policy explains how we collect, use,
-              disclose, and safeguard your information when you use our platform
-              and services.
+              {t("privacy.section1Para1")}
             </p>
             <p className="text-gray-600 mb-4">
-              By using RenewCanvas Africa, you consent to the data practices
-              described in this policy.
+              {t("privacy.section1Para2")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              2. Information We Collect
+              {t("privacy.section2Heading")}
             </h2>
             <h3 className="text-lg font-medium text-gray-800 mt-6 mb-3">
-              2.1 Personal Information
+              {t("privacy.section2_1Heading")}
             </h3>
             <p className="text-gray-600 mb-4">
-              We collect information you provide directly, including:
+              {t("privacy.section2_1Intro")}
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Name and contact information (email, phone number, address)</li>
-              <li>Account credentials (username, password)</li>
-              <li>Payment information (processed securely through payment providers)</li>
-              <li>Profile information (bio, profile photo, social media links)</li>
-              <li>Identification documents (for artist verification)</li>
+              <li>{t("privacy.section2_1Item1")}</li>
+              <li>{t("privacy.section2_1Item2")}</li>
+              <li>{t("privacy.section2_1Item3")}</li>
+              <li>{t("privacy.section2_1Item4")}</li>
+              <li>{t("privacy.section2_1Item5")}</li>
             </ul>
 
             <h3 className="text-lg font-medium text-gray-800 mt-6 mb-3">
-              2.2 Artwork Information
+              {t("privacy.section2_2Heading")}
             </h3>
-            <p className="text-gray-600 mb-4">For artists, we collect:</p>
+            <p className="text-gray-600 mb-4">{t("privacy.section2_2Intro")}</p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Artwork descriptions, images, and pricing</li>
-              <li>Materials used and environmental impact data</li>
-              <li>Sales history and earnings</li>
+              <li>{t("privacy.section2_2Item1")}</li>
+              <li>{t("privacy.section2_2Item2")}</li>
+              <li>{t("privacy.section2_2Item3")}</li>
             </ul>
 
             <h3 className="text-lg font-medium text-gray-800 mt-6 mb-3">
-              2.3 Automatically Collected Information
+              {t("privacy.section2_3Heading")}
             </h3>
             <p className="text-gray-600 mb-4">
-              We automatically collect certain information when you visit our
-              platform:
+              {t("privacy.section2_3Intro")}
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Device information (type, operating system, browser)</li>
-              <li>IP address and location data</li>
-              <li>Usage patterns and browsing behavior</li>
-              <li>Cookies and similar tracking technologies</li>
+              <li>{t("privacy.section2_3Item1")}</li>
+              <li>{t("privacy.section2_3Item2")}</li>
+              <li>{t("privacy.section2_3Item3")}</li>
+              <li>{t("privacy.section2_3Item4")}</li>
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              3. How We Use Your Information
+              {t("privacy.section3Heading")}
             </h2>
             <p className="text-gray-600 mb-4">
-              We use the collected information for:
+              {t("privacy.section3Intro")}
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Providing and maintaining our services</li>
-              <li>Processing transactions and payments</li>
-              <li>Verifying artist identities and artwork authenticity</li>
-              <li>Calculating and displaying environmental impact metrics</li>
-              <li>Communicating with you about orders, updates, and promotions</li>
-              <li>Improving our platform and user experience</li>
-              <li>Preventing fraud and ensuring security</li>
-              <li>Complying with legal obligations</li>
+              <li>{t("privacy.section3Item1")}</li>
+              <li>{t("privacy.section3Item2")}</li>
+              <li>{t("privacy.section3Item3")}</li>
+              <li>{t("privacy.section3Item4")}</li>
+              <li>{t("privacy.section3Item5")}</li>
+              <li>{t("privacy.section3Item6")}</li>
+              <li>{t("privacy.section3Item7")}</li>
+              <li>{t("privacy.section3Item8")}</li>
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              4. Information Sharing
+              {t("privacy.section4Heading")}
             </h2>
-            <p className="text-gray-600 mb-4">We may share your information with:</p>
+            <p className="text-gray-600 mb-4">{t("privacy.section4Intro")}</p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
               <li>
-                <strong>Other Users:</strong> Artists and buyers can see each
-                other's relevant information to facilitate transactions
+                <strong>{t("privacy.section4Item1Label")}</strong>{" "}
+                {t("privacy.section4Item1Text")}
               </li>
               <li>
-                <strong>Service Providers:</strong> Third parties who help us
-                operate our platform (payment processors, hosting services)
+                <strong>{t("privacy.section4Item2Label")}</strong>{" "}
+                {t("privacy.section4Item2Text")}
               </li>
               <li>
-                <strong>Legal Authorities:</strong> When required by law or to
-                protect our rights
+                <strong>{t("privacy.section4Item3Label")}</strong>{" "}
+                {t("privacy.section4Item3Text")}
               </li>
               <li>
-                <strong>Business Transfers:</strong> In case of merger,
-                acquisition, or sale of assets
+                <strong>{t("privacy.section4Item4Label")}</strong>{" "}
+                {t("privacy.section4Item4Text")}
               </li>
             </ul>
             <p className="text-gray-600 mb-4">
-              We do not sell your personal information to third parties.
+              {t("privacy.section4Outro")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              5. Data Security
+              {t("privacy.section5Heading")}
             </h2>
             <p className="text-gray-600 mb-4">
-              We implement appropriate technical and organizational security
-              measures to protect your information, including:
+              {t("privacy.section5Intro")}
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Encryption of data in transit and at rest</li>
-              <li>Secure authentication mechanisms</li>
-              <li>Regular security audits and updates</li>
-              <li>Access controls and employee training</li>
+              <li>{t("privacy.section5Item1")}</li>
+              <li>{t("privacy.section5Item2")}</li>
+              <li>{t("privacy.section5Item3")}</li>
+              <li>{t("privacy.section5Item4")}</li>
             </ul>
             <p className="text-gray-600 mb-4">
-              However, no method of transmission over the internet is 100%
-              secure. We cannot guarantee absolute security.
+              {t("privacy.section5Outro")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              6. Cookies and Tracking
+              {t("privacy.section6Heading")}
             </h2>
             <p className="text-gray-600 mb-4">
-              We use cookies and similar technologies to:
+              {t("privacy.section6Intro")}
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Remember your preferences and login status</li>
-              <li>Analyze platform usage and performance</li>
-              <li>Personalize content and recommendations</li>
-              <li>Provide social media features</li>
+              <li>{t("privacy.section6Item1")}</li>
+              <li>{t("privacy.section6Item2")}</li>
+              <li>{t("privacy.section6Item3")}</li>
+              <li>{t("privacy.section6Item4")}</li>
             </ul>
             <p className="text-gray-600 mb-4">
-              You can control cookies through your browser settings, but some
-              features may not function properly without them.
+              {t("privacy.section6Outro")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              7. Your Rights
+              {t("privacy.section7Heading")}
             </h2>
-            <p className="text-gray-600 mb-4">You have the right to:</p>
+            <p className="text-gray-600 mb-4">{t("privacy.section7Intro")}</p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Access your personal information</li>
-              <li>Correct inaccurate or incomplete data</li>
-              <li>Request deletion of your data</li>
-              <li>Object to certain processing activities</li>
-              <li>Data portability (receive your data in a usable format)</li>
-              <li>Withdraw consent at any time</li>
+              <li>{t("privacy.section7Item1")}</li>
+              <li>{t("privacy.section7Item2")}</li>
+              <li>{t("privacy.section7Item3")}</li>
+              <li>{t("privacy.section7Item4")}</li>
+              <li>{t("privacy.section7Item5")}</li>
+              <li>{t("privacy.section7Item6")}</li>
             </ul>
             <p className="text-gray-600 mb-4">
-              To exercise these rights, contact us at hello.renewcanvas@gmail.com.
+              {t("privacy.section7Outro", { email: "hello.renewcanvas@gmail.com" })}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              8. Data Retention
+              {t("privacy.section8Heading")}
             </h2>
             <p className="text-gray-600 mb-4">
-              We retain your information for as long as necessary to provide our
-              services and fulfill the purposes described in this policy. After
-              account deletion:
+              {t("privacy.section8Intro")}
             </p>
             <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-4">
-              <li>Personal data is deleted within 30 days</li>
+              <li>{t("privacy.section8Item1")}</li>
               <li>
-                Transaction records may be retained for legal and accounting
-                purposes (up to 7 years)
+                {t("privacy.section8Item2")}
               </li>
-              <li>Anonymized data may be retained for analytics</li>
+              <li>{t("privacy.section8Item3")}</li>
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              9. Children&apos;s Privacy
+              {t("privacy.section9Heading")}
             </h2>
             <p className="text-gray-600 mb-4">
-              Our platform is not intended for children under 18 years of age. We
-              do not knowingly collect personal information from children. If you
-              believe we have collected data from a minor, please contact us
-              immediately.
+              {t("privacy.section9Para1")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              10. International Data Transfers
+              {t("privacy.section10Heading")}
             </h2>
             <p className="text-gray-600 mb-4">
-              Your information may be transferred to and processed in countries
-              other than Rwanda. We ensure appropriate safeguards are in place to
-              protect your data in accordance with applicable laws.
+              {t("privacy.section10Para1")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              11. Third-Party Links
+              {t("privacy.section11Heading")}
             </h2>
             <p className="text-gray-600 mb-4">
-              Our platform may contain links to third-party websites. We are not
-              responsible for their privacy practices. We encourage you to review
-              their privacy policies before providing any information.
+              {t("privacy.section11Para1")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              12. User-Generated Content
+              {t("privacy.section12Heading")}
             </h2>
             <p className="text-gray-600 mb-4">
-              Artists and users may submit content to the platform, including
-              artwork images, profile details, descriptions, and messages
-              (&quot;User Content&quot;). You are responsible for the content you
-              submit and confirm you have the rights to share it. By submitting
-              User Content you grant RenewCanvas Africa a non-exclusive licence to
-              display, reproduce, and promote it for the operation and marketing of
-              the marketplace.
+              {t("privacy.section12Para1")}
             </p>
             <p className="text-gray-600 mb-4">
-              We may review, moderate, or remove content that is unlawful,
-              infringing, or violates our terms. To report content or request
-              removal, contact us at hello.renewcanvas@gmail.com.
+              {t("privacy.section12Para2", { email: "hello.renewcanvas@gmail.com" })}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              13. California Privacy Rights (CCPA / CPRA)
+              {t("privacy.section13Heading")}
             </h2>
             <p className="text-gray-600 mb-4">
-              If you are a California resident, you have the right to know what
-              personal information we collect and how we use it, to request access
-              to or deletion of your personal information, to correct inaccurate
-              information, and to not be discriminated against for exercising these
-              rights.
+              {t("privacy.section13Para1")}
             </p>
             <p className="text-gray-600 mb-4">
-              We do <strong>not</strong> sell your personal information, and we do
-              not &quot;share&quot; it for cross-context behavioural advertising as
-              those terms are defined under the CPRA. To exercise your California
-              rights, email hello.renewcanvas@gmail.com with the subject
-              &quot;California Privacy Request&quot;. We will verify your request
-              before acting on it.
+              {t("privacy.section13Para2", { email: "hello.renewcanvas@gmail.com" })}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              14. Changes to This Policy
+              {t("privacy.section14Heading")}
             </h2>
             <p className="text-gray-600 mb-4">
-              We may update this Privacy Policy periodically. We will notify you
-              of significant changes via email or platform notification. Your
-              continued use of the platform after changes constitutes acceptance
-              of the updated policy.
+              {t("privacy.section14Para1")}
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-              15. Contact Us
+              {t("privacy.section15Heading")}
             </h2>
             <p className="text-gray-600 mb-4">
-              For questions or concerns about this Privacy Policy or our data
-              practices, please contact:
+              {t("privacy.section15Intro")}
             </p>
             <ul className="list-none text-gray-600 space-y-2 mb-4">
               <li>
-                <strong>Data Protection Officer:</strong> hello.renewcanvas@gmail.com
+                <strong>{t("privacy.section15DpoLabel")}</strong> hello.renewcanvas@gmail.com
               </li>
               <li>
-                <strong>General Inquiries:</strong> hello.renewcanvas@gmail.com
+                <strong>{t("privacy.section15GeneralLabel")}</strong> hello.renewcanvas@gmail.com
               </li>
               <li>
-                <strong>Phone:</strong> +250 788 000 000
+                <strong>{t("privacy.section15PhoneLabel")}</strong> +250 788 000 000
               </li>
               <li>
-                <strong>Address:</strong> Kigali Innovation City, Kigali, Rwanda
+                <strong>{t("privacy.section15AddressLabel")}</strong> {t("privacy.section15AddressValue")}
               </li>
             </ul>
           </div>
@@ -316,21 +279,21 @@ export default function PrivacyPage() {
                 href="/terms"
                 className="text-teal-600 hover:text-teal-700 font-medium"
               >
-                Terms and Conditions
+                {t("privacy.footerTerms")}
               </Link>
               <span className="text-gray-300">|</span>
               <Link
                 href="/refund-policy"
                 className="text-teal-600 hover:text-teal-700 font-medium"
               >
-                Refund Policy
+                {t("privacy.footerRefund")}
               </Link>
               <span className="text-gray-300">|</span>
               <Link
                 href="/contact"
                 className="text-teal-600 hover:text-teal-700 font-medium"
               >
-                Contact Us
+                {t("privacy.footerContact")}
               </Link>
             </div>
           </div>

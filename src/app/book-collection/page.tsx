@@ -19,6 +19,7 @@ import {
   Info,
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 
@@ -54,6 +55,7 @@ export default function BookCollectionPage() {
    HERO SECTION
    ============================================ */
 function HeroSection() {
+  const { t } = useTranslation();
   return (
     <section className="relative pt-32 pb-20 overflow-hidden">
       {/* Background */}
@@ -90,16 +92,15 @@ function HeroSection() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-6">
             <Truck className="w-4 h-4" />
-            Waste Collection Service
+            {t("bookCollection.heroBadge")}
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
-            Book a <span className="text-amber-500">Collection</span>
+            {t("bookCollection.heroTitlePrefix")} <span className="text-amber-500">{t("bookCollection.heroTitleHighlight")}</span>
           </h1>
 
           <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Contribute your recyclable materials and earn discounts on artwork purchases.
-            Your waste becomes the canvas for beautiful, sustainable art.
+            {t("bookCollection.heroSubheading")}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -107,7 +108,7 @@ function HeroSection() {
               href="#collection-form"
               className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-105 shadow-lg shadow-amber-500/30"
             >
-              Schedule Pickup
+              {t("bookCollection.heroSchedulePickup")}
               <ArrowRight className="w-5 h-5" />
             </a>
             <a
@@ -115,7 +116,7 @@ function HeroSection() {
               className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl font-medium hover:border-teal-500 hover:text-teal-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)]"
             >
               <Package className="w-5 h-5" />
-              What We Accept
+              {t("bookCollection.heroWhatWeAccept")}
             </a>
           </div>
         </div>
@@ -128,29 +129,30 @@ function HeroSection() {
    HOW IT WORKS SECTION
    ============================================ */
 function HowItWorksSection() {
+  const { t } = useTranslation();
   const steps = [
     {
       number: "01",
-      title: "Fill the Form",
-      description: "Complete the collection request form with your details and material information.",
+      title: t("bookCollection.step1Title"),
+      description: t("bookCollection.step1Description"),
       icon: MessageSquare,
     },
     {
       number: "02",
-      title: "Schedule Pickup",
-      description: "Choose a convenient date and time for our team to collect your materials.",
+      title: t("bookCollection.step2Title"),
+      description: t("bookCollection.step2Description"),
       icon: Calendar,
     },
     {
       number: "03",
-      title: "We Collect",
-      description: "Our team arrives at your location to pick up the recyclable materials.",
+      title: t("bookCollection.step3Title"),
+      description: t("bookCollection.step3Description"),
       icon: Truck,
     },
     {
       number: "04",
-      title: "Earn Rewards",
-      description: "Receive discount codes based on the weight and type of materials contributed.",
+      title: t("bookCollection.step4Title"),
+      description: t("bookCollection.step4Description"),
       icon: Gift,
     },
   ];
@@ -160,10 +162,10 @@ function HowItWorksSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            How Collection <span className="text-teal-600">Works</span>
+            {t("bookCollection.howItWorksTitlePrefix")} <span className="text-teal-600">{t("bookCollection.howItWorksTitleHighlight")}</span>
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            A simple 4-step process to contribute your recyclables and earn rewards.
+            {t("bookCollection.howItWorksSubheading")}
           </p>
         </div>
 
@@ -202,17 +204,18 @@ function HowItWorksSection() {
    COLLECTION FORM SECTION
    ============================================ */
 function CollectionFormSection() {
+  const { t } = useTranslation();
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const materials = [
-    { id: "plastic", label: "Plastic Bottles & Caps", icon: "🧴" },
-    { id: "cardboard", label: "Cardboard & Paper", icon: "📦" },
-    { id: "fabric", label: "Fabric & Textiles", icon: "🧵" },
-    { id: "metal", label: "Non-hazardous Metals", icon: "🔩" },
-    { id: "glass", label: "Glass Containers", icon: "🫙" },
-    { id: "electronics", label: "Small Electronics", icon: "📱" },
+    { id: "plastic", label: t("bookCollection.materialPlastic"), icon: "🧴" },
+    { id: "cardboard", label: t("bookCollection.materialCardboard"), icon: "📦" },
+    { id: "fabric", label: t("bookCollection.materialFabric"), icon: "🧵" },
+    { id: "metal", label: t("bookCollection.materialMetal"), icon: "🔩" },
+    { id: "glass", label: t("bookCollection.materialGlass"), icon: "🫙" },
+    { id: "electronics", label: t("bookCollection.materialElectronics"), icon: "📱" },
   ];
 
   const toggleMaterial = (id: string) => {
@@ -226,7 +229,7 @@ function CollectionFormSection() {
     setStatus(null);
 
     if (selectedMaterials.length === 0) {
-      setStatus({ type: "error", message: "Please select at least one material to collect." });
+      setStatus({ type: "error", message: t("bookCollection.errorNoMaterials") });
       return;
     }
 
@@ -279,18 +282,18 @@ function CollectionFormSection() {
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(body.error ?? "We couldn't submit your request. Please try again.");
+        throw new Error(body.error ?? t("bookCollection.errorSubmitFailed"));
       }
       setStatus({
         type: "success",
-        message: "Request received! Our team will contact you within 24-48 hours to confirm pickup.",
+        message: t("bookCollection.successMessage"),
       });
       form.reset();
       setSelectedMaterials([]);
     } catch (error) {
       setStatus({
         type: "error",
-        message: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        message: error instanceof Error ? error.message : t("bookCollection.errorGeneric"),
       });
     } finally {
       setIsSubmitting(false);
@@ -306,13 +309,13 @@ function CollectionFormSection() {
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
             <Truck className="w-4 h-4" />
-            Collection Request
+            {t("bookCollection.formBadge")}
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Schedule Your <span className="text-amber-500">Pickup</span>
+            {t("bookCollection.formTitlePrefix")} <span className="text-amber-500">{t("bookCollection.formTitleHighlight")}</span>
           </h2>
           <p className="text-gray-600 text-lg">
-            Fill out the form below and we&apos;ll arrange a convenient collection time.
+            {t("bookCollection.formSubheading")}
           </p>
         </div>
 
@@ -322,25 +325,25 @@ function CollectionFormSection() {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <User className="w-5 h-5 text-teal-600" />
-                Personal Information
+                {t("bookCollection.personalInfoHeading")}
               </h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name *
+                    {t("bookCollection.fullNameLabel")}
                   </label>
                   <input
                     type="text"
                     id="fullName"
                     name="fullName"
-                    placeholder="Your full name"
+                    placeholder={t("bookCollection.fullNamePlaceholder")}
                     className={inputClasses}
                     required
                   />
                 </div>
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address *
+                    {t("bookCollection.emailLabel")}
                   </label>
                   <input
                     type="email"
@@ -355,7 +358,7 @@ function CollectionFormSection() {
               <div className="grid sm:grid-cols-2 gap-4 mt-4">
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number *
+                    {t("bookCollection.phoneLabel")}
                   </label>
                   <input
                     type="tel"
@@ -368,14 +371,14 @@ function CollectionFormSection() {
                 </div>
                 <div>
                   <label htmlFor="organizationType" className="block text-sm font-medium text-gray-700 mb-2">
-                    I am a...
+                    {t("bookCollection.organizationTypeLabel")}
                   </label>
                   <select id="organizationType" name="organizationType" className={inputClasses}>
-                    <option value="individual">Individual / Household</option>
-                    <option value="business">Business / Office</option>
-                    <option value="school">School / Institution</option>
-                    <option value="organization">NGO / Organization</option>
-                    <option value="recycler">Waste Picker / Recycler</option>
+                    <option value="individual">{t("bookCollection.orgIndividual")}</option>
+                    <option value="business">{t("bookCollection.orgBusiness")}</option>
+                    <option value="school">{t("bookCollection.orgSchool")}</option>
+                    <option value="organization">{t("bookCollection.orgOrganization")}</option>
+                    <option value="recycler">{t("bookCollection.orgRecycler")}</option>
                   </select>
                 </div>
               </div>
@@ -385,44 +388,44 @@ function CollectionFormSection() {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-teal-600" />
-                Pickup Location
+                {t("bookCollection.pickupLocationHeading")}
               </h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                    Street Address *
+                    {t("bookCollection.addressLabel")}
                   </label>
                   <input
                     type="text"
                     id="address"
                     name="address"
-                    placeholder="Street name, building, house number"
+                    placeholder={t("bookCollection.addressPlaceholder")}
                     className={inputClasses}
                     required
                   />
                 </div>
                 <div>
                   <label htmlFor="district" className="block text-sm font-medium text-gray-700 mb-2">
-                    District / Area *
+                    {t("bookCollection.districtLabel")}
                   </label>
                   <input
                     type="text"
                     id="district"
                     name="district"
-                    placeholder="e.g., Kicukiro, Gasabo"
+                    placeholder={t("bookCollection.districtPlaceholder")}
                     className={inputClasses}
                     required
                   />
                 </div>
                 <div>
                   <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
-                    City *
+                    {t("bookCollection.cityLabel")}
                   </label>
                   <input
                     type="text"
                     id="city"
                     name="city"
-                    placeholder="e.g., Kigali"
+                    placeholder={t("bookCollection.cityPlaceholder")}
                     className={inputClasses}
                     required
                   />
@@ -430,13 +433,13 @@ function CollectionFormSection() {
               </div>
               <div className="mt-4">
                 <label htmlFor="landmark" className="block text-sm font-medium text-gray-700 mb-2">
-                  Landmark / Additional Directions
+                  {t("bookCollection.landmarkLabel")}
                 </label>
                 <input
                   type="text"
                   id="landmark"
                   name="landmark"
-                  placeholder="Near the main market, opposite the school, etc."
+                  placeholder={t("bookCollection.landmarkPlaceholder")}
                   className={inputClasses}
                 />
               </div>
@@ -446,10 +449,10 @@ function CollectionFormSection() {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Package className="w-5 h-5 text-teal-600" />
-                Materials to Collect
+                {t("bookCollection.materialsToCollectHeading")}
               </h3>
               <p className="text-sm text-gray-500 mb-4">
-                Select all materials you want to contribute (select at least one)
+                {t("bookCollection.materialsHelperText")}
               </p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {materials.map((material) => (
@@ -476,13 +479,13 @@ function CollectionFormSection() {
             {/* Estimated Quantity */}
             <div>
               <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
-                Estimated Quantity
+                {t("bookCollection.quantityLabel")}
               </label>
               <select id="quantity" name="quantity" className={inputClasses}>
-                <option value="small">Small (fits in a shopping bag)</option>
-                <option value="medium">Medium (1-2 large bags)</option>
-                <option value="large">Large (3-5 large bags)</option>
-                <option value="bulk">Bulk (more than 5 bags / requires vehicle)</option>
+                <option value="small">{t("bookCollection.quantitySmall")}</option>
+                <option value="medium">{t("bookCollection.quantityMedium")}</option>
+                <option value="large">{t("bookCollection.quantityLarge")}</option>
+                <option value="bulk">{t("bookCollection.quantityBulk")}</option>
               </select>
             </div>
 
@@ -490,12 +493,12 @@ function CollectionFormSection() {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-teal-600" />
-                Preferred Schedule
+                {t("bookCollection.preferredScheduleHeading")}
               </h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-2">
-                    Preferred Date *
+                    {t("bookCollection.preferredDateLabel")}
                   </label>
                   <input
                     type="date"
@@ -507,13 +510,13 @@ function CollectionFormSection() {
                 </div>
                 <div>
                   <label htmlFor="preferredTime" className="block text-sm font-medium text-gray-700 mb-2">
-                    Preferred Time *
+                    {t("bookCollection.preferredTimeLabel")}
                   </label>
                   <select id="preferredTime" name="preferredTime" className={inputClasses} required>
-                    <option value="">Select a time slot</option>
-                    <option value="morning">Morning (8:00 AM - 12:00 PM)</option>
-                    <option value="afternoon">Afternoon (12:00 PM - 4:00 PM)</option>
-                    <option value="evening">Evening (4:00 PM - 6:00 PM)</option>
+                    <option value="">{t("bookCollection.timeSlotPlaceholder")}</option>
+                    <option value="morning">{t("bookCollection.timeSlotMorning")}</option>
+                    <option value="afternoon">{t("bookCollection.timeSlotAfternoon")}</option>
+                    <option value="evening">{t("bookCollection.timeSlotEvening")}</option>
                   </select>
                 </div>
               </div>
@@ -522,13 +525,13 @@ function CollectionFormSection() {
             {/* Additional Notes */}
             <div>
               <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                Additional Notes
+                {t("bookCollection.notesLabel")}
               </label>
               <textarea
                 id="notes"
                 name="notes"
                 rows={3}
-                placeholder="Any special instructions for pickup, access codes, etc."
+                placeholder={t("bookCollection.notesPlaceholder")}
                 className={`${inputClasses} resize-none`}
               />
             </div>
@@ -538,11 +541,9 @@ function CollectionFormSection() {
               <div className="flex items-start gap-3">
                 <Info className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-teal-700">
-                  <p className="font-medium mb-1">What happens next?</p>
+                  <p className="font-medium mb-1">{t("bookCollection.infoBoxTitle")}</p>
                   <p>
-                    After submitting, our team will review your request and contact you within
-                    24-48 hours to confirm the collection details. You&apos;ll receive a confirmation
-                    email with your collection reference number.
+                    {t("bookCollection.infoBoxText")}
                   </p>
                 </div>
               </div>
@@ -570,7 +571,7 @@ function CollectionFormSection() {
               className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] hover:scale-[1.02] shadow-lg shadow-amber-500/30 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Truck className="w-5 h-5" />
-              {isSubmitting ? "Submitting..." : "Submit Collection Request"}
+              {isSubmitting ? t("bookCollection.submitButtonSubmitting") : t("bookCollection.submitButton")}
             </button>
           </form>
         </div>
@@ -583,36 +584,57 @@ function CollectionFormSection() {
    MATERIALS SECTION
    ============================================ */
 function MaterialsSection() {
+  const { t } = useTranslation();
   const acceptedMaterials = [
     {
-      category: "Plastics",
-      items: ["PET bottles", "HDPE containers", "Bottle caps", "Clean plastic bags"],
+      category: t("bookCollection.acceptedPlasticsCategory"),
+      items: [
+        t("bookCollection.acceptedPlasticsItem1"),
+        t("bookCollection.acceptedPlasticsItem2"),
+        t("bookCollection.acceptedPlasticsItem3"),
+        t("bookCollection.acceptedPlasticsItem4"),
+      ],
       color: "teal",
     },
     {
-      category: "Paper & Cardboard",
-      items: ["Cardboard boxes", "Newspapers", "Magazines", "Office paper"],
+      category: t("bookCollection.acceptedPaperCategory"),
+      items: [
+        t("bookCollection.acceptedPaperItem1"),
+        t("bookCollection.acceptedPaperItem2"),
+        t("bookCollection.acceptedPaperItem3"),
+        t("bookCollection.acceptedPaperItem4"),
+      ],
       color: "amber",
     },
     {
-      category: "Textiles",
-      items: ["Fabric scraps", "Old clothes", "Textile remnants", "Thread spools"],
+      category: t("bookCollection.acceptedTextilesCategory"),
+      items: [
+        t("bookCollection.acceptedTextilesItem1"),
+        t("bookCollection.acceptedTextilesItem2"),
+        t("bookCollection.acceptedTextilesItem3"),
+        t("bookCollection.acceptedTextilesItem4"),
+      ],
       color: "purple",
     },
     {
-      category: "Metals",
-      items: ["Aluminum cans", "Tin cans", "Metal bottle caps", "Small metal objects"],
+      category: t("bookCollection.acceptedMetalsCategory"),
+      items: [
+        t("bookCollection.acceptedMetalsItem1"),
+        t("bookCollection.acceptedMetalsItem2"),
+        t("bookCollection.acceptedMetalsItem3"),
+        t("bookCollection.acceptedMetalsItem4"),
+      ],
       color: "gray",
     },
   ];
 
   const notAccepted = [
-    "Hazardous materials",
-    "Medical waste",
-    "Batteries",
-    "Paint or chemicals",
-    "Food-contaminated items",
-    "Broken glass",
+    t("bookCollection.notAccepted1"),
+    t("bookCollection.notAccepted2"),
+    t("bookCollection.notAccepted3"),
+    t("bookCollection.notAccepted4"),
+    t("bookCollection.notAccepted5"),
+    t("bookCollection.notAccepted6"),
   ];
 
   const colorClasses: Record<string, { bg: string; border: string; badge: string }> = {
@@ -627,10 +649,10 @@ function MaterialsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Materials We <span className="text-teal-600">Accept</span>
+            {t("bookCollection.acceptTitlePrefix")} <span className="text-teal-600">{t("bookCollection.acceptTitleHighlight")}</span>
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            We accept various recyclable materials that our artists transform into beautiful art pieces.
+            {t("bookCollection.acceptSubheading")}
           </p>
         </div>
 
@@ -660,7 +682,7 @@ function MaterialsSection() {
 
         {/* Not Accepted */}
         <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-red-700 mb-4">Materials We Cannot Accept</h3>
+          <h3 className="text-lg font-semibold text-red-700 mb-4">{t("bookCollection.notAcceptedHeading")}</h3>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {notAccepted.map((item, index) => (
               <div key={index} className="flex items-center gap-2 text-red-600 text-sm">
@@ -679,21 +701,22 @@ function MaterialsSection() {
    BENEFITS SECTION
    ============================================ */
 function BenefitsSection() {
+  const { t } = useTranslation();
   const benefits = [
     {
       icon: Gift,
-      title: "Earn Discounts",
-      description: "Get discount codes for artwork purchases based on the weight of materials you contribute.",
+      title: t("bookCollection.benefit1Title"),
+      description: t("bookCollection.benefit1Description"),
     },
     {
       icon: Recycle,
-      title: "Support Sustainability",
-      description: "Your materials are transformed into art, reducing waste and supporting circular economy.",
+      title: t("bookCollection.benefit2Title"),
+      description: t("bookCollection.benefit2Description"),
     },
     {
       icon: Truck,
-      title: "Free Pickup",
-      description: "We come to your location at no cost. Just schedule a convenient time and we handle the rest.",
+      title: t("bookCollection.benefit3Title"),
+      description: t("bookCollection.benefit3Description"),
     },
   ];
 
@@ -711,10 +734,10 @@ function BenefitsSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-white mb-4">
-            Why Book a Collection?
+            {t("bookCollection.benefitsTitle")}
           </h2>
           <p className="text-teal-100 max-w-2xl mx-auto">
-            Contributing your recyclables benefits you, the environment, and local artists.
+            {t("bookCollection.benefitsSubheading")}
           </p>
         </div>
 
