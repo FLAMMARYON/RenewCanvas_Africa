@@ -577,6 +577,13 @@ export default function VirtualRoomPage() {
     const world = new THREE.Group();
     scene.add(world);
 
+    // Per-frame updaters for the living world (creatures, drifting particles,
+    // swaying canopies). Kept tiny and capped so they never tank the frame.
+    const animators: Array<(elapsed: number, delta: number) => void> = [];
+    // HDRI environment handles (disposed on cleanup); null until/unless loaded.
+    let hdrEnvTexture: THREE.Texture | null = null;
+    let hdrSkyTexture: THREE.Texture | null = null;
+
     // Soft interior fill light (works alongside outdoor sun/hemisphere from buildExterior).
     // Kept low so it doesn't blow out the outdoor scene.
     const interiorFill = new THREE.HemisphereLight("#f7efe2", "#27322f", 0.45);
@@ -999,6 +1006,34 @@ export default function VirtualRoomPage() {
       return material;
     }
 
+    // Ground/terrain material from the downloaded PolyHaven 1k JPG PBR set
+    // (diffuse + normal + roughness). Tiled across the large outdoor terrain.
+    function loadTerrainMaterial(repeat: number) {
+      const material = new THREE.MeshStandardMaterial({ color: "#5d6b3e", roughness: 0.97 });
+      const apply = (path: string, srgb: boolean, assign: (t: THREE.Texture) => void) => {
+        sharedTextureLoader.load(
+          path,
+          (texture) => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(repeat, repeat);
+            texture.anisotropy = 4;
+            if (srgb) texture.colorSpace = THREE.SRGBColorSpace;
+            assign(texture);
+            material.needsUpdate = true;
+          },
+          undefined,
+          () => {
+            /* keep the flat fallback colour */
+          }
+        );
+      };
+      apply("/textures/pbr/grass_rock_diff_1k.jpg", true, (t) => (material.map = t));
+      apply("/textures/pbr/grass_rock_nor_1k.jpg", false, (t) => (material.normalMap = t));
+      apply("/textures/pbr/grass_rock_rough_1k.jpg", false, (t) => (material.roughnessMap = t));
+      return material;
+    }
+
     function buildExterior(sceneRef: THREE.Scene): THREE.Group {
       const mode = new Date().getHours() < 18 ? "day" : "night";
 
@@ -1352,8 +1387,190 @@ export default function VirtualRoomPage() {
         exterior.add(archSpot.target);
       }
 
+      addLivingWorld(outdoorWorld, mode);
       sceneRef.add(exterior);
       return exterior;
+    }
+
+    // A living ecosystem around the building: grassy terrain, distant hills,
+    // swaying trees, drifting pollen, and capped, reused-geometry creatures.
+    // Everything sits in outdoorWorld (z > -12) so the interior stays clean.
+    function addLivingWorld(outdoorWorld: THREE.Group, mode: "day" | "night") {
+      const isDay = mode === "day";
+
+      // Terrain: a large grassy floor (PolyHaven PBR) extending to the horizon.
+      const terrain = new THREE.Mesh(new THREE.PlaneGeometry(360, 360), loadTerrainMaterial(48));
+      terrain.rotation.x = -Math.PI / 2;
+      terrain.position.set(0, -0.08, -20);
+      terrain.receiveShadow = true;
+      outdoorWorld.add(terrain);
+
+      // Distant hills for horizon depth and scale.
+      const hillGeo = new THREE.SphereGeometry(1, 16, 10);
+      const hillMat = new THREE.MeshStandardMaterial({ color: isDay ? "#46582f" : "#11170d", roughness: 1 });
+      ([[-70, 70, 26, 10], [62, 95, 34, 13], [-95, 30, 30, 11], [95, 45, 28, 12], [0, 138, 46, 17]] as const).forEach(
+        ([x, z, r, h]) => {
+          const hill = new THREE.Mesh(hillGeo, hillMat);
+          hill.position.set(x, -2, z);
+          hill.scale.set(r, h, r);
+          outdoorWorld.add(hill);
+        }
+      );
+
+      // Vegetation: low-poly trees sharing geometry + a couple of materials.
+      const TREE_CAP = 26;
+      const trunkGeo = new THREE.CylinderGeometry(0.16, 0.28, 3.4, 6);
+      const canopyGeo = new THREE.IcosahedronGeometry(1.7, 1);
+      const trunkMat = new THREE.MeshStandardMaterial({ color: "#3c2a18", roughness: 0.9 });
+      const canopyMats = [
+        new THREE.MeshStandardMaterial({ color: isDay ? "#2f6b32" : "#15311b", roughness: 0.85 }),
+        new THREE.MeshStandardMaterial({ color: isDay ? "#3d7a3a" : "#1a3b21", roughness: 0.85 }),
+      ];
+      const canopies: THREE.Mesh[] = [];
+      let placed = 0;
+      let guard = 0;
+      while (placed < TREE_CAP && guard < 400) {
+        guard += 1;
+        const x = (Math.random() - 0.5) * 150;
+        const z = -10 + Math.random() * 82;
+        // Keep clear of the entrance path strip and the immediate plaza.
+        if ((Math.abs(x) < 4.5 && z < 24) || Math.hypot(x, z - 4) < 17) continue;
+        placed += 1;
+        const scale = 0.8 + Math.random() * 1.1;
+        const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+        trunk.position.set(x, 1.7 * scale, z);
+        trunk.scale.setScalar(scale);
+        trunk.castShadow = true;
+        outdoorWorld.add(trunk);
+        const canopy = new THREE.Mesh(canopyGeo, canopyMats[placed % 2]);
+        canopy.position.set(x, (3.4 + Math.random() * 0.8) * scale, z);
+        canopy.scale.setScalar(scale * (0.9 + Math.random() * 0.5));
+        canopy.castShadow = true;
+        canopy.userData.phase = Math.random() * Math.PI * 2;
+        canopy.userData.baseY = canopy.position.y;
+        outdoorWorld.add(canopy);
+        canopies.push(canopy);
+      }
+      animators.push((elapsed) => {
+        for (const canopy of canopies) {
+          const phase = canopy.userData.phase as number;
+          canopy.rotation.z = Math.sin(elapsed * 0.8 + phase) * 0.05;
+          canopy.position.y = (canopy.userData.baseY as number) + Math.sin(elapsed * 0.9 + phase) * 0.06;
+        }
+      });
+
+      // Floating elements: drifting pollen / seeds (single Points draw call).
+      const PARTICLE_CAP = 220;
+      const positions = new Float32Array(PARTICLE_CAP * 3);
+      const speeds = new Float32Array(PARTICLE_CAP);
+      for (let i = 0; i < PARTICLE_CAP; i += 1) {
+        positions[i * 3] = (Math.random() - 0.5) * 120;
+        positions[i * 3 + 1] = Math.random() * 14;
+        positions[i * 3 + 2] = -20 + Math.random() * 92;
+        speeds[i] = 0.3 + Math.random() * 0.7;
+      }
+      const particleGeo = new THREE.BufferGeometry();
+      particleGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      const particles = new THREE.Points(
+        particleGeo,
+        new THREE.PointsMaterial({
+          color: isDay ? "#fdf3c4" : "#9fd0ff",
+          size: 0.12,
+          transparent: true,
+          opacity: isDay ? 0.7 : 0.85,
+          sizeAttenuation: true,
+          depthWrite: false,
+        })
+      );
+      outdoorWorld.add(particles);
+      const posAttr = particleGeo.getAttribute("position") as THREE.BufferAttribute;
+      animators.push((elapsed, delta) => {
+        for (let i = 0; i < PARTICLE_CAP; i += 1) {
+          let y = posAttr.getY(i) + speeds[i] * delta;
+          if (y > 15) y = 0;
+          posAttr.setY(i, y);
+          posAttr.setX(i, posAttr.getX(i) + Math.sin(elapsed + i) * delta * 0.25);
+        }
+        posAttr.needsUpdate = true;
+      });
+
+      // Creatures: birds circling overhead (shared geometry + material).
+      const BIRD_CAP = 5;
+      const birdMat = new THREE.MeshStandardMaterial({ color: "#2c2c30", side: THREE.DoubleSide, roughness: 0.7 });
+      const wingGeo = new THREE.PlaneGeometry(1.2, 0.4);
+      const bodyGeo = new THREE.ConeGeometry(0.12, 0.8, 6);
+      const birds: Array<{ group: THREE.Group; radius: number; speed: number; phase: number; baseY: number; wings: THREE.Mesh[] }> = [];
+      for (let i = 0; i < BIRD_CAP; i += 1) {
+        const group = new THREE.Group();
+        const body = new THREE.Mesh(bodyGeo, birdMat);
+        body.rotation.x = Math.PI / 2;
+        const leftWing = new THREE.Mesh(wingGeo, birdMat);
+        leftWing.position.set(-0.6, 0, 0);
+        const rightWing = new THREE.Mesh(wingGeo, birdMat);
+        rightWing.position.set(0.6, 0, 0);
+        group.add(body, leftWing, rightWing);
+        outdoorWorld.add(group);
+        birds.push({
+          group,
+          radius: 18 + i * 5,
+          speed: 0.18 + Math.random() * 0.12,
+          phase: Math.random() * Math.PI * 2,
+          baseY: 20 + i * 2,
+          wings: [leftWing, rightWing],
+        });
+      }
+      animators.push((elapsed) => {
+        for (const bird of birds) {
+          const angle = elapsed * bird.speed + bird.phase;
+          bird.group.position.set(Math.cos(angle) * bird.radius, bird.baseY + Math.sin(angle * 2) * 1.5, 10 + Math.sin(angle) * bird.radius);
+          bird.group.rotation.y = -angle;
+          const flap = Math.sin(elapsed * 9 + bird.phase) * 0.6;
+          bird.wings[0].rotation.z = flap;
+          bird.wings[1].rotation.z = -flap;
+        }
+      });
+
+      // Creatures: butterflies fluttering near the ground (brand teal/orange).
+      const BUTTERFLY_CAP = 8;
+      const flutterGeo = new THREE.PlaneGeometry(0.32, 0.42);
+      const flutterMats = [
+        new THREE.MeshStandardMaterial({ color: BRAND_TEAL, side: THREE.DoubleSide, roughness: 0.5, emissive: BRAND_TEAL, emissiveIntensity: 0.15 }),
+        new THREE.MeshStandardMaterial({ color: BRAND_ORANGE, side: THREE.DoubleSide, roughness: 0.5, emissive: BRAND_ORANGE, emissiveIntensity: 0.15 }),
+      ];
+      const butterflies: Array<{ group: THREE.Group; cx: number; cz: number; r: number; speed: number; phase: number; wings: THREE.Mesh[] }> = [];
+      for (let i = 0; i < BUTTERFLY_CAP; i += 1) {
+        const group = new THREE.Group();
+        const mat = flutterMats[i % 2];
+        const leftWing = new THREE.Mesh(flutterGeo, mat);
+        leftWing.position.set(-0.18, 0, 0);
+        const rightWing = new THREE.Mesh(flutterGeo, mat);
+        rightWing.position.set(0.18, 0, 0);
+        group.add(leftWing, rightWing);
+        outdoorWorld.add(group);
+        butterflies.push({
+          group,
+          cx: (Math.random() - 0.5) * 40,
+          cz: 6 + Math.random() * 40,
+          r: 1.5 + Math.random() * 2.5,
+          speed: 0.6 + Math.random() * 0.6,
+          phase: Math.random() * Math.PI * 2,
+          wings: [leftWing, rightWing],
+        });
+      }
+      animators.push((elapsed) => {
+        for (const butterfly of butterflies) {
+          const angle = elapsed * butterfly.speed + butterfly.phase;
+          butterfly.group.position.set(
+            butterfly.cx + Math.cos(angle) * butterfly.r,
+            1.1 + Math.sin(angle * 2) * 0.6,
+            butterfly.cz + Math.sin(angle * 1.3) * butterfly.r
+          );
+          butterfly.group.rotation.y = -angle;
+          const flap = Math.abs(Math.sin(elapsed * 12 + butterfly.phase)) * 1.2;
+          butterfly.wings[0].rotation.y = flap;
+          butterfly.wings[1].rotation.y = -flap;
+        }
+      });
     }
 
     function disposeExterior(exteriorGroup: THREE.Group | null, sceneRef: THREE.Scene) {
@@ -1538,6 +1755,36 @@ export default function VirtualRoomPage() {
     clickablesRef.current = [];
     // Outdoor scene first (sets sky bg + outdoor lights).
     exteriorGroupRef.current = buildExterior(scene);
+
+    // Real PolyHaven HDRI sky + image-based lighting, daytime only (night keeps
+    // the procedural starfield). Loaded async via the bundled three example
+    // loader; silently keeps the procedural environment if anything fails.
+    if (new Date().getHours() < 18) {
+      import("three/examples/jsm/loaders/RGBELoader.js")
+        .then(({ RGBELoader }) => {
+          new RGBELoader().load(
+            "/hdri/sky_puresky_1k.hdr",
+            (hdr) => {
+              hdr.mapping = THREE.EquirectangularReflectionMapping;
+              const pmrem = new THREE.PMREMGenerator(renderer);
+              hdrEnvTexture = pmrem.fromEquirectangular(hdr).texture;
+              pmrem.dispose();
+              hdrSkyTexture = hdr;
+              scene.environment = hdrEnvTexture;
+              if (sceneStateRef.current === "exterior") {
+                scene.background = hdr;
+              }
+            },
+            undefined,
+            () => {
+              /* keep procedural environment */
+            }
+          );
+        })
+        .catch(() => {
+          /* loader unavailable — keep procedural environment */
+        });
+    }
     // Indoor geometry built eagerly so users can walk through the entrance
     // without a reload (continuous architecture).
     buildInteriorOnce();
@@ -1610,6 +1857,14 @@ export default function VirtualRoomPage() {
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
       if (sceneStateRef.current === "exterior") {
+        // Outdoors: scroll glides the camera through the ecosystem (scroll up =
+        // travel forward toward the building) once the intro fly-in has settled.
+        if (introT >= 1) {
+          const step = -event.deltaY * 0.012;
+          const yaw = yawRef.current;
+          targetRef.current.x = Math.max(-90, Math.min(90, targetRef.current.x + step * Math.sin(yaw)));
+          targetRef.current.z = Math.max(-6, Math.min(80, targetRef.current.z - step * Math.cos(yaw)));
+        }
         return;
       }
 
@@ -1763,6 +2018,9 @@ export default function VirtualRoomPage() {
         }
       });
 
+      // Drive the living world (creatures, pollen, canopy sway).
+      for (const animate of animators) animate(elapsed, delta);
+
       renderer.render(scene, camera);
     });
 
@@ -1777,6 +2035,8 @@ export default function VirtualRoomPage() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("resize", resize);
+      hdrEnvTexture?.dispose();
+      hdrSkyTexture?.dispose();
       mount.removeChild(renderer.domElement);
       renderer.dispose();
     };
