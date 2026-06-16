@@ -43,6 +43,10 @@ export type ArtworkRecord = {
   reviewedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  tags?: string[];
+  theme?: string | null;
+  impactScore?: number | null;
+  artistLocation?: string | null;
   artist?: { id: string; name: string; email: string; artistProfile?: { phone: string | null } | null } | null;
   images?: Array<{ id: string; url: string; altText: string; sortOrder: number }>;
   materials?: Array<{ id: string; material: string; weightKg: unknown; source: string | null; isVerified: boolean }>;
@@ -413,6 +417,14 @@ export function normalizeArtwork(artwork: ArtworkRecord) {
     submittedAt: artwork.submittedAt?.toISOString() ?? null,
     reviewedAt: artwork.reviewedAt?.toISOString() ?? null,
     createdAt: artwork.createdAt.toISOString(),
+    // Gallery/curation metadata — present on the Artwork row (Prisma `include`
+    // returns all scalars) but previously dropped here, which made the
+    // GalleryArtwork type a lie at runtime. Surface them so the virtual
+    // gallery (and any tag/theme-based curation) receives real values.
+    tags: artwork.tags ?? [],
+    theme: artwork.theme ?? null,
+    impactScore: artwork.impactScore ?? null,
+    artistLocation: artwork.artistLocation ?? null,
     artist: artwork.artist
       ? {
           id: artwork.artist.id,
@@ -662,8 +674,11 @@ function boundedPage(value: unknown): number {
 }
 
 function boundedPageSize(value: unknown): number {
+  // Cap raised 48 -> 200 so the virtual gallery (which requests every listed
+  // piece in one page) is no longer silently truncated mid-collection. The
+  // marketplace UI still requests pageSize=12, so its pagination is unaffected.
   const pageSize = Number(value);
-  return Number.isInteger(pageSize) && pageSize > 0 ? Math.min(pageSize, 48) : 12;
+  return Number.isInteger(pageSize) && pageSize > 0 ? Math.min(pageSize, 200) : 12;
 }
 
 function assertRole(user: AuthPublicUser | null, role: AuthPublicUser["role"]): asserts user is AuthPublicUser {

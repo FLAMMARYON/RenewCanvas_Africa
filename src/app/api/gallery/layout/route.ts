@@ -32,7 +32,11 @@ export async function GET() {
 
     const db = getDatabaseClient();
     const artworks = await db.artwork.findMany({
-      where: { status: "listed" },
+      // Match the live gallery data source (/api/artworks?scope=marketplace),
+      // which treats listed + approved + reserved as "in the gallery". Keeping
+      // this stricter (listed-only) made the two endpoints disagree about what
+      // is viewable.
+      where: { status: { in: ["listed", "approved", "reserved"] } },
       select: {
         id: true,
         slug: true,
@@ -70,7 +74,7 @@ export async function GET() {
           },
         },
       },
-      take: 100,
+      take: 200,
       orderBy: { updatedAt: "desc" },
     });
 

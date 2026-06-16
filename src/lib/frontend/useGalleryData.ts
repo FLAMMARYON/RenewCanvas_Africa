@@ -65,7 +65,9 @@ export function useGalleryData(): UseGalleryDataResult {
 
     async function fetchData() {
       try {
-        const response = await fetch("/api/artworks?scope=marketplace&pageSize=100", { credentials: "include" });
+        // Request the full listed collection in one page (cap is 200 server-side).
+        // The gallery places every artwork on a wall, so it must not paginate.
+        const response = await fetch("/api/artworks?scope=marketplace&pageSize=200", { credentials: "include" });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
