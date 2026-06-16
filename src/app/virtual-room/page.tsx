@@ -45,10 +45,13 @@ type ArtworkPlacement = {
   roomKey: RoomKey;
   slotIndex: number;
   wingIndex: number;
+  slot: WallPlacement;
   curationRoomTitle: string;
   curationGrouping: string;
   curationExplanation: string;
 };
+
+type WallSide = "north" | "south" | "east" | "west";
 
 type WallPlacement = {
   x: number;
@@ -56,6 +59,10 @@ type WallPlacement = {
   rotY: number;
 };
 
+// Hard ceiling on duplicated "wings" used only when a single category holds
+// more pieces than its room's walls can show. Each wing replicates the whole
+// (grounded, connected) building, so this caps geometry/draw-calls.
+const MAX_WINGS = 6;
 const WING_SPACING = 76;
 const ROOM_W = 14;
 const ROOM_D = 16;
@@ -145,21 +152,37 @@ function stationFor(room: RoomKey, wing: number) {
 }
 
 function getArtworkPlacements(items: Artwork[]): ArtworkPlacement[] {
-  const roomSlots = new Map<RoomKey, number>();
-  return items.map((artwork) => {
+  // Group every piece into the room its category routes to, then lay each one
+  // onto a real wall slot in that room. When a room runs out of wall space the
+  // overflow continues onto the SAME room in the next wing, so capacity scales
+  // with the collection and a piece is never dropped into empty space.
+  const byRoom = new Map<RoomKey, Artwork[]>();
+  items.forEach((artwork) => {
     const roomKey = roomForArtworkCategory(artwork.category);
-    const slotIndex = roomSlots.get(roomKey) ?? 0;
-    roomSlots.set(roomKey, slotIndex + 1);
-    return {
-      artwork,
-      roomKey,
-      slotIndex,
-      wingIndex: Math.floor(slotIndex / 4),
-      curationRoomTitle: stationFor(roomKey, 0).label,
-      curationGrouping: artwork.category,
-      curationExplanation: `${artwork.title} is grouped by category in the ${stationFor(roomKey, 0).label}.`,
-    };
+    const list = byRoom.get(roomKey) ?? [];
+    list.push(artwork);
+    byRoom.set(roomKey, list);
   });
+
+  const placements: ArtworkPlacement[] = [];
+  byRoom.forEach((list, roomKey) => {
+    const slots = wallSlotsForRoom(roomKey);
+    const capacity = Math.max(1, slots.length);
+    list.forEach((artwork, index) => {
+      placements.push({
+        artwork,
+        roomKey,
+        slotIndex: index,
+        wingIndex: Math.floor(index / capacity),
+        slot: slots[index % capacity] ?? { x: 0, z: -ROOM_D / 2 + FRAME_DEPTH / 2 + 0.16, rotY: 0 },
+        curationRoomTitle: stationFor(roomKey, 0).label,
+        curationGrouping: artwork.category,
+        curationExplanation: `${artwork.title} is grouped by category in the ${stationFor(roomKey, 0).label}.`,
+      });
+    });
+  });
+
+  return placements;
 }
 
 function roomForArtworkCategory(category: string): RoomKey {
@@ -170,34 +193,76 @@ function roomForArtworkCategory(category: string): RoomKey {
   return "corridor";
 }
 
-function wallPlacementsForRoom(roomKey: RoomKey): WallPlacement[] {
-  const cornerClearance = 1;
-  const frameClearance = 0.65;
-  const halfFrame = FRAME_W / 2;
-  const inset = FRAME_DEPTH / 2 + 0.14;
-  const northZ = -ROOM_D / 2 + inset;
-  const southZ = ROOM_D / 2 - inset;
-  const westX = -ROOM_W / 2 + inset;
-  const eastX = ROOM_W / 2 - inset;
+// Single source of truth for which walls of each room are solid vs. carry a
+// doorway. MUST stay in sync with the geometry built in addRoom(). Art slots
+// are generated from this so a frame never lands on — or blocks — a doorway.
+const roomWalls: Record<RoomKey, Record<WallSide, "solid" | "door">> = {
+  entrance: { north: "door", south: "door", east: "solid", west: "solid" },
+  main: { north: "door", south: "door", east: "door", west: "door" },
+  left: { north: "solid", south: "solid", east: "door", west: "solid" },
+  right: { north: "solid", south: "solid", east: "solid", west: "door" },
+  court: { north: "door", south: "door", east: "solid", west: "solid" },
+  corridor: { north: "door", south: "door", east: "solid", west: "solid" },
+};
 
-  const horizontalSlots = [-4.55, -2.05, 2.05, 4.55].filter((x) => {
-    const awayFromCorner = Math.abs(x) + halfFrame <= ROOM_W / 2 - cornerClearance;
-    const clearsDoor = Math.abs(x) - halfFrame >= 1.75 + frameClearance;
-    return awayFromCorner && clearsDoor;
-  });
-  const verticalSlots = [-4.55, -2.05, 2.05, 4.55].filter((z) => Math.abs(z) + halfFrame <= ROOM_D / 2 - cornerClearance);
+// Walls we never hang art on (entrance south = glass doors to the outdoors).
+const skipArtWalls: Partial<Record<RoomKey, WallSide[]>> = {
+  entrance: ["south"],
+};
 
+const FRAME_PITCH = 2.72; // centre-to-centre spacing of frames along a wall
+const CORNER_CLEARANCE = 0.95; // keep frames off the corners
+const DOOR_EDGE_CLEARANCE = 0.55; // keep frames clear of the doorway opening
+const DOOR_HALF_NS = 1.75; // half the north/south doorway gap (gap 3.5)
+const DOOR_HALF_EW = 1.9; // half the east/west doorway gap (gap 3.8)
+
+// Evenly distribute as many frames as fit within a 1-D wall region [a, b].
+function fitFramesInRegion(a: number, b: number): number[] {
+  const length = b - a;
+  if (length < FRAME_W + 0.2) return [];
+  const count = Math.max(1, Math.floor((length - 0.3) / FRAME_PITCH));
+  const used = count * FRAME_PITCH;
+  const start = a + (length - used) / 2 + FRAME_PITCH / 2;
+  return Array.from({ length: count }, (_, index) => start + index * FRAME_PITCH);
+}
+
+// A solid wall is one usable region; a door wall is the two segments flanking
+// the opening, so frames sit beside the doorway rather than across it.
+function regionsForWall(kind: "solid" | "door", halfSpan: number, doorHalf: number): Array<[number, number]> {
+  const edge = halfSpan - CORNER_CLEARANCE;
+  if (kind === "solid") return [[-edge, edge]];
+  const doorEdge = doorHalf + DOOR_EDGE_CLEARANCE;
+  return [
+    [-edge, -doorEdge],
+    [doorEdge, edge],
+  ];
+}
+
+// All hangable wall slots for a room: every solid wall plus the segments
+// beside each doorway, frames flush against the wall facing the room.
+function wallSlotsForRoom(roomKey: RoomKey): WallPlacement[] {
+  const inset = FRAME_DEPTH / 2 + 0.16;
+  const walls = roomWalls[roomKey];
+  const skip = skipArtWalls[roomKey] ?? [];
   const placements: WallPlacement[] = [];
-  horizontalSlots.forEach((x) => placements.push({ x, z: northZ, rotY: 0 }));
-  if (roomKey !== "entrance") {
-    horizontalSlots.forEach((x) => placements.push({ x, z: southZ, rotY: Math.PI }));
-  }
-  if (roomKey !== "main" && roomKey !== "left") {
-    verticalSlots.forEach((z) => placements.push({ x: westX, z, rotY: Math.PI / 2 }));
-  }
-  if (roomKey !== "main" && roomKey !== "right") {
-    verticalSlots.forEach((z) => placements.push({ x: eastX, z, rotY: -Math.PI / 2 }));
-  }
+
+  (Object.keys(walls) as WallSide[]).forEach((side) => {
+    if (skip.includes(side)) return;
+    const kind = walls[side];
+    if (side === "north" || side === "south") {
+      const z = side === "north" ? -ROOM_D / 2 + inset : ROOM_D / 2 - inset;
+      const rotY = side === "north" ? 0 : Math.PI;
+      regionsForWall(kind, ROOM_W / 2, DOOR_HALF_NS).forEach(([a, b]) =>
+        fitFramesInRegion(a, b).forEach((x) => placements.push({ x, z, rotY }))
+      );
+    } else {
+      const x = side === "west" ? -ROOM_W / 2 + inset : ROOM_W / 2 - inset;
+      const rotY = side === "west" ? Math.PI / 2 : -Math.PI / 2;
+      regionsForWall(kind, ROOM_D / 2, DOOR_HALF_EW).forEach(([a, b]) =>
+        fitFramesInRegion(a, b).forEach((z) => placements.push({ x, z, rotY }))
+      );
+    }
+  });
 
   return placements;
 }
@@ -637,7 +702,9 @@ export default function VirtualRoomPage() {
         new THREE.PlaneGeometry(3.7, 1.38),
         new THREE.MeshBasicMaterial({ map: brandTexture, transparent: true })
       );
-      brandSign.position.set(0, 2.9, ROOM_D / 2 - 0.32);
+      // Sit the brand sign high on the wall (above the ~3.3m frame line and any
+      // doorway) so it never collides with the denser art placement below.
+      brandSign.position.set(0, 4.3, ROOM_D / 2 - 0.32);
       brandSign.rotation.y = Math.PI;
       group.add(brandSign);
 
@@ -805,10 +872,9 @@ export default function VirtualRoomPage() {
     }
 
     function addArtwork(placement: ArtworkPlacement) {
-      const { artwork, slotIndex, roomKey, wingIndex, curationGrouping } = placement;
+      const { artwork, roomKey, wingIndex, curationGrouping } = placement;
       const station = stationFor(roomKey, wingIndex);
-      const wallSlots = wallPlacementsForRoom(roomKey);
-      const wallSlot = wallSlots[slotIndex % wallSlots.length] ?? { x: 0, z: -ROOM_D / 2 + FRAME_DEPTH / 2, rotY: 0 };
+      const wallSlot = placement.slot;
       const group = new THREE.Group();
       group.position.set(station.x + wallSlot.x, FRAME_CENTER_Y, station.z + wallSlot.z);
       group.rotation.y = wallSlot.rotY;
@@ -1300,13 +1366,23 @@ export default function VirtualRoomPage() {
       clickablesRef.current = [];
     }
 
+    let builtWings = 1;
+
     function buildMuseum() {
       clickablesRef.current = [];
-      // Two wings instead of five: 60% fewer rooms, lights, draw calls.
-      // The "infinite museum" wing loop still works for navigation.
-      const wingRange = [0, 1];
 
-      wingRange.forEach((wingIndex) => {
+      const placements = getArtworkPlacements(artworks);
+      // Build exactly as many wings as the fullest room needs (clamped), so a
+      // large collection always has a real wall to hang on — never floating in
+      // empty space — without replicating the building more than necessary.
+      const neededWings = placements.reduce((max, placement) => Math.max(max, placement.wingIndex + 1), 1);
+      const wingCount = Math.min(Math.max(neededWings, 1), MAX_WINGS);
+      builtWings = wingCount;
+      if (neededWings > MAX_WINGS) {
+        console.warn(`[virtual-room] ${neededWings} wings needed but capped at ${MAX_WINGS}; some overflow pieces reuse the last wing's walls.`);
+      }
+
+      for (let wingIndex = 0; wingIndex < wingCount; wingIndex += 1) {
         roomStations.forEach((station) => addRoom(station.key, wingIndex));
 
         roomStations.forEach((station) => {
@@ -1314,10 +1390,36 @@ export default function VirtualRoomPage() {
             addDoorHotspot(station.key, wingIndex, target);
           });
         });
-      });
 
-      getArtworkPlacements(artworks).forEach((placement) => {
-        addArtwork(placement);
+        // Only when more than one wing exists: reachable doorways linking the
+        // corridor of one wing to the entrance of the next (and back), so every
+        // hung piece can actually be walked to.
+        if (wingIndex < wingCount - 1) {
+          addDoorHotspot("corridor", wingIndex, {
+            label: "Next Gallery Wing",
+            room: "entrance",
+            heading: 0,
+            wingOffset: 1,
+            fromRoom: "corridor",
+            localPosition: [0, 0.06, -6.8],
+          });
+        }
+        if (wingIndex > 0) {
+          addDoorHotspot("entrance", wingIndex, {
+            label: "Previous Gallery Wing",
+            room: "corridor",
+            heading: 180,
+            wingOffset: -1,
+            fromRoom: "entrance",
+            localPosition: [0, 0.06, 6.8],
+          });
+        }
+      }
+
+      placements.forEach((placement) => {
+        // Overflow beyond the wing cap reuses the last built wing's walls.
+        const safeWing = Math.min(placement.wingIndex, wingCount - 1);
+        addArtwork(safeWing === placement.wingIndex ? placement : { ...placement, wingIndex: safeWing });
       });
       loadTexturesForActiveRoom(roomRef.current, wingRef.current);
     }
@@ -1556,9 +1658,11 @@ export default function VirtualRoomPage() {
           targetRef.current.x += moveX;
           targetRef.current.z += moveZ;
 
-          // Collision bounds (optional - keeps camera within reasonable area)
+          // Collision bounds — span every built wing so the far wings stay
+          // reachable; the last room sits at z = -74 - (wing * WING_SPACING).
+          const zFloor = -(74 + (builtWings - 1) * WING_SPACING) - 14;
           targetRef.current.x = Math.max(-25, Math.min(25, targetRef.current.x));
-          targetRef.current.z = Math.max(-80, Math.min(22, targetRef.current.z));
+          targetRef.current.z = Math.max(zFloor, Math.min(22, targetRef.current.z));
         }
 
         camera.position.lerp(targetRef.current, 0.08);
@@ -1853,10 +1957,26 @@ export default function VirtualRoomPage() {
           <p className="mt-1 text-xs text-white/65">{accessibilitySummary}</p>
           <ul className="mt-3 space-y-3">
             {accessiblePlacements.map((placement) => (
-              <li key={`${placement.artwork.id}-${placement.roomKey}`} className="border-b border-white/10 pb-3 last:border-b-0">
-                <p className="font-medium">{placement.artwork.title}</p>
-                <p className="text-xs text-white/65">{t("virtualRoom.byArtistInRoom", { artist: placement.artwork.artist, room: roomLabel(placement.roomKey) })}</p>
-                <p className="mt-1 text-xs text-white/55">{t("virtualRoom.curationExplanation", { title: placement.artwork.title, room: roomLabel(placement.roomKey) })}</p>
+              <li key={`${placement.artwork.id}-${placement.roomKey}`} className="flex gap-3 border-b border-white/10 pb-3 last:border-b-0">
+                {placement.artwork.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={placement.artwork.image}
+                    alt={placement.artwork.title}
+                    loading="lazy"
+                    className="h-14 w-14 flex-shrink-0 rounded-md border border-white/10 object-cover"
+                  />
+                ) : (
+                  <div
+                    className="h-14 w-14 flex-shrink-0 rounded-md border border-white/10"
+                    style={{ backgroundColor: placement.artwork.fallbackColor }}
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{placement.artwork.title}</p>
+                  <p className="text-xs text-white/65">{t("virtualRoom.byArtistInRoom", { artist: placement.artwork.artist, room: roomLabel(placement.roomKey) })}</p>
+                  <p className="mt-1 text-xs text-white/55">{t("virtualRoom.curationExplanation", { title: placement.artwork.title, room: roomLabel(placement.roomKey) })}</p>
+                </div>
               </li>
             ))}
           </ul>
@@ -1882,7 +2002,17 @@ export default function VirtualRoomPage() {
               <X className="h-4 w-4" />
             </button>
             <div className="h-48 bg-black overflow-hidden flex items-center justify-center md:h-auto md:max-h-[85vh]">
-              <img src={selectedArtwork.image} alt={selectedArtwork.title} className="w-full h-full object-contain" />
+              {selectedArtwork.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={selectedArtwork.image} alt={selectedArtwork.title} className="w-full h-full object-contain" />
+              ) : (
+                <div
+                  className="flex h-full w-full items-center justify-center p-4 text-center text-sm font-medium text-white/80"
+                  style={{ backgroundColor: selectedArtwork.fallbackColor }}
+                >
+                  {selectedArtwork.title}
+                </div>
+              )}
             </div>
             <div className="flex flex-col max-h-[85vh] overflow-y-auto p-4 sm:p-5">
               <div className="flex-1">
