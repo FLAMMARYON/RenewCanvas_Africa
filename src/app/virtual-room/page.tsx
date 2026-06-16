@@ -1366,6 +1366,69 @@ export default function VirtualRoomPage() {
       clickablesRef.current = [];
     }
 
+    // Adjacent rooms that must be joined by a real, enclosed walkway.
+    const connectors: Array<{ from: RoomKey; to: RoomKey; axis: "x" | "z" }> = [
+      { from: "entrance", to: "main", axis: "z" },
+      { from: "main", to: "left", axis: "x" },
+      { from: "main", to: "right", axis: "x" },
+      { from: "main", to: "court", axis: "z" },
+      { from: "court", to: "corridor", axis: "z" },
+    ];
+
+    const CONNECTOR_HALF_NS = 1.95; // half-width of a z-running corridor (~3.5 door + jambs)
+    const CONNECTOR_HALF_EW = 2.05; // half-depth of an x-running corridor (~3.8 door + jambs)
+
+    // Build a short enclosed corridor (floor + ceiling + two side walls) that
+    // bridges the gap between two rooms' facing doorways, so you walk room ->
+    // corridor -> room on continuous floor with no open-air gap on the sides.
+    function addConnector(from: Station, to: Station, axis: "x" | "z") {
+      const group = new THREE.Group();
+      world.add(group);
+      const wallColor = "#cdc4b5";
+      const floorColor = "#6a5f51";
+      const ceilingColor = "#e8e4dc";
+
+      if (axis === "z") {
+        const za = from.z + Math.sign(to.z - from.z) * (ROOM_D / 2);
+        const zb = to.z + Math.sign(from.z - to.z) * (ROOM_D / 2);
+        const zc = (za + zb) / 2;
+        const length = Math.abs(zb - za) + 0.2;
+        const xc = from.x;
+        const half = CONNECTOR_HALF_NS;
+        addBox(group, [half * 2 + 0.4, 0.18, length], [xc, -0.09, zc], floorColor, { roughness: 0.5, map: floorTexture });
+        addBox(group, [half * 2 + 0.4, 0.2, length], [xc, WALL_H + 0.1, zc], ceilingColor, { roughness: 0.7 });
+        addBox(group, [0.2, WALL_H, length], [xc - half, WALL_H / 2, zc], wallColor);
+        addBox(group, [0.2, WALL_H, length], [xc + half, WALL_H / 2, zc], wallColor);
+      } else {
+        const xa = from.x + Math.sign(to.x - from.x) * (ROOM_W / 2);
+        const xb = to.x + Math.sign(from.x - to.x) * (ROOM_W / 2);
+        const xc = (xa + xb) / 2;
+        const length = Math.abs(xb - xa) + 0.2;
+        const zc = from.z;
+        const half = CONNECTOR_HALF_EW;
+        addBox(group, [length, 0.18, half * 2 + 0.4], [xc, -0.09, zc], floorColor, { roughness: 0.5, map: floorTexture });
+        addBox(group, [length, 0.2, half * 2 + 0.4], [xc, WALL_H + 0.1, zc], ceilingColor, { roughness: 0.7 });
+        addBox(group, [length, WALL_H, 0.2], [xc, WALL_H / 2, zc - half], wallColor);
+        addBox(group, [length, WALL_H, 0.2], [xc, WALL_H / 2, zc + half], wallColor);
+      }
+    }
+
+    // Solid land beneath the entire interior footprint (all wings) so no room,
+    // wall or walkway is ever left floating over empty space.
+    function addFoundation(wingCount: number) {
+      const zNear = -10;
+      const zFar = -82 - (wingCount - 1) * WING_SPACING - 6;
+      const depth = Math.abs(zNear - zFar);
+      addBox(world, [66, 0.6, depth], [0, -0.32, (zNear + zFar) / 2], "#37312a", { roughness: 0.96 });
+    }
+
+    // Close the corridor's far doorway on the LAST wing so it opens onto a wall,
+    // not the void — every doorway then leads somewhere real.
+    function capCorridorNorth(wingIndex: number) {
+      const station = stationFor("corridor", wingIndex);
+      addBox(world, [ROOM_W, WALL_H, 0.26], [station.x, WALL_H / 2, station.z - ROOM_D / 2], "#cfc5b6");
+    }
+
     let builtWings = 1;
 
     function buildMuseum() {
@@ -1382,6 +1445,9 @@ export default function VirtualRoomPage() {
         console.warn(`[virtual-room] ${neededWings} wings needed but capped at ${MAX_WINGS}; some overflow pieces reuse the last wing's walls.`);
       }
 
+      // Land first, so every room/wall/walkway built on top sits on ground.
+      addFoundation(wingCount);
+
       for (let wingIndex = 0; wingIndex < wingCount; wingIndex += 1) {
         roomStations.forEach((station) => addRoom(station.key, wingIndex));
 
@@ -1391,9 +1457,14 @@ export default function VirtualRoomPage() {
           });
         });
 
+        // Enclosed walkways between adjacent rooms — no open-air gaps.
+        connectors.forEach(({ from, to, axis }) =>
+          addConnector(stationFor(from, wingIndex), stationFor(to, wingIndex), axis)
+        );
+
         // Only when more than one wing exists: reachable doorways linking the
-        // corridor of one wing to the entrance of the next (and back), so every
-        // hung piece can actually be walked to.
+        // corridor of one wing to the entrance of the next (and back), bridged
+        // by a real corridor, so every hung piece can actually be walked to.
         if (wingIndex < wingCount - 1) {
           addDoorHotspot("corridor", wingIndex, {
             label: "Next Gallery Wing",
@@ -1403,6 +1474,10 @@ export default function VirtualRoomPage() {
             fromRoom: "corridor",
             localPosition: [0, 0.06, -6.8],
           });
+          addConnector(stationFor("corridor", wingIndex), stationFor("entrance", wingIndex + 1), "z");
+        } else {
+          // Last wing: the corridor's far doorway is sealed into a back wall.
+          capCorridorNorth(wingIndex);
         }
         if (wingIndex > 0) {
           addDoorHotspot("entrance", wingIndex, {
