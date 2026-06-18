@@ -51,10 +51,14 @@ type ArtworkPlacement = {
   curationExplanation: string;
 };
 
-type WallSide = "north" | "south" | "east" | "west";
+type SlotWall = "front" | "back" | "left" | "right";
+
+// A hardcoded wall slot (Task 2): room-local position + which wall it hangs on.
+type Slot = { position: [number, number, number]; wall: SlotWall };
 
 type WallPlacement = {
   x: number;
+  y: number;
   z: number;
   rotY: number;
 };
@@ -70,8 +74,7 @@ const SPINE_SPACING = 32; // z gap between rooms along the entrance->corridor sp
 const WING_X = 30; // x of the left/right rooms either side of the main room
 const ROOM_W = 16; // BASE room footprint — rooms grow from here up to the max
 const ROOM_D = 18;
-const MAX_ROOM_W = 26; // growth cap (kept inside the grid cell so rooms never overlap)
-const MAX_ROOM_D = 26;
+const MAX_ROOM_D = 26; // upper bound used to size the foundation / camera bounds
 const WALL_H = 5.2;
 const CAMERA_Y = 1.72;
 const FRAME_W = 2.35;
@@ -79,7 +82,6 @@ const FRAME_H = 2.95;
 const FRAME_DEPTH = 0.18;
 const ARTWORK_IMAGE_W = 1.76;
 const ARTWORK_IMAGE_H = 2.26;
-const FRAME_CENTER_Y = 1.82;
 const BRAND_TEAL = "#0f766e";
 const BRAND_ORANGE = "#f59e0b";
 const BRAND_DARK = "#101417";
@@ -161,10 +163,9 @@ function stationFor(room: RoomKey, wing: number) {
 }
 
 function getArtworkPlacements(items: Artwork[]): ArtworkPlacement[] {
-  // Group every piece into the room its category routes to, then lay each one
-  // onto a real wall slot in that room. When a room runs out of wall space the
-  // overflow continues onto the SAME room in the next wing, so capacity scales
-  // with the collection and a piece is never dropped into empty space.
+  // Task 2: fill each room's hardcoded slot table in order. Overflow beyond a
+  // room's slots is ignored (see TODO). Nothing floats or blocks a doorway —
+  // the table only lists real wall positions, beside (never across) doorways.
   const byRoom = new Map<RoomKey, Artwork[]>();
   items.forEach((artwork) => {
     const roomKey = roomForArtworkCategory(artwork.category);
@@ -173,18 +174,18 @@ function getArtworkPlacements(items: Artwork[]): ArtworkPlacement[] {
     byRoom.set(roomKey, list);
   });
 
-  const dims = computeRoomDims(items);
   const placements: ArtworkPlacement[] = [];
   byRoom.forEach((list, roomKey) => {
-    const slots = wallSlotsForRoom(roomKey, dims[roomKey]);
-    const capacity = Math.max(1, slots.length);
+    const slots = ROOM_SLOTS[roomKey];
     list.forEach((artwork, index) => {
+      if (index >= slots.length) return; // TODO: overflow — no free wall slot left in this room
+      const slot = slots[index];
       placements.push({
         artwork,
         roomKey,
         slotIndex: index,
-        wingIndex: Math.floor(index / capacity),
-        slot: slots[index % capacity] ?? { x: 0, z: -dims[roomKey].d / 2 + FRAME_DEPTH / 2 + 0.16, rotY: 0 },
+        wingIndex: 0,
+        slot: { x: slot.position[0], y: slot.position[1], z: slot.position[2], rotY: WALL_ROT_Y[slot.wall] },
         curationRoomTitle: stationFor(roomKey, 0).label,
         curationGrouping: artwork.category,
         curationExplanation: `${artwork.title} is grouped by category in the ${stationFor(roomKey, 0).label}.`,
@@ -205,31 +206,14 @@ function roomForArtworkCategory(category: string): RoomKey {
 
 type RoomDims = { w: number; d: number };
 
-// Each art room grows with the number of pieces routed to it (capped), so a
-// busy category gets a bigger room instead of immediately spilling into a new
-// wing. The entrance lobby is fixed (it holds no art and seams to the façade).
-// Deterministic from the artwork list, so the placement maths and the built
-// geometry always agree.
-function computeRoomDims(items: Artwork[]): Record<RoomKey, RoomDims> {
-  const counts: Record<RoomKey, number> = { entrance: 0, main: 0, left: 0, right: 0, court: 0, corridor: 0 };
-  items.forEach((artwork) => {
-    counts[roomForArtworkCategory(artwork.category)] += 1;
-  });
-  const dims = {} as Record<RoomKey, RoomDims>;
-  (Object.keys(counts) as RoomKey[]).forEach((key) => {
-    if (key === "entrance") {
-      dims[key] = { w: ROOM_W, d: ROOM_D };
-      return;
-    }
-    // Grow ~2 units (both axes) for every ~5 pieces beyond the first 6, capped.
-    const steps = Math.min(Math.max(0, Math.ceil((counts[key] - 6) / 5)), (MAX_ROOM_W - ROOM_W) / 2);
-    dims[key] = { w: Math.min(ROOM_W + steps * 2, MAX_ROOM_W), d: Math.min(ROOM_D + steps * 2, MAX_ROOM_D) };
-  });
-  return dims;
+// Task 2: rooms are fixed-size; placement uses the hardcoded ROOM_SLOTS table,
+// so every room reports the same base footprint.
+function computeRoomDims(): Record<RoomKey, RoomDims> {
+  const fixed: RoomDims = { w: ROOM_W, d: ROOM_D };
+  return { entrance: fixed, main: fixed, left: fixed, right: fixed, court: fixed, corridor: fixed };
 }
 
-// Scale a door hotspot's base local position to a room's actual wall so the
-// marker stays in the doorway as the room grows.
+// Scale a door hotspot's base local position to a room's wall.
 function doorLocal(base: [number, number, number], dims: RoomDims): [number, number, number] {
   const [bx, by, bz] = base;
   if (Math.abs(bz) >= Math.abs(bx)) {
@@ -238,79 +222,107 @@ function doorLocal(base: [number, number, number], dims: RoomDims): [number, num
   return [Math.sign(bx) * (dims.w / 2 - 1.2), by, bz];
 }
 
-// Single source of truth for which walls of each room are solid vs. carry a
-// doorway. MUST stay in sync with the geometry built in addRoom(). Art slots
-// are generated from this so a frame never lands on — or blocks — a doorway.
-const roomWalls: Record<RoomKey, Record<WallSide, "solid" | "door">> = {
-  entrance: { north: "door", south: "door", east: "solid", west: "solid" },
-  main: { north: "door", south: "door", east: "door", west: "door" },
-  left: { north: "solid", south: "solid", east: "door", west: "solid" },
-  right: { north: "solid", south: "solid", east: "solid", west: "door" },
-  court: { north: "door", south: "door", east: "solid", west: "solid" },
-  corridor: { north: "door", south: "door", east: "solid", west: "solid" },
+// Picture-plane facing per wall (Task 1 convention: front faces +z).
+const WALL_ROT_Y: Record<SlotWall, number> = {
+  front: 0,
+  back: Math.PI,
+  left: Math.PI / 2,
+  right: -Math.PI / 2,
 };
 
-// Walls we never hang art on (entrance south = glass doors to the outdoors).
-const skipArtWalls: Partial<Record<RoomKey, WallSide[]>> = {
-  entrance: ["south"],
+// Hardcoded wall-slot table per room (room-local positions at eye level).
+// Built for the fixed ROOM_W=16 (x ∈ ±8) × ROOM_D=18 (z ∈ ±9) room: front
+// wall z=-8.8, back z=8.8, left x=-7.8, right x=7.8. Slots sit on solid walls
+// and beside doorways — never across one. Order = fill order.
+const EYE = 1.7;
+const ROOM_SLOTS: Record<RoomKey, Slot[]> = {
+  // Lobby: art only on the two solid side walls (N/S are doorways/glass).
+  entrance: [
+    { position: [-7.8, EYE, -6], wall: "left" },
+    { position: [-7.8, EYE, -2], wall: "left" },
+    { position: [-7.8, EYE, 2], wall: "left" },
+    { position: [-7.8, EYE, 6], wall: "left" },
+    { position: [7.8, EYE, -6], wall: "right" },
+    { position: [7.8, EYE, -2], wall: "right" },
+    { position: [7.8, EYE, 2], wall: "right" },
+    { position: [7.8, EYE, 6], wall: "right" },
+  ],
+  // Painting room is a crossroads (doors on all 4 walls): slots flank each door.
+  main: [
+    { position: [-5.2, EYE, -8.8], wall: "front" },
+    { position: [5.2, EYE, -8.8], wall: "front" },
+    { position: [-5.2, EYE, 8.8], wall: "back" },
+    { position: [5.2, EYE, 8.8], wall: "back" },
+    { position: [-7.8, EYE, -5.5], wall: "left" },
+    { position: [-7.8, EYE, 5.5], wall: "left" },
+    { position: [7.8, EYE, -5.5], wall: "right" },
+    { position: [7.8, EYE, 5.5], wall: "right" },
+  ],
+  // Wearables: solid front/back/left walls + door on the right (flanked).
+  left: [
+    { position: [-5.2, EYE, -8.8], wall: "front" },
+    { position: [-1.7, EYE, -8.8], wall: "front" },
+    { position: [1.7, EYE, -8.8], wall: "front" },
+    { position: [5.2, EYE, -8.8], wall: "front" },
+    { position: [-5.2, EYE, 8.8], wall: "back" },
+    { position: [-1.7, EYE, 8.8], wall: "back" },
+    { position: [1.7, EYE, 8.8], wall: "back" },
+    { position: [5.2, EYE, 8.8], wall: "back" },
+    { position: [-7.8, EYE, -6], wall: "left" },
+    { position: [-7.8, EYE, -2], wall: "left" },
+    { position: [-7.8, EYE, 2], wall: "left" },
+    { position: [-7.8, EYE, 6], wall: "left" },
+    { position: [7.8, EYE, -5.5], wall: "right" },
+    { position: [7.8, EYE, 5.5], wall: "right" },
+  ],
+  // Living space: solid front/back/right walls + door on the left (flanked).
+  right: [
+    { position: [-5.2, EYE, -8.8], wall: "front" },
+    { position: [-1.7, EYE, -8.8], wall: "front" },
+    { position: [1.7, EYE, -8.8], wall: "front" },
+    { position: [5.2, EYE, -8.8], wall: "front" },
+    { position: [-5.2, EYE, 8.8], wall: "back" },
+    { position: [-1.7, EYE, 8.8], wall: "back" },
+    { position: [1.7, EYE, 8.8], wall: "back" },
+    { position: [5.2, EYE, 8.8], wall: "back" },
+    { position: [7.8, EYE, -6], wall: "right" },
+    { position: [7.8, EYE, -2], wall: "right" },
+    { position: [7.8, EYE, 2], wall: "right" },
+    { position: [7.8, EYE, 6], wall: "right" },
+    { position: [-7.8, EYE, -5.5], wall: "left" },
+    { position: [-7.8, EYE, 5.5], wall: "left" },
+  ],
+  // Sculpture room: doors on front/back (flanked) + solid left/right walls.
+  court: [
+    { position: [-5.2, EYE, -8.8], wall: "front" },
+    { position: [5.2, EYE, -8.8], wall: "front" },
+    { position: [-5.2, EYE, 8.8], wall: "back" },
+    { position: [5.2, EYE, 8.8], wall: "back" },
+    { position: [-7.8, EYE, -6], wall: "left" },
+    { position: [-7.8, EYE, -2], wall: "left" },
+    { position: [-7.8, EYE, 2], wall: "left" },
+    { position: [-7.8, EYE, 6], wall: "left" },
+    { position: [7.8, EYE, -6], wall: "right" },
+    { position: [7.8, EYE, -2], wall: "right" },
+    { position: [7.8, EYE, 2], wall: "right" },
+    { position: [7.8, EYE, 6], wall: "right" },
+  ],
+  // Mixed media: same shape as the sculpture room.
+  corridor: [
+    { position: [-5.2, EYE, -8.8], wall: "front" },
+    { position: [5.2, EYE, -8.8], wall: "front" },
+    { position: [-5.2, EYE, 8.8], wall: "back" },
+    { position: [5.2, EYE, 8.8], wall: "back" },
+    { position: [-7.8, EYE, -6], wall: "left" },
+    { position: [-7.8, EYE, -2], wall: "left" },
+    { position: [-7.8, EYE, 2], wall: "left" },
+    { position: [-7.8, EYE, 6], wall: "left" },
+    { position: [7.8, EYE, -6], wall: "right" },
+    { position: [7.8, EYE, -2], wall: "right" },
+    { position: [7.8, EYE, 2], wall: "right" },
+    { position: [7.8, EYE, 6], wall: "right" },
+  ],
 };
-
-const FRAME_PITCH = 2.72; // centre-to-centre spacing of frames along a wall
-const CORNER_CLEARANCE = 0.95; // keep frames off the corners
-const DOOR_EDGE_CLEARANCE = 0.55; // keep frames clear of the doorway opening
-const DOOR_HALF_NS = 1.75; // half the north/south doorway gap (gap 3.5)
-const DOOR_HALF_EW = 1.9; // half the east/west doorway gap (gap 3.8)
-
-// Evenly distribute as many frames as fit within a 1-D wall region [a, b].
-function fitFramesInRegion(a: number, b: number): number[] {
-  const length = b - a;
-  if (length < FRAME_W + 0.2) return [];
-  const count = Math.max(1, Math.floor((length - 0.3) / FRAME_PITCH));
-  const used = count * FRAME_PITCH;
-  const start = a + (length - used) / 2 + FRAME_PITCH / 2;
-  return Array.from({ length: count }, (_, index) => start + index * FRAME_PITCH);
-}
-
-// A solid wall is one usable region; a door wall is the two segments flanking
-// the opening, so frames sit beside the doorway rather than across it.
-function regionsForWall(kind: "solid" | "door", halfSpan: number, doorHalf: number): Array<[number, number]> {
-  const edge = halfSpan - CORNER_CLEARANCE;
-  if (kind === "solid") return [[-edge, edge]];
-  const doorEdge = doorHalf + DOOR_EDGE_CLEARANCE;
-  return [
-    [-edge, -doorEdge],
-    [doorEdge, edge],
-  ];
-}
-
-// All hangable wall slots for a room: every solid wall plus the segments
-// beside each doorway, frames flush against the wall facing the room.
-function wallSlotsForRoom(roomKey: RoomKey, dims: RoomDims): WallPlacement[] {
-  const inset = FRAME_DEPTH / 2 + 0.16;
-  const walls = roomWalls[roomKey];
-  const skip = skipArtWalls[roomKey] ?? [];
-  const placements: WallPlacement[] = [];
-
-  (Object.keys(walls) as WallSide[]).forEach((side) => {
-    if (skip.includes(side)) return;
-    const kind = walls[side];
-    if (side === "north" || side === "south") {
-      const z = side === "north" ? -dims.d / 2 + inset : dims.d / 2 - inset;
-      const rotY = side === "north" ? 0 : Math.PI;
-      regionsForWall(kind, dims.w / 2, DOOR_HALF_NS).forEach(([a, b]) =>
-        fitFramesInRegion(a, b).forEach((x) => placements.push({ x, z, rotY }))
-      );
-    } else {
-      const x = side === "west" ? -dims.w / 2 + inset : dims.w / 2 - inset;
-      const rotY = side === "west" ? Math.PI / 2 : -Math.PI / 2;
-      regionsForWall(kind, dims.d / 2, DOOR_HALF_EW).forEach(([a, b]) =>
-        fitFramesInRegion(a, b).forEach((z) => placements.push({ x, z, rotY }))
-      );
-    }
-  });
-
-  return placements;
-}
 
 function fitTextureToArtworkPlane(texture: THREE.Texture) {
   const image = texture.image as { width?: number; height?: number } | undefined;
@@ -941,7 +953,7 @@ export default function VirtualRoomPage() {
       const station = stationFor(roomKey, wingIndex);
       const wallSlot = placement.slot;
       const group = new THREE.Group();
-      group.position.set(station.x + wallSlot.x, FRAME_CENTER_Y, station.z + wallSlot.z);
+      group.position.set(station.x + wallSlot.x, wallSlot.y, station.z + wallSlot.z);
       group.rotation.y = wallSlot.rotY;
       scene.add(group);
 
@@ -1777,7 +1789,7 @@ export default function VirtualRoomPage() {
       const placements = getArtworkPlacements(artworks);
       // Per-room sizes (rooms grow with their content); same deterministic
       // computation the placement maths used, so geometry and slots agree.
-      const roomDims = computeRoomDims(artworks);
+      const roomDims = computeRoomDims();
       // Build exactly as many wings as the fullest room needs (clamped), so a
       // large collection always has a real wall to hang on — never floating in
       // empty space — without replicating the building more than necessary.
