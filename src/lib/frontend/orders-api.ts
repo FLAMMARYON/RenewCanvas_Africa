@@ -31,6 +31,26 @@ export type FrontendOrder = {
 type OrderResponse = { ok: boolean; order: FrontendOrder; message?: string };
 type OrderListResponse = { ok: boolean; orders: FrontendOrder[]; message?: string };
 
+/**
+ * Platform commission rate (artist keeps the remaining 80%). There is no payout
+ * field on the order, so the payout is computed as artwork value minus this
+ * commission (delivery is excluded — it is not the artist's share).
+ */
+export const PLATFORM_COMMISSION_RATE = 0.2;
+
+/**
+ * Artist payout for an order: the artist's share of the artwork value after the
+ * platform commission. Returns null when the order has no artist-owned items
+ * (e.g. RenewCanvas-owned), which the UI shows as "—".
+ */
+export function artistPayout(order: FrontendOrder): number | null {
+  const artistSubtotal = order.items
+    .filter((item) => item.ownerType === "artist")
+    .reduce((sum, item) => sum + item.unitAmount * item.quantity, 0);
+  if (artistSubtotal <= 0) return null;
+  return Math.round(artistSubtotal * (1 - PLATFORM_COMMISSION_RATE));
+}
+
 export async function createOrder(payload: {
   artworkId: string;
   paymentMethod: string;

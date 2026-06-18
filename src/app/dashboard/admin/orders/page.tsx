@@ -1,7 +1,7 @@
 "use client";
 
 import DashboardLayout from "@/components/DashboardLayout";
-import { confirmOrderPayment, disburseOrder, listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
+import { artistPayout, confirmOrderPayment, disburseOrder, listOrders, PLATFORM_COMMISSION_RATE, type FrontendOrder } from "@/lib/frontend/orders-api";
 import { orderStatusMeta, isConfirmedRevenueStatus } from "@/lib/frontend/status-labels";
 import { Banknote, Calendar, CheckCircle, DollarSign, Mail, Package, Search, User } from "lucide-react";
 import Link from "next/link";
@@ -131,6 +131,17 @@ export default function AdminOrdersPage() {
                       <div className="lg:col-span-2">
                         <p className="font-semibold text-gray-900">{order.totalAmount.toLocaleString()} RWF</p>
                         <p className="text-xs uppercase text-gray-500">{order.paymentMethod}</p>
+                        {(() => {
+                          const payout = artistPayout(order);
+                          return (
+                            <p className="mt-0.5 text-xs text-gray-500">
+                              {t("admin.orders.artistPayoutEstimate")}:{" "}
+                              <span className="font-medium text-teal-700">
+                                {payout === null ? "—" : `${payout.toLocaleString()} RWF`}
+                              </span>
+                            </p>
+                          );
+                        })()}
                       </div>
                       <div className="lg:col-span-2">
                         <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${status.bgColor} ${status.color}`}>
@@ -150,8 +161,8 @@ export default function AdminOrdersPage() {
                             <Detail label={t("admin.orders.subtotal")} value={`${order.subtotalAmount.toLocaleString()} RWF`} />
                             <Detail label={t("admin.orders.delivery")} value={`${order.deliveryAmount.toLocaleString()} RWF`} />
                             <Detail label={t("admin.orders.total")} value={`${order.totalAmount.toLocaleString()} RWF`} />
-                            <Detail label={t("admin.orders.platformFeeEstimate")} value={`${Math.round(order.totalAmount * 0.2).toLocaleString()} RWF`} />
-                            <Detail label={t("admin.orders.artistPayoutEstimate")} value={item?.ownerType === "renewcanvas" ? t("admin.orders.notApplicable") : `${Math.round(order.totalAmount * 0.8).toLocaleString()} RWF`} />
+                            <Detail label={t("admin.orders.platformFeeEstimate")} value={`${Math.round(order.subtotalAmount * PLATFORM_COMMISSION_RATE).toLocaleString()} RWF`} />
+                            <Detail label={t("admin.orders.artistPayoutEstimate")} value={artistPayout(order) === null ? t("admin.orders.notApplicable") : `${artistPayout(order)!.toLocaleString()} RWF`} />
                           </div>
                         </div>
 
