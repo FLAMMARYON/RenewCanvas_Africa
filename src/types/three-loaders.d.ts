@@ -16,3 +16,25 @@ declare module "three/examples/jsm/loaders/RGBELoader.js" {
     setDataType(type: number): this;
   }
 }
+
+declare module "three/addons/controls/PointerLockControls.js" {
+  import { Camera, Vector3 } from "three";
+
+  export class PointerLockControls {
+    constructor(camera: Camera, domElement?: HTMLElement | null);
+    readonly isLocked: boolean;
+    pointerSpeed: number;
+    enabled: boolean;
+    lock(): void;
+    unlock(): void;
+    moveForward(distance: number): void;
+    moveRight(distance: number): void;
+    getObject(): Camera;
+    getDirection(target: Vector3): Vector3;
+    connect(): void;
+    disconnect(): void;
+    dispose(): void;
+    addEventListener(type: string, listener: (event: unknown) => void): void;
+    removeEventListener(type: string, listener: (event: unknown) => void): void;
+  }
+}

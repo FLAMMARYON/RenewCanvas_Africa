@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Compass, Home, Info, List, Map as MapIcon, Maximize2, RotateCcw, Share2, ShoppingBag, Volume2, VolumeX, X } from "lucide-react";
 import { useNarration } from "@/lib/frontend/useNarration";
 import * as THREE from "three";
+import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { GalleryLoadingScreen } from "@/components/gallery/GalleryLoadingScreen";
 import { WebGLFallback } from "@/components/gallery/WebGLFallback";
 import { useGalleryData } from "@/lib/frontend/useGalleryData";
@@ -558,6 +559,9 @@ export default function VirtualRoomPage() {
   const [hasWebGL, setHasWebGL] = useState<boolean | null>(null);
   const [shareMessage, setShareMessage] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
+  const [pointerLocked, setPointerLocked] = useState(false);
+  // Artwork the camera is currently near (Task 7 proximity info card).
+  const [nearbyArtwork, setNearbyArtwork] = useState<Artwork | null>(null);
 
   const artworks = useMemo<Artwork[]>(
     () => (galleryData.status === "success" ? flattenGalleryRooms(galleryData.data.rooms) : []),
@@ -620,6 +624,9 @@ export default function VirtualRoomPage() {
     // Per-frame updaters for the living world (creatures, drifting particles,
     // swaying canopies). Kept tiny and capped so they never tank the frame.
     const animators: Array<(elapsed: number, delta: number) => void> = [];
+    // Wall meshes the player collides with (Task 6); their world Box3 is
+    // computed once after the build.
+    const wallColliders: THREE.Object3D[] = [];
     // HDRI environment handles (disposed on cleanup); null until/unless loaded.
     let hdrEnvTexture: THREE.Texture | null = null;
     let hdrSkyTexture: THREE.Texture | null = null;
@@ -709,12 +716,12 @@ export default function VirtualRoomPage() {
       const tex = wallPanelOpts();
 
       if (doorCenter === undefined) {
-        addBox(group, [width, WALL_H, 0.24], [0, WALL_H / 2, z], color, tex);
+        wallColliders.push(addBox(group, [width, WALL_H, 0.24], [0, WALL_H / 2, z], color, tex));
         return;
       }
 
-      if (leftWidth > 0.4) addBox(group, [leftWidth, WALL_H, 0.24], [-width / 2 + leftWidth / 2, WALL_H / 2, z], color, tex);
-      if (rightWidth > 0.4) addBox(group, [rightWidth, WALL_H, 0.24], [width / 2 - rightWidth / 2, WALL_H / 2, z], color, tex);
+      if (leftWidth > 0.4) wallColliders.push(addBox(group, [leftWidth, WALL_H, 0.24], [-width / 2 + leftWidth / 2, WALL_H / 2, z], color, tex));
+      if (rightWidth > 0.4) wallColliders.push(addBox(group, [rightWidth, WALL_H, 0.24], [width / 2 - rightWidth / 2, WALL_H / 2, z], color, tex));
       addBox(group, [gap + 0.8, 1.25, 0.3], [doorCenter, 4.58, z], "#4a3728");
       addBox(group, [0.28, 4, 0.34], [doorCenter - gap / 2, 2, z], "#4a3728");
       addBox(group, [0.28, 4, 0.34], [doorCenter + gap / 2, 2, z], "#4a3728");
@@ -724,14 +731,14 @@ export default function VirtualRoomPage() {
       const gap = doorZ === undefined ? 0 : 3.8;
       const tex = wallPanelOpts();
       if (doorZ === undefined) {
-        addBox(group, [0.24, WALL_H, depth], [x, WALL_H / 2, 0], color, tex);
+        wallColliders.push(addBox(group, [0.24, WALL_H, depth], [x, WALL_H / 2, 0], color, tex));
         return;
       }
 
       const front = Math.max(0, doorZ + depth / 2 - gap / 2);
       const back = Math.max(0, depth / 2 - doorZ - gap / 2);
-      if (front > 0.4) addBox(group, [0.24, WALL_H, front], [x, WALL_H / 2, -depth / 2 + front / 2], color, tex);
-      if (back > 0.4) addBox(group, [0.24, WALL_H, back], [x, WALL_H / 2, depth / 2 - back / 2], color, tex);
+      if (front > 0.4) wallColliders.push(addBox(group, [0.24, WALL_H, front], [x, WALL_H / 2, -depth / 2 + front / 2], color, tex));
+      if (back > 0.4) wallColliders.push(addBox(group, [0.24, WALL_H, back], [x, WALL_H / 2, depth / 2 - back / 2], color, tex));
       addBox(group, [0.32, 1.25, gap + 0.8], [x, 4.58, doorZ], "#4a3728");
       addBox(group, [0.32, 4, 0.28], [x, 2, doorZ - gap / 2], "#4a3728");
       addBox(group, [0.32, 4, 0.28], [x, 2, doorZ + gap / 2], "#4a3728");
@@ -1266,6 +1273,7 @@ export default function VirtualRoomPage() {
       wallLeft.castShadow = true;
       wallLeft.receiveShadow = true;
       buildingShell.add(wallLeft);
+      wallColliders.push(wallLeft);
 
       // Right wing wall (x: 3 to 11)
       const wallRight = new THREE.Mesh(new THREE.BoxGeometry(8, SHELL_TOP, 0.8), sandstoneMaterial);
@@ -1273,6 +1281,7 @@ export default function VirtualRoomPage() {
       wallRight.castShadow = true;
       wallRight.receiveShadow = true;
       buildingShell.add(wallRight);
+      wallColliders.push(wallRight);
 
       // Lintel above door opening
       const lintel = new THREE.Mesh(new THREE.BoxGeometry(6.4, SHELL_TOP - 5, 0.9), sandstoneMaterial);
@@ -1292,6 +1301,7 @@ export default function VirtualRoomPage() {
         extension.castShadow = true;
         extension.receiveShadow = true;
         buildingShell.add(extension);
+        wallColliders.push(extension);
       });
 
       // Vine strip across the top of the facade
@@ -1812,8 +1822,8 @@ export default function VirtualRoomPage() {
         const half = CONNECTOR_HALF_NS;
         addBox(group, [half * 2 + 0.4, 0.18, length], [xc, -0.09, zc], floorColor, floorOpts);
         addBox(group, [half * 2 + 0.4, 0.2, length], [xc, WALL_H + 0.1, zc], ceilingColor, wallOpts);
-        addBox(group, [0.2, WALL_H, length], [xc - half, WALL_H / 2, zc], wallColor, wallOpts);
-        addBox(group, [0.2, WALL_H, length], [xc + half, WALL_H / 2, zc], wallColor, wallOpts);
+        wallColliders.push(addBox(group, [0.2, WALL_H, length], [xc - half, WALL_H / 2, zc], wallColor, wallOpts));
+        wallColliders.push(addBox(group, [0.2, WALL_H, length], [xc + half, WALL_H / 2, zc], wallColor, wallOpts));
       } else {
         const xa = from.x + Math.sign(to.x - from.x) * (fromDims.w / 2);
         const xb = to.x + Math.sign(from.x - to.x) * (toDims.w / 2);
@@ -1823,8 +1833,8 @@ export default function VirtualRoomPage() {
         const half = CONNECTOR_HALF_EW;
         addBox(group, [length, 0.18, half * 2 + 0.4], [xc, -0.09, zc], floorColor, floorOpts);
         addBox(group, [length, 0.2, half * 2 + 0.4], [xc, WALL_H + 0.1, zc], ceilingColor, wallOpts);
-        addBox(group, [length, WALL_H, 0.2], [xc, WALL_H / 2, zc - half], wallColor, wallOpts);
-        addBox(group, [length, WALL_H, 0.2], [xc, WALL_H / 2, zc + half], wallColor, wallOpts);
+        wallColliders.push(addBox(group, [length, WALL_H, 0.2], [xc, WALL_H / 2, zc - half], wallColor, wallOpts));
+        wallColliders.push(addBox(group, [length, WALL_H, 0.2], [xc, WALL_H / 2, zc + half], wallColor, wallOpts));
       }
     }
 
@@ -1845,7 +1855,7 @@ export default function VirtualRoomPage() {
     // not the void — every doorway then leads somewhere real.
     function capCorridorNorth(wingIndex: number, dims: RoomDims) {
       const station = stationFor("corridor", wingIndex);
-      addBox(world, [dims.w, WALL_H, 0.26], [station.x, WALL_H / 2, station.z - dims.d / 2], "#cfc5b6");
+      wallColliders.push(addBox(world, [dims.w, WALL_H, 0.26], [station.x, WALL_H / 2, station.z - dims.d / 2], "#cfc5b6"));
     }
 
     let builtWings = 1;
@@ -1946,13 +1956,7 @@ export default function VirtualRoomPage() {
       loadTexturesForActiveRoom("entrance", 0);
     };
 
-    // Always start outside with the camera intro animation.
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let introT = 0;
-    const INTRO_MS = 3200;
-    const introFrom = new THREE.Vector3(0, CAMERA_Y, 22);
-    const introTo = new THREE.Vector3(0, CAMERA_Y, 6);
-    const smoothstep = (t: number) => t * t * (3 - 2 * t);
+    const MOVE_SPEED = 6; // units/second (Task 6: applied with clock delta)
 
     sceneStateRef.current = "exterior";
     clickablesRef.current = [];
@@ -1992,50 +1996,33 @@ export default function VirtualRoomPage() {
     // without a reload (continuous architecture).
     buildInteriorOnce();
 
-    camera.position.copy(introFrom);
-    targetRef.current.copy(introFrom);
-    yawRef.current = 0;
-    // Reduced motion: skip animation but stay outside
-    if (prefersReducedMotion) {
-      camera.position.copy(introTo);
-      targetRef.current.copy(introTo);
-      introT = 1;
-    }
+    // Start at the outdoor approach, facing the entrance. PointerLockControls
+    // takes over look + movement once the user clicks to lock (Task 6).
+    camera.position.set(0, CAMERA_Y, 9);
+    camera.lookAt(0, CAMERA_Y, -12);
+
+    const controls = new PointerLockControls(camera, renderer.domElement);
+    controls.addEventListener("lock", () => setPointerLocked(true));
+    controls.addEventListener("unlock", () => setPointerLocked(false));
+
+    // Wall collision (Task 6): a player Box3 vs. each wall's world Box3.
+    scene.updateMatrixWorld(true);
+    const wallBoxes = wallColliders.map((object) => new THREE.Box3().setFromObject(object));
+    const playerBox = new THREE.Box3();
+    const playerSize = new THREE.Vector3(0.7, 1.7, 0.7);
+    const collidesWithWall = (position: THREE.Vector3) => {
+      playerBox.setFromCenterAndSize(position, playerSize);
+      return wallBoxes.some((box) => box.intersectsBox(playerBox));
+    };
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
-    const goTo = (target: DoorTarget, baseWing: number) => {
-      const nextWing = baseWing + (target.wingOffset ?? 0);
-      const station = stationFor(target.room, nextWing);
-      targetRef.current.set(station.x, CAMERA_Y, station.z);
-      yawRef.current = degToRad(target.heading);
-      roomRef.current = target.room;
-      wingRef.current = nextWing;
-      setWing(nextWing);
-      setRoom(target.room);
-      loadTexturesForActiveRoom(target.room, nextWing);
-    };
-
-    const chooseDoorFromHeading = (activeRoom: RoomKey, activeWing: number, backward: boolean) => {
-      const station = stationFor(activeRoom, activeWing);
-      const cameraDirection = -yawRef.current + (backward ? Math.PI : 0);
-      const candidates = doorRuntimeTargets[activeRoom];
-
-      return candidates.reduce(
-        (best, candidate) => {
-          const doorWorldX = station.x + candidate.localPosition[0];
-          const doorWorldZ = station.z + candidate.localPosition[2];
-          const angleToDoor = Math.atan2(doorWorldX - targetRef.current.x, -(doorWorldZ - targetRef.current.z));
-          const angleDistance = Math.abs(normalizeAngle(angleToDoor - cameraDirection));
-
-          return angleDistance < best.angleDistance ? { target: candidate, angleDistance } : best;
-        },
-        { target: candidates[0], angleDistance: Number.POSITIVE_INFINITY }
-      ).target;
-    };
-
+    // Click (Task 6/7): while the pointer is released, raycast the artworks —
+    // a hit routes to checkout, a miss locks the pointer to start exploring.
+    // While locked, the pointer drives mouse-look (handled by the controls).
     const onClick = (event: MouseEvent) => {
+      if (controls.isLocked) return;
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -2044,105 +2031,76 @@ export default function VirtualRoomPage() {
       const hit = hits.find((item) => item.object.userData.type || item.object.parent?.userData.type);
       const data = hit?.object.userData.type ? hit.object.userData : hit?.object.parent?.userData;
 
-      if (data?.type === "door") {
-        goTo(data.target, data.wing);
-      }
-
-      if (data?.type === "exteriorEnter") {
-        enterBuilding();
-      }
-
       if (data?.type === "artwork") {
-        setSelectedArtwork(data.artwork);
-      }
-    };
-
-    const onWheel = (event: WheelEvent) => {
-      event.preventDefault();
-      if (sceneStateRef.current === "exterior") {
-        // Outdoors: scroll glides the camera through the ecosystem (scroll up =
-        // travel forward toward the building) once the intro fly-in has settled.
-        if (introT >= 1) {
-          const step = -event.deltaY * 0.012;
-          const yaw = yawRef.current;
-          targetRef.current.x = Math.max(-90, Math.min(90, targetRef.current.x + step * Math.sin(yaw)));
-          targetRef.current.z = Math.max(-6, Math.min(80, targetRef.current.z - step * Math.cos(yaw)));
-        }
+        // Buy: route to checkout for this artwork (shown for all artworks).
+        window.location.href = `/checkout?artworkId=${encodeURIComponent(data.artwork.id)}`;
         return;
       }
-
-      const now = performance.now();
-      wheelDeltaRef.current += event.deltaY;
-
-      if (Math.abs(wheelDeltaRef.current) < 260 || now - lastWheelNavRef.current < 850) {
-        return;
-      }
-
-      lastWheelNavRef.current = now;
-      const activeRoom = roomRef.current;
-      const activeWing = wingRef.current;
-      const target = chooseDoorFromHeading(activeRoom, activeWing, false);
-      if (target) goTo(target, activeWing);
-      wheelDeltaRef.current = 0;
+      // Otherwise: lock the pointer and start walking around.
+      controls.lock();
     };
-
-    const onPointerDown = (event: PointerEvent) => {
-      dragRef.current = {
-        x: event.clientX,
-        y: event.clientY,
-        yaw: yawRef.current,
-        pitch: pitchRef.current
-      };
-    };
-
-    const onPointerMove = (event: PointerEvent) => {
-      if (!dragRef.current) return;
-      // Update yaw (horizontal rotation)
-      yawRef.current = dragRef.current.yaw - (event.clientX - dragRef.current.x) * 0.0022;
-
-      // Update pitch (vertical rotation) with clamping to prevent gimbal lock
-      const newPitch = dragRef.current.pitch + (event.clientY - dragRef.current.y) * 0.0022;
-      const MAX_PITCH = Math.PI / 2.2; // ~82 degrees up/down
-      pitchRef.current = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, newPitch));
-    };
-
-    const onPointerUp = () => {
-      dragRef.current = null;
-    };
-
     renderer.domElement.addEventListener("click", onClick);
-    renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
-    renderer.domElement.addEventListener("pointerdown", onPointerDown);
-    renderer.domElement.addEventListener("pointermove", onPointerMove);
-    renderer.domElement.addEventListener("pointerup", onPointerUp);
-    renderer.domElement.addEventListener("pointerleave", onPointerUp);
 
+    // WASD + arrow keys -> movement state (applied per frame with delta).
     const onKeyDown = (event: KeyboardEvent) => {
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "s", "a", "d", "q", "e"].includes(event.key)) {
-        event.preventDefault();
+      switch (event.key) {
+        case "w":
+        case "W":
+        case "ArrowUp":
+          keysRef.current.forward = true;
+          break;
+        case "s":
+        case "S":
+        case "ArrowDown":
+          keysRef.current.backward = true;
+          break;
+        case "a":
+        case "A":
+        case "ArrowLeft":
+          keysRef.current.left = true;
+          break;
+        case "d":
+        case "D":
+        case "ArrowRight":
+          keysRef.current.right = true;
+          break;
+        case " ":
+          // Spacebar toggles pointer-lock so the user can release the mouse for UI.
+          event.preventDefault();
+          if (controls.isLocked) controls.unlock();
+          else controls.lock();
+          break;
+        default:
+          break;
       }
-
-      // Smooth WASD movement (set key states)
-      if (event.key === "w" || event.key === "ArrowUp") keysRef.current.forward = true;
-      if (event.key === "s" || event.key === "ArrowDown") keysRef.current.backward = true;
-      if (event.key === "a") keysRef.current.left = true;
-      if (event.key === "d") keysRef.current.right = true;
-
-      // Arrow keys and Q/E for camera rotation
-      if (event.key === "ArrowLeft" || event.key === "q") {
-        yawRef.current += degToRad(18);
-      }
-
-      if (event.key === "ArrowRight" || event.key === "e") {
-        yawRef.current -= degToRad(18);
-      }
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) event.preventDefault();
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      if (event.key === "w" || event.key === "ArrowUp") keysRef.current.forward = false;
-      if (event.key === "s" || event.key === "ArrowDown") keysRef.current.backward = false;
-      if (event.key === "a") keysRef.current.left = false;
-      if (event.key === "d") keysRef.current.right = false;
+      switch (event.key) {
+        case "w":
+        case "W":
+        case "ArrowUp":
+          keysRef.current.forward = false;
+          break;
+        case "s":
+        case "S":
+        case "ArrowDown":
+          keysRef.current.backward = false;
+          break;
+        case "a":
+        case "A":
+        case "ArrowLeft":
+          keysRef.current.left = false;
+          break;
+        case "d":
+        case "D":
+        case "ArrowRight":
+          keysRef.current.right = false;
+          break;
+        default:
+          break;
+      }
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -2162,48 +2120,25 @@ export default function VirtualRoomPage() {
     renderer.setAnimationLoop(() => {
       const delta = clock.getDelta();
       const elapsed = clock.getElapsedTime();
-      if (sceneStateRef.current === "exterior" && introT < 1 && !prefersReducedMotion) {
-        introT = Math.min(introT + delta / (INTRO_MS / 1000), 1);
-        camera.position.lerpVectors(introFrom, introTo, smoothstep(introT));
-        targetRef.current.copy(camera.position);
-        // Intro: face toward entrance (yaw = 0, pitch = 0)
-        yawRef.current = 0;
-        pitchRef.current = 0;
-      } else {
-        // Smooth WASD movement
-        const keys = keysRef.current;
-        const speed = 5; // units per second
-        const moveDistance = speed * delta;
 
-        let dx = 0;
-        let dz = 0;
-
-        if (keys.forward) dz -= moveDistance;
-        if (keys.backward) dz += moveDistance;
-        if (keys.left) dx -= moveDistance;
-        if (keys.right) dx += moveDistance;
-
-        if (dx !== 0 || dz !== 0) {
-          const yaw = yawRef.current;
-          const moveX = dx * Math.cos(yaw) - dz * Math.sin(yaw);
-          const moveZ = dx * Math.sin(yaw) + dz * Math.cos(yaw);
-
-          targetRef.current.x += moveX;
-          targetRef.current.z += moveZ;
-
-          // Collision bounds — span every built wing (the corridor of the last
-          // wing is the deepest room) and reach the left/right rooms at ±WING_X.
-          const zFloor = -(21 + SPINE_SPACING * 3 + MAX_ROOM_D / 2 + 10) - (builtWings - 1) * WING_SPACING;
-          targetRef.current.x = Math.max(-47, Math.min(47, targetRef.current.x));
-          targetRef.current.z = Math.max(zFloor, Math.min(22, targetRef.current.z));
-        }
-
-        camera.position.lerp(targetRef.current, 0.08);
+      // Task 6: movement only while the pointer is locked. PointerLockControls
+      // owns look (mouse) + facing; moveForward/moveRight walk on the horizontal
+      // plane. Delta-timed for frame-rate independence. Collision: clone the
+      // position, move, and revert if the player box hits a wall.
+      if (controls.isLocked) {
+        const step = MOVE_SPEED * delta;
+        const before = camera.position.clone();
+        if (keysRef.current.forward) controls.moveForward(step);
+        if (keysRef.current.backward) controls.moveForward(-step);
+        if (keysRef.current.left) controls.moveRight(-step);
+        if (keysRef.current.right) controls.moveRight(step);
+        camera.position.y = CAMERA_Y;
+        if (collidesWithWall(camera.position)) camera.position.copy(before);
+        // Outer bounds: span every built wing and reach the left/right rooms.
+        const zFloor = -(21 + SPINE_SPACING * 3 + MAX_ROOM_D / 2 + 10) - (builtWings - 1) * WING_SPACING;
+        camera.position.x = Math.max(-47, Math.min(47, camera.position.x));
+        camera.position.z = Math.max(zFloor, Math.min(22, camera.position.z));
       }
-      // Unified first-person camera rotation (yaw + pitch) for both exterior and interior
-      camera.rotation.order = "YXZ"; // Critical for FPS controls
-      camera.rotation.y = yawRef.current;
-      camera.rotation.x = pitchRef.current;
 
       // Proximity-driven texture loading: load the artwork images for whichever
       // room the camera is actually in. Previously textures only loaded when you
@@ -2260,14 +2195,10 @@ export default function VirtualRoomPage() {
     return () => {
       renderer.setAnimationLoop(null);
       renderer.domElement.removeEventListener("click", onClick);
-      renderer.domElement.removeEventListener("wheel", onWheel);
-      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
-      renderer.domElement.removeEventListener("pointermove", onPointerMove);
-      renderer.domElement.removeEventListener("pointerup", onPointerUp);
-      renderer.domElement.removeEventListener("pointerleave", onPointerUp);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("resize", resize);
+      controls.dispose();
       hdrEnvTexture?.dispose();
       hdrSkyTexture?.dispose();
       mount.removeChild(renderer.domElement);
@@ -2277,8 +2208,9 @@ export default function VirtualRoomPage() {
 
   const goToRoom = (nextRoom: RoomKey, nextWing = wing) => {
     const station = stationFor(nextRoom, nextWing);
-    targetRef.current.set(station.x, CAMERA_Y, station.z);
-    yawRef.current = degToRad(station.heading);
+    // Fast-travel: teleport the camera straight to the room centre (PointerLock
+    // owns look, so we only set position).
+    cameraRef.current?.position.set(station.x, CAMERA_Y, station.z);
     roomRef.current = nextRoom;
     wingRef.current = nextWing;
     setWing(nextWing);
