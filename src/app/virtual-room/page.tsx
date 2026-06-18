@@ -629,6 +629,30 @@ export default function VirtualRoomPage() {
     const interiorFill = new THREE.HemisphereLight("#f7efe2", "#27322f", 0.45);
     scene.add(interiorFill);
 
+    // Task 4: base lighting so nothing renders pure black, plus an overall
+    // directional fill that casts shadows. Per-artwork spotlights are added in
+    // addArtwork(). renderer.shadowMap is already enabled below.
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+
+    const directionalFill = new THREE.DirectionalLight("#fff3e0", 0.55);
+    directionalFill.position.set(12, 34, 16);
+    directionalFill.castShadow = true;
+    directionalFill.shadow.mapSize.set(2048, 2048);
+    directionalFill.shadow.camera.near = 1;
+    directionalFill.shadow.camera.far = 90;
+    directionalFill.shadow.camera.left = -45;
+    directionalFill.shadow.camera.right = 45;
+    directionalFill.shadow.camera.top = 45;
+    directionalFill.shadow.camera.bottom = -45;
+    directionalFill.shadow.bias = -0.0004;
+    scene.add(directionalFill);
+
+    // Cap on per-artwork spotlights so a very large collection can't blow the
+    // WebGL light budget (the ambient + room point lights still light the rest).
+    const MAX_ARTWORK_SPOTS = 40;
+    let artworkSpotCount = 0;
+
     // Single shared loader; crossOrigin MUST be set before loading or Vercel
     // Blob images load tainted/blank.
     const loader = new THREE.TextureLoader();
@@ -980,7 +1004,22 @@ export default function VirtualRoomPage() {
         new THREE.MeshBasicMaterial({ map: fallbackTexture, color: 0xffffff, side: THREE.DoubleSide })
       );
       plane.position.z = 0.11;
+      plane.castShadow = true; // unlit, but still casts (Task 4)
       group.add(plane);
+
+      // Task 4: one accent SpotLight per artwork, aimed at the picture from in
+      // front and above. No shadow casting (it's accent light; the directional
+      // fill owns shadows) and capped so a huge collection can't exceed the
+      // light budget.
+      if (artworkSpotCount < MAX_ARTWORK_SPOTS) {
+        artworkSpotCount += 1;
+        const spot = new THREE.SpotLight("#fff4e2", 6, 7, 0.6, 0.45, 1.2);
+        spot.position.set(0, 1.6, 1.9);
+        spot.target.position.set(0, 0, 0.11);
+        spot.castShadow = false;
+        group.add(spot);
+        group.add(spot.target);
+      }
 
       // Plaque = text label only (title + artist). Never the photo.
       const plaqueTexture = new THREE.CanvasTexture(createTextCanvas(artwork.title, artwork.artist));
