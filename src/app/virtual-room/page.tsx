@@ -395,32 +395,6 @@ function createTextCanvas(title: string, subtitle: string, bg = "#f2eadc") {
   return canvas;
 }
 
-// Wall-label plaque: a recessed image slot on the left (the real artwork
-// thumbnail is overlaid in 3D) and the title/artist caption on the right.
-function createPlaqueCanvas(title: string, artist: string) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 640;
-  canvas.height = 156;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return canvas;
-
-  ctx.fillStyle = "#f2eadc";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = "#b89d70";
-  ctx.lineWidth = 8;
-  ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
-  // Recessed slot the 3D thumbnail sits in front of.
-  ctx.fillStyle = "#15191c";
-  ctx.fillRect(18, 16, 100, 124);
-  ctx.fillStyle = "#241c15";
-  ctx.font = "700 34px Arial";
-  ctx.fillText(title.slice(0, 22), 150, 66);
-  ctx.fillStyle = "#6e5b43";
-  ctx.font = "26px Arial";
-  ctx.fillText(artist.slice(0, 26), 150, 112);
-  return canvas;
-}
-
 function createArtworkCanvas(artwork: Artwork) {
   const canvas = document.createElement("canvas");
   canvas.width = 768;
@@ -643,12 +617,13 @@ export default function VirtualRoomPage() {
     const interiorFill = new THREE.HemisphereLight("#f7efe2", "#27322f", 0.45);
     scene.add(interiorFill);
 
+    // Single shared loader; crossOrigin MUST be set before loading or Vercel
+    // Blob images load tainted/blank.
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin("anonymous");
     loader.crossOrigin = "anonymous";
     const artworkTextureTargets: Array<{
-      plane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshPhysicalMaterial>;
-      thumbnail?: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+      plane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
       placement: ArtworkPlacement;
       imageUrl: string;
       loaded: boolean;
@@ -658,6 +633,9 @@ export default function VirtualRoomPage() {
       artworkTextureTargets.forEach((target) => {
         if (target.loaded || !target.imageUrl || target.placement.roomKey !== activeRoom || target.placement.wingIndex !== activeWing) return;
         target.loaded = true;
+        // TEMP: log every image URL so it can be verified in devtools that these
+        // are absolute https://...blob... URLs.
+        console.log("[virtual-room] loading artwork image:", target.imageUrl);
         loader.load(
           target.imageUrl,
           (texture) => {
@@ -666,31 +644,16 @@ export default function VirtualRoomPage() {
             texture.wrapT = THREE.ClampToEdgeWrapping;
             fitTextureToArtworkPlane(texture);
             target.plane.material.map = texture;
-            target.plane.material.color.set("#ffffff");
+            target.plane.material.color.set(0xffffff);
             target.plane.material.needsUpdate = true;
-            // Same WebP on the plaque thumbnail (shares the decoded texture).
-            if (target.thumbnail) {
-              target.thumbnail.material.map = texture;
-              target.thumbnail.material.color.set("#ffffff");
-              target.thumbnail.material.needsUpdate = true;
-            }
           },
           undefined,
-          (error) => {
-            console.error("[virtual-room] artwork texture failed", {
-              title: target.placement.artwork.title,
-              url: target.imageUrl,
-              error,
-            });
+          () => {
+            console.warn("[virtual-room] artwork texture failed:", target.imageUrl);
             target.loaded = false;
             target.plane.material.map = null;
             target.plane.material.color.set(BRAND_TEAL);
             target.plane.material.needsUpdate = true;
-            if (target.thumbnail) {
-              target.thumbnail.material.map = null;
-              target.thumbnail.material.color.set(BRAND_TEAL);
-              target.thumbnail.material.needsUpdate = true;
-            }
           }
         );
       });
@@ -982,46 +945,37 @@ export default function VirtualRoomPage() {
       group.rotation.y = wallSlot.rotY;
       scene.add(group);
 
+      // Frame = a slightly larger border slab placed BEHIND the picture (it
+      // never carries the photo). The mat sits further back again.
       addBox(group, [FRAME_W, FRAME_H, 0.16], [0, 0, 0], "#3d2c1d", { roughness: 0.6 });
       addBox(group, [2.02, 2.62, 0.18], [0, 0, -0.04], "#f2eadc", { roughness: 0.52 });
 
+      // The picture plane IS the artwork. UNLIT MeshBasicMaterial so the image
+      // shows at full brightness regardless of scene lighting (Standard/Physical
+      // render black without enough light — the cause of the blank panels).
+      // It sits on the room-facing side, in front of the frame's front face
+      // (z = +0.08), so it is never hidden behind the frame or facing the wall.
       const fallbackTexture = new THREE.CanvasTexture(createArtworkCanvas(artwork));
       fallbackTexture.colorSpace = THREE.SRGBColorSpace;
       const plane = new THREE.Mesh(
         new THREE.PlaneGeometry(ARTWORK_IMAGE_W, ARTWORK_IMAGE_H),
-        new THREE.MeshPhysicalMaterial({
-          map: fallbackTexture,
-          color: "#ffffff",
-          roughness: 0.56,
-          clearcoat: 0.16,
-          clearcoatRoughness: 0.48,
-        })
+        new THREE.MeshBasicMaterial({ map: fallbackTexture, color: 0xffffff, side: THREE.DoubleSide })
       );
-      plane.position.z = 0.07;
+      plane.position.z = 0.11;
       group.add(plane);
 
-      // Museum label plaque: title/artist caption on the right with the real
-      // artwork image (WebP) shown as a thumbnail on the left, so the piece
-      // renders on the plaque too — not only on the wall frame.
-      const plaqueTexture = new THREE.CanvasTexture(createPlaqueCanvas(artwork.title, artwork.artist));
+      // Plaque = text label only (title + artist). Never the photo.
+      const plaqueTexture = new THREE.CanvasTexture(createTextCanvas(artwork.title, artwork.artist));
       plaqueTexture.colorSpace = THREE.SRGBColorSpace;
       const plaque = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.9, 0.46),
+        new THREE.PlaneGeometry(1.65, 0.46),
         new THREE.MeshBasicMaterial({ map: plaqueTexture, transparent: true, side: THREE.DoubleSide, depthWrite: false })
       );
-      plaque.position.set(0, -1.32, 0.09);
+      plaque.position.set(0, -1.32, 0.12);
       plaque.renderOrder = 10;
       group.add(plaque);
 
-      const plaqueThumb = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.297, 0.366),
-        new THREE.MeshBasicMaterial({ map: fallbackTexture, color: "#ffffff", side: THREE.DoubleSide, depthWrite: false })
-      );
-      plaqueThumb.position.set(-0.748, -1.32, 0.11);
-      plaqueThumb.renderOrder = 11;
-      group.add(plaqueThumb);
-
-      artworkTextureTargets.push({ plane, thumbnail: plaqueThumb, placement, imageUrl: artwork.image, loaded: false });
+      artworkTextureTargets.push({ plane, placement, imageUrl: artwork.image, loaded: false });
 
       const categoryTexture = new THREE.CanvasTexture(createTextCanvas(roomLabel(roomKey), curationGrouping, "#dff6f3"));
       categoryTexture.colorSpace = THREE.SRGBColorSpace;
