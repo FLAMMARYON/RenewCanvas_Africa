@@ -122,7 +122,20 @@ export default function AdminOrdersPage() {
                       </div>
                       <div className="lg:col-span-3">
                         <p className="font-medium text-gray-900">{item?.title ?? t("admin.orders.artworkFallback")}</p>
-                        <p className="text-sm text-gray-500">{t("admin.orders.byArtist", { name: item?.artistName ?? "RenewCanvas Africa" })}</p>
+                        <p className="text-sm text-gray-500">
+                          {item && item.ownerType === "artist" && item.artistId ? (
+                            // Artist-owned: link the artist name to their public profile.
+                            <Link
+                              href={`/artists/${item.artistId}`}
+                              className="text-teal-700 hover:underline"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {t("admin.orders.byArtist", { name: item.artistName })}
+                            </Link>
+                          ) : (
+                            t("admin.orders.byArtist", { name: item?.artistName ?? "RenewCanvas Africa" })
+                          )}
+                        </p>
                       </div>
                       <div className="lg:col-span-3">
                         <p className="font-medium text-gray-900">{order.buyer?.name ?? String(delivery.fullName ?? t("admin.orders.buyerFallback"))}</p>

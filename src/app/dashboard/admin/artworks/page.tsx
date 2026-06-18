@@ -121,7 +121,17 @@ export default function AdminArtworksPage() {
                           </span>
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500">
-                          <span className="flex items-center gap-1"><User className="h-3 w-3" />{artwork.artist?.name ?? "RenewCanvas Africa"}</span>
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {artwork.ownerType === "artist" && artwork.artist?.id ? (
+                              // Artist-owned: link the name to their public profile.
+                              <Link href={`/artists/${artwork.artist.id}`} className="text-teal-700 hover:underline" onClick={(event) => event.stopPropagation()}>
+                                {artwork.artist.name}
+                              </Link>
+                            ) : (
+                              artwork.artist?.name ?? "RenewCanvas Africa"
+                            )}
+                          </span>
                           <span className="rounded bg-gray-100 px-2 py-0.5 text-xs">{artwork.category}</span>
                           <span className={artwork.ownerType === "renewcanvas" ? "text-blue-700" : "text-purple-700"}>
                             {artwork.ownerType === "renewcanvas" ? t("admin.artworks.ownerRenewcanvas") : t("admin.artworks.ownerConsignment")}
