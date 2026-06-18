@@ -442,45 +442,28 @@ function createEnvironmentTexture() {
   return texture;
 }
 
-function createFloorTexture() {
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-
-  ctx.fillStyle = "#6d6153";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  for (let y = 0; y < 512; y += 64) {
-    for (let x = 0; x < 512; x += 128) {
-      ctx.fillStyle = (x + y) % 256 === 0 ? "#776b5c" : "#5f554a";
-      ctx.fillRect(x, y, 126, 62);
-      ctx.strokeStyle = "rgba(32, 25, 18, 0.42)";
-      ctx.strokeRect(x, y, 126, 62);
-    }
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(3, 4);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
 function addBox(
   group: THREE.Group,
   size: [number, number, number],
   position: [number, number, number],
   color: string,
-  options?: { roughness?: number; metalness?: number; map?: THREE.Texture | null; emissive?: string; emissiveIntensity?: number }
+  options?: {
+    roughness?: number;
+    metalness?: number;
+    map?: THREE.Texture | null;
+    normalMap?: THREE.Texture | null;
+    roughnessMap?: THREE.Texture | null;
+    emissive?: string;
+    emissiveIntensity?: number;
+  }
 ) {
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(...size),
     new THREE.MeshPhysicalMaterial({
       color,
       map: options?.map ?? null,
+      normalMap: options?.normalMap ?? null,
+      roughnessMap: options?.roughnessMap ?? null,
       roughness: options?.roughness ?? 0.72,
       metalness: options?.metalness ?? 0,
       clearcoat: 0.08,
@@ -618,7 +601,6 @@ export default function VirtualRoomPage() {
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin("anonymous");
     loader.crossOrigin = "anonymous";
-    const floorTexture = createFloorTexture();
     const artworkTextureTargets: Array<{
       plane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshPhysicalMaterial>;
       thumbnail?: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
@@ -670,18 +652,25 @@ export default function VirtualRoomPage() {
     };
     loadRoomTexturesRef.current = loadTexturesForActiveRoom;
 
+    // Shared options that put the plaster PBR set on a wall panel (color tints it).
+    const wallPanelOpts = () => {
+      const wall = pbrSet("wall", 2);
+      return { map: wall.map, normalMap: wall.normalMap, roughnessMap: wall.roughnessMap, roughness: 0.95 } as const;
+    };
+
     function addWallSegments(group: THREE.Group, z: number, color: string, doorCenter?: number) {
       const gap = doorCenter === undefined ? 0 : 3.5;
       const leftWidth = doorCenter === undefined ? ROOM_W : Math.max(0, doorCenter + ROOM_W / 2 - gap / 2);
       const rightWidth = doorCenter === undefined ? 0 : Math.max(0, ROOM_W / 2 - doorCenter - gap / 2);
+      const tex = wallPanelOpts();
 
       if (doorCenter === undefined) {
-        addBox(group, [ROOM_W, WALL_H, 0.24], [0, WALL_H / 2, z], color);
+        addBox(group, [ROOM_W, WALL_H, 0.24], [0, WALL_H / 2, z], color, tex);
         return;
       }
 
-      if (leftWidth > 0.4) addBox(group, [leftWidth, WALL_H, 0.24], [-ROOM_W / 2 + leftWidth / 2, WALL_H / 2, z], color);
-      if (rightWidth > 0.4) addBox(group, [rightWidth, WALL_H, 0.24], [ROOM_W / 2 - rightWidth / 2, WALL_H / 2, z], color);
+      if (leftWidth > 0.4) addBox(group, [leftWidth, WALL_H, 0.24], [-ROOM_W / 2 + leftWidth / 2, WALL_H / 2, z], color, tex);
+      if (rightWidth > 0.4) addBox(group, [rightWidth, WALL_H, 0.24], [ROOM_W / 2 - rightWidth / 2, WALL_H / 2, z], color, tex);
       addBox(group, [gap + 0.8, 1.25, 0.3], [doorCenter, 4.58, z], "#4a3728");
       addBox(group, [0.28, 4, 0.34], [doorCenter - gap / 2, 2, z], "#4a3728");
       addBox(group, [0.28, 4, 0.34], [doorCenter + gap / 2, 2, z], "#4a3728");
@@ -689,15 +678,16 @@ export default function VirtualRoomPage() {
 
     function addSideWall(group: THREE.Group, x: number, color: string, doorZ?: number) {
       const gap = doorZ === undefined ? 0 : 3.8;
+      const tex = wallPanelOpts();
       if (doorZ === undefined) {
-        addBox(group, [0.24, WALL_H, ROOM_D], [x, WALL_H / 2, 0], color);
+        addBox(group, [0.24, WALL_H, ROOM_D], [x, WALL_H / 2, 0], color, tex);
         return;
       }
 
       const front = Math.max(0, doorZ + ROOM_D / 2 - gap / 2);
       const back = Math.max(0, ROOM_D / 2 - doorZ - gap / 2);
-      if (front > 0.4) addBox(group, [0.24, WALL_H, front], [x, WALL_H / 2, -ROOM_D / 2 + front / 2], color);
-      if (back > 0.4) addBox(group, [0.24, WALL_H, back], [x, WALL_H / 2, ROOM_D / 2 - back / 2], color);
+      if (front > 0.4) addBox(group, [0.24, WALL_H, front], [x, WALL_H / 2, -ROOM_D / 2 + front / 2], color, tex);
+      if (back > 0.4) addBox(group, [0.24, WALL_H, back], [x, WALL_H / 2, ROOM_D / 2 - back / 2], color, tex);
       addBox(group, [0.32, 1.25, gap + 0.8], [x, 4.58, doorZ], "#4a3728");
       addBox(group, [0.32, 4, 0.28], [x, 2, doorZ - gap / 2], "#4a3728");
       addBox(group, [0.32, 4, 0.28], [x, 2, doorZ + gap / 2], "#4a3728");
@@ -710,8 +700,22 @@ export default function VirtualRoomPage() {
       group.position.set(station.x, 0, station.z);
       world.add(group);
 
-      addBox(group, [ROOM_W + 0.4, 0.18, ROOM_D + 0.4], [0, -0.09, 0], palette.floor, { roughness: 0.36, map: floorTexture });
-      addBox(group, [ROOM_W + 0.2, 0.22, ROOM_D + 0.2], [0, WALL_H + 0.12, 0], "#E8E4DC", { roughness: 0.65, emissive: "#4A4539", emissiveIntensity: 0.08 });
+      const floorTex = pbrSet("floor", 4);
+      const ceilTex = pbrSet("wall", 2);
+      addBox(group, [ROOM_W + 0.4, 0.18, ROOM_D + 0.4], [0, -0.09, 0], palette.floor, {
+        roughness: 0.55,
+        map: floorTex.map,
+        normalMap: floorTex.normalMap,
+        roughnessMap: floorTex.roughnessMap,
+      });
+      addBox(group, [ROOM_W + 0.2, 0.22, ROOM_D + 0.2], [0, WALL_H + 0.12, 0], "#E8E4DC", {
+        roughness: 0.8,
+        map: ceilTex.map,
+        normalMap: ceilTex.normalMap,
+        roughnessMap: ceilTex.roughnessMap,
+        emissive: "#4A4539",
+        emissiveIntensity: 0.08,
+      });
 
       const hasNorth = roomKey === "entrance" || roomKey === "main" || roomKey === "court" || roomKey === "corridor";
       const hasSouth = roomKey === "main" || roomKey === "court" || roomKey === "corridor";
@@ -1016,6 +1020,9 @@ export default function VirtualRoomPage() {
     // Cache textures + materials by basePath so repeated wings reuse them
     const pbrTextureCache = new Map<string, THREE.Texture>();
     const sharedTextureLoader = new THREE.TextureLoader();
+    // Shared PolyHaven PBR sets (diff/normal/rough) keyed by name and loaded
+    // once, so every wall/floor/prop reuses the same GPU textures.
+    const pbrSetCache = new Map<string, { map: THREE.Texture; normalMap: THREE.Texture; roughnessMap: THREE.Texture }>();
 
     function loadPBRMaterial(
       basePath: string,
@@ -1055,32 +1062,47 @@ export default function VirtualRoomPage() {
       return material;
     }
 
-    // Ground/terrain material from the downloaded PolyHaven 1k JPG PBR set
-    // (diffuse + normal + roughness). Tiled across the large outdoor terrain.
-    function loadTerrainMaterial(repeat: number) {
-      const material = new THREE.MeshStandardMaterial({ color: "#5d6b3e", roughness: 0.97 });
-      const apply = (path: string, srgb: boolean, assign: (t: THREE.Texture) => void) => {
-        sharedTextureLoader.load(
-          path,
-          (texture) => {
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(repeat, repeat);
-            texture.anisotropy = 4;
-            if (srgb) texture.colorSpace = THREE.SRGBColorSpace;
-            assign(texture);
-            material.needsUpdate = true;
-          },
+    // Load (once) a shared PolyHaven 1k PBR set: /textures/pbr/{name}_{diff,nor,rough}_1k.jpg.
+    function pbrSet(name: string, repeat: number) {
+      const cached = pbrSetCache.get(name);
+      if (cached) return cached;
+      const make = (suffix: string, srgb: boolean) => {
+        const texture = sharedTextureLoader.load(
+          `/textures/pbr/${name}_${suffix}_1k.jpg`,
+          undefined,
           undefined,
           () => {
-            /* keep the flat fallback colour */
+            /* leave the material's flat fallback colour in place */
           }
         );
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(repeat, repeat);
+        texture.anisotropy = 4;
+        if (srgb) texture.colorSpace = THREE.SRGBColorSpace;
+        return texture;
       };
-      apply("/textures/pbr/grass_rock_diff_1k.jpg", true, (t) => (material.map = t));
-      apply("/textures/pbr/grass_rock_nor_1k.jpg", false, (t) => (material.normalMap = t));
-      apply("/textures/pbr/grass_rock_rough_1k.jpg", false, (t) => (material.roughnessMap = t));
-      return material;
+      const set = { map: make("diff", true), normalMap: make("nor", false), roughnessMap: make("rough", false) };
+      pbrSetCache.set(name, set);
+      return set;
+    }
+
+    // Build a MeshStandardMaterial from a shared PBR set. `color` tints the
+    // diffuse map, which keeps each room's colour identity while adding texture.
+    function pbrMaterial(name: string, repeat: number, opts?: { color?: string; roughness?: number; metalness?: number }) {
+      const set = pbrSet(name, repeat);
+      return new THREE.MeshStandardMaterial({
+        color: opts?.color ?? "#ffffff",
+        roughness: opts?.roughness ?? 0.9,
+        metalness: opts?.metalness ?? 0,
+        map: set.map,
+        normalMap: set.normalMap,
+        roughnessMap: set.roughnessMap,
+      });
+    }
+
+    function loadTerrainMaterial(repeat: number) {
+      return pbrMaterial("grass_rock", repeat, { color: "#8f9f6a", roughness: 0.97 });
     }
 
     function buildExterior(sceneRef: THREE.Scene): THREE.Group {
@@ -1107,7 +1129,17 @@ export default function VirtualRoomPage() {
         { roughness: 0.95 }
       );
 
-      const pathMaterial = new THREE.MeshStandardMaterial({ color: "#5C4A3A", roughness: 0.92 });
+      // Cobblestone pavement on the approach path (per-axis tiling so the
+      // stones stay roughly square down the long walkway).
+      const pavementSet = pbrSet("pavement", 1);
+      [pavementSet.map, pavementSet.normalMap, pavementSet.roughnessMap].forEach((t) => t.repeat.set(3, 18));
+      const pathMaterial = new THREE.MeshStandardMaterial({
+        color: "#9a9286",
+        roughness: 0.9,
+        map: pavementSet.map,
+        normalMap: pavementSet.normalMap,
+        roughnessMap: pavementSet.roughnessMap,
+      });
       const borderMaterial = new THREE.MeshStandardMaterial({ color: "#8B7355", roughness: 0.88 });
       const sandstoneMaterial = new THREE.MeshStandardMaterial({ color: "#C4A882", roughness: 0.82, metalness: 0 });
       const ledgeMaterial = new THREE.MeshStandardMaterial({ color: "#B09070", roughness: 0.78 });
@@ -1274,7 +1306,7 @@ export default function VirtualRoomPage() {
       });
 
       // Two tall street lamps flanking the approach path (per reference).
-      const lampMetal = new THREE.MeshStandardMaterial({ color: "#1f1f1f", roughness: 0.35, metalness: 0.85 });
+      const lampMetal = pbrMaterial("metal", 2, { color: "#5a5a5e", roughness: 0.45, metalness: 0.85 });
       const lampGlowMat = new THREE.MeshStandardMaterial({
         color: "#fff2cf",
         emissive: "#ffd58a",
@@ -1336,7 +1368,7 @@ export default function VirtualRoomPage() {
       buildingShell.add(signText);
 
       // Trees (outdoor). All tree positions stay at z >= -5, safely outside.
-      const trunkMaterial = new THREE.MeshStandardMaterial({ color: "#3D2B1A", roughness: 0.85 });
+      const trunkMaterial = pbrMaterial("bark", 2, { color: "#6e5236", roughness: 0.9 });
       const canopyMaterial = loadPBRMaterial(
         "/textures/othonna_cerarioides",
         "#1A3D1A",
@@ -1470,7 +1502,7 @@ export default function VirtualRoomPage() {
       const TREE_CAP = 26;
       const trunkGeo = new THREE.CylinderGeometry(0.16, 0.28, 3.4, 6);
       const canopyGeo = new THREE.IcosahedronGeometry(1.7, 1);
-      const trunkMat = new THREE.MeshStandardMaterial({ color: "#3c2a18", roughness: 0.9 });
+      const trunkMat = pbrMaterial("bark", 2, { color: "#6e5236", roughness: 0.9 });
       const canopyMats = [
         new THREE.MeshStandardMaterial({ color: isDay ? "#2f6b32" : "#15311b", roughness: 0.85 }),
         new THREE.MeshStandardMaterial({ color: isDay ? "#3d7a3a" : "#1a3b21", roughness: 0.85 }),
@@ -1650,8 +1682,12 @@ export default function VirtualRoomPage() {
     function addConnector(from: Station, to: Station, axis: "x" | "z") {
       const group = new THREE.Group();
       world.add(group);
+      const floor = pbrSet("floor", 2);
+      const wall = pbrSet("wall", 2);
+      const floorOpts = { roughness: 0.55, map: floor.map, normalMap: floor.normalMap, roughnessMap: floor.roughnessMap };
+      const wallOpts = { roughness: 0.95, map: wall.map, normalMap: wall.normalMap, roughnessMap: wall.roughnessMap };
       const wallColor = "#cdc4b5";
-      const floorColor = "#6a5f51";
+      const floorColor = "#8a7f6f";
       const ceilingColor = "#e8e4dc";
 
       if (axis === "z") {
@@ -1661,10 +1697,10 @@ export default function VirtualRoomPage() {
         const length = Math.abs(zb - za) + 0.2;
         const xc = from.x;
         const half = CONNECTOR_HALF_NS;
-        addBox(group, [half * 2 + 0.4, 0.18, length], [xc, -0.09, zc], floorColor, { roughness: 0.5, map: floorTexture });
-        addBox(group, [half * 2 + 0.4, 0.2, length], [xc, WALL_H + 0.1, zc], ceilingColor, { roughness: 0.7 });
-        addBox(group, [0.2, WALL_H, length], [xc - half, WALL_H / 2, zc], wallColor);
-        addBox(group, [0.2, WALL_H, length], [xc + half, WALL_H / 2, zc], wallColor);
+        addBox(group, [half * 2 + 0.4, 0.18, length], [xc, -0.09, zc], floorColor, floorOpts);
+        addBox(group, [half * 2 + 0.4, 0.2, length], [xc, WALL_H + 0.1, zc], ceilingColor, wallOpts);
+        addBox(group, [0.2, WALL_H, length], [xc - half, WALL_H / 2, zc], wallColor, wallOpts);
+        addBox(group, [0.2, WALL_H, length], [xc + half, WALL_H / 2, zc], wallColor, wallOpts);
       } else {
         const xa = from.x + Math.sign(to.x - from.x) * (ROOM_W / 2);
         const xb = to.x + Math.sign(from.x - to.x) * (ROOM_W / 2);
@@ -1672,10 +1708,10 @@ export default function VirtualRoomPage() {
         const length = Math.abs(xb - xa) + 0.2;
         const zc = from.z;
         const half = CONNECTOR_HALF_EW;
-        addBox(group, [length, 0.18, half * 2 + 0.4], [xc, -0.09, zc], floorColor, { roughness: 0.5, map: floorTexture });
-        addBox(group, [length, 0.2, half * 2 + 0.4], [xc, WALL_H + 0.1, zc], ceilingColor, { roughness: 0.7 });
-        addBox(group, [length, WALL_H, 0.2], [xc, WALL_H / 2, zc - half], wallColor);
-        addBox(group, [length, WALL_H, 0.2], [xc, WALL_H / 2, zc + half], wallColor);
+        addBox(group, [length, 0.18, half * 2 + 0.4], [xc, -0.09, zc], floorColor, floorOpts);
+        addBox(group, [length, 0.2, half * 2 + 0.4], [xc, WALL_H + 0.1, zc], ceilingColor, wallOpts);
+        addBox(group, [length, WALL_H, 0.2], [xc, WALL_H / 2, zc - half], wallColor, wallOpts);
+        addBox(group, [length, WALL_H, 0.2], [xc, WALL_H / 2, zc + half], wallColor, wallOpts);
       }
     }
 
