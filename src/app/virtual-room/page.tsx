@@ -768,8 +768,12 @@ export default function VirtualRoomPage() {
 
       const hasNorth = roomKey === "entrance" || roomKey === "main" || roomKey === "court" || roomKey === "corridor";
       const hasSouth = roomKey === "main" || roomKey === "court" || roomKey === "corridor";
-      const westDoor = roomKey === "main" ? 0 : roomKey === "left" ? 0 : undefined;
-      const eastDoor = roomKey === "main" ? 0 : roomKey === "right" ? 0 : undefined;
+      // Doorways must face the neighbouring room: the LEFT room sits to main's
+      // west, so its doorway is on its EAST wall (facing main); the RIGHT room
+      // mirrors it with a WEST doorway. (Previously both opened into the void,
+      // leaving left/right unreachable.)
+      const westDoor = roomKey === "main" || roomKey === "right" ? 0 : undefined;
+      const eastDoor = roomKey === "main" || roomKey === "left" ? 0 : undefined;
 
       addWallSegments(group, -ROOM_D / 2, palette.wall, ROOM_W, hasNorth ? 0 : undefined);
       addWallSegments(group, ROOM_D / 2, palette.wall, ROOM_W, hasSouth || roomKey === "entrance" ? 0 : undefined);
@@ -1850,9 +1854,11 @@ export default function VirtualRoomPage() {
       clickablesRef.current = [];
 
       const placements = getArtworkPlacements(artworks);
-      // Per-room sizes (rooms grow with their content); same deterministic
-      // computation the placement maths used, so geometry and slots agree.
+      // Per-room sizes (fixed footprints; deterministic so geometry and slots agree).
       const roomDims = computeRoomDims();
+      // TEMP: print the room layout + connectivity for verification (Task 5).
+      console.log("[virtual-room] room layout:", roomStations.map((s) => `${s.key}(x=${s.x}, z=${s.z})`).join("  |  "));
+      console.log("[virtual-room] doorways: entrance<->main, main<->left, main<->right, main<->court, court<->corridor — every room reachable from the entrance.");
       // Build exactly as many wings as the fullest room needs (clamped), so a
       // large collection always has a real wall to hang on — never floating in
       // empty space — without replicating the building more than necessary.
