@@ -103,13 +103,16 @@ const roomStations: Station[] = [
   { key: "corridor", label: "Mixed Media Room", x: 0, z: -21 - SPINE_SPACING * 3, heading: 0 },
 ];
 
+// Wall colour tints the plaster PBR map. Only the Painting room (red) and the
+// Living Space room (green) are coloured; every other room's walls are white
+// (no greys), per request.
 const roomColors: Record<RoomKey, { wall: string; trim: string; rail: string; floor: string }> = {
-  entrance: { wall: "#d8ccb9", trim: "#f2eadc", rail: "#0f766e", floor: "#6f6255" },
+  entrance: { wall: "#ffffff", trim: "#f2eadc", rail: "#0f766e", floor: "#6f6255" },
   main: { wall: "#8f2f2b", trim: "#ead8b8", rail: "#5d2420", floor: "#735f4d" },
-  left: { wall: "#b9b0a4", trim: "#f3eee5", rail: "#786a5b", floor: "#665b4f" },
+  left: { wall: "#ffffff", trim: "#f3eee5", rail: "#786a5b", floor: "#665b4f" },
   right: { wall: "#93aa79", trim: "#f1e8d2", rail: "#566d45", floor: "#695d49" },
-  court: { wall: "#d6c7b1", trim: "#f8efe0", rail: "#0f766e", floor: "#7b715f" },
-  corridor: { wall: "#cfc5b6", trim: "#f5eee2", rail: "#f59e0b", floor: "#665d51" },
+  court: { wall: "#ffffff", trim: "#f8efe0", rail: "#0f766e", floor: "#7b715f" },
+  corridor: { wall: "#ffffff", trim: "#f5eee2", rail: "#f59e0b", floor: "#665d51" },
 };
 
 const doors: Record<RoomKey, DoorTarget[]> = {
@@ -1814,7 +1817,7 @@ export default function VirtualRoomPage() {
       const wall = pbrSet("wall", 2);
       const floorOpts = { roughness: 0.55, map: floor.map, normalMap: floor.normalMap, roughnessMap: floor.roughnessMap };
       const wallOpts = { roughness: 0.95, map: wall.map, normalMap: wall.normalMap, roughnessMap: wall.roughnessMap };
-      const wallColor = "#cdc4b5";
+      const wallColor = "#ffffff";
       const floorColor = "#8a7f6f";
       const ceilingColor = "#e8e4dc";
 
@@ -1860,7 +1863,7 @@ export default function VirtualRoomPage() {
     // not the void — every doorway then leads somewhere real.
     function capCorridorNorth(wingIndex: number, dims: RoomDims) {
       const station = stationFor("corridor", wingIndex);
-      wallColliders.push(addBox(world, [dims.w, WALL_H, 0.26], [station.x, WALL_H / 2, station.z - dims.d / 2], "#cfc5b6"));
+      wallColliders.push(addBox(world, [dims.w, WALL_H, 0.26], [station.x, WALL_H / 2, station.z - dims.d / 2], "#ffffff"));
     }
 
     let builtWings = 1;
