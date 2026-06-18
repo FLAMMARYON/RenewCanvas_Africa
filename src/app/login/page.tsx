@@ -24,15 +24,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touched, setTouched] = useState<{ email?: boolean; password?: boolean }>({});
+
+  // Inline validation: valid email format + non-empty password.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailError = !email.trim()
+    ? t("auth.validation.emailRequired", { defaultValue: "Email is required" })
+    : !EMAIL_RE.test(email.trim())
+    ? t("auth.validation.emailInvalid", { defaultValue: "Enter a valid email address" })
+    : "";
+  const passwordError = !password ? t("auth.validation.passwordRequired", { defaultValue: "Password is required" }) : "";
+  const isValid = !emailError && !passwordError;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setTouched({ email: true, password: true });
 
-    if (!email.trim() || !password.trim()) {
-      setError(t("auth.login.errEmpty"));
-      return;
-    }
+    if (!isValid) return;
 
     setIsSubmitting(true);
 
@@ -134,11 +143,14 @@ export default function LoginPage() {
                     id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
                     placeholder={t("auth.emailPlaceholder")}
+                    aria-invalid={touched.email && emailError ? true : undefined}
                     className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                     required
                   />
                 </div>
+                {touched.email && emailError && <p className="mt-1 text-sm text-red-600">{emailError}</p>}
               </div>
 
               {/* Password Field */}
@@ -158,6 +170,7 @@ export default function LoginPage() {
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
                     placeholder={t("auth.login.passwordPlaceholder")}
                     className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                     required
@@ -175,6 +188,7 @@ export default function LoginPage() {
                     )}
                   </button>
                 </div>
+                {touched.password && passwordError && <p className="mt-1 text-sm text-red-600">{passwordError}</p>}
               </div>
 
               {/* Remember Me & Forgot Password */}
@@ -197,8 +211,8 @@ export default function LoginPage() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white bg-teal-700 rounded-xl hover:bg-teal-800 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-[1.02] shadow-lg shadow-teal-700/30"
+                disabled={isSubmitting || !isValid}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white bg-teal-700 rounded-xl hover:bg-teal-800 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-[1.02] shadow-lg shadow-teal-700/30 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? (
                   <>

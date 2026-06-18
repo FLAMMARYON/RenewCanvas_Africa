@@ -38,6 +38,7 @@ function RegisterForm() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touched, setTouched] = useState<{ fullName?: boolean; email?: boolean; password?: boolean; confirmPassword?: boolean }>({});
 
   useEffect(() => {
     const roleParam = searchParams.get("role");
@@ -46,21 +47,33 @@ function RegisterForm() {
     }
   }, [searchParams]);
 
+  // Inline validation: required name, valid email, password >= 8, confirm match.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const fieldErrors = {
+    fullName: !formData.fullName.trim() ? t("auth.validation.nameRequired", { defaultValue: "Full name is required" }) : "",
+    email: !formData.email.trim()
+      ? t("auth.validation.emailRequired", { defaultValue: "Email is required" })
+      : !EMAIL_RE.test(formData.email.trim())
+      ? t("auth.validation.emailInvalid", { defaultValue: "Enter a valid email address" })
+      : "",
+    password: formData.password.length < 8 ? t("auth.validation.passwordMin", { defaultValue: "Password must be at least 8 characters" }) : "",
+    confirmPassword: formData.confirmPassword !== formData.password ? t("auth.validation.passwordMismatch", { defaultValue: "Passwords do not match" }) : "",
+  };
+  const isValid = !fieldErrors.fullName && !fieldErrors.email && !fieldErrors.password && !fieldErrors.confirmPassword && agreedToTerms;
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const markTouched = (field: keyof typeof touched) => setTouched((prev) => ({ ...prev, [field]: true }));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setTouched({ fullName: true, email: true, password: true, confirmPassword: true });
 
-    if (formData.password !== formData.confirmPassword) {
-      setError(t("auth.register.errMismatch"));
-      return;
-    }
-
-    if (!agreedToTerms) {
-      setError(t("auth.register.errTerms"));
+    if (!isValid) {
+      if (!agreedToTerms) setError(t("auth.register.errTerms"));
       return;
     }
 
@@ -226,11 +239,13 @@ function RegisterForm() {
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleChange}
+                    onBlur={() => markTouched("fullName")}
                     placeholder={t("auth.fullNamePlaceholder")}
                     className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                     required
                   />
                 </div>
+                {touched.fullName && fieldErrors.fullName && <p className="mt-1 text-sm text-red-600">{fieldErrors.fullName}</p>}
               </div>
 
               {/* Email Field */}
@@ -251,11 +266,13 @@ function RegisterForm() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
+                    onBlur={() => markTouched("email")}
                     placeholder={t("auth.emailPlaceholder")}
                     className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                     required
                   />
                 </div>
+                {touched.email && fieldErrors.email && <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>}
               </div>
 
               {/* Phone (Optional) */}
@@ -301,6 +318,7 @@ function RegisterForm() {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
+                    onBlur={() => markTouched("password")}
                     placeholder={t("auth.register.passwordPlaceholder")}
                     className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                     required
@@ -318,6 +336,7 @@ function RegisterForm() {
                     )}
                   </button>
                 </div>
+                {touched.password && fieldErrors.password && <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>}
               </div>
 
               {/* Confirm Password Field */}
@@ -338,6 +357,7 @@ function RegisterForm() {
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
+                    onBlur={() => markTouched("confirmPassword")}
                     placeholder={t("auth.register.confirmPlaceholder")}
                     className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white outline-none [transition:all_0.3s_cubic-bezier(0.4,0,0.2,1)]"
                     required
@@ -354,6 +374,7 @@ function RegisterForm() {
                     )}
                   </button>
                 </div>
+                {touched.confirmPassword && fieldErrors.confirmPassword && <p className="mt-1 text-sm text-red-600">{fieldErrors.confirmPassword}</p>}
               </div>
 
               {/* Terms Agreement */}
@@ -380,8 +401,8 @@ function RegisterForm() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white bg-teal-600 rounded-xl hover:bg-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-[1.02] shadow-lg shadow-teal-600/30"
+                disabled={isSubmitting || !isValid}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white bg-teal-600 rounded-xl hover:bg-teal-700 [transition:all_0.4s_cubic-bezier(0.4,0,0.2,1)] font-medium hover:scale-[1.02] shadow-lg shadow-teal-600/30 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? (
                   <>
