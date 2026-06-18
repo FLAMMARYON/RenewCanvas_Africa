@@ -726,7 +726,7 @@ export default function VirtualRoomPage() {
       world.add(group);
 
       const floorTex = pbrSet("floor", 4);
-      const ceilTex = pbrSet("wall", 2);
+      const ceilTex = pbrSet("ceiling", 3);
       addBox(group, [ROOM_W + 0.4, 0.18, ROOM_D + 0.4], [0, -0.09, 0], palette.floor, {
         roughness: 0.55,
         map: floorTex.map,
@@ -853,14 +853,20 @@ export default function VirtualRoomPage() {
       }
 
       if (roomKey === "court") {
-        addBox(group, [2.1, 0.55, 2.1], [0, 0.25, 0], "#d2c9b8");
-        addBox(group, [0.9, 2.8, 0.9], [0, 1.75, 0], "#f1eadc", { roughness: 0.5 });
+        // Plinth + statue: stone (plaster PBR set) tinted light.
+        const stone = pbrSet("wall", 2);
+        const stoneOpts = { map: stone.map, normalMap: stone.normalMap, roughnessMap: stone.roughnessMap, roughness: 0.7 };
+        addBox(group, [2.1, 0.55, 2.1], [0, 0.25, 0], "#d2c9b8", stoneOpts);
+        addBox(group, [0.9, 2.8, 0.9], [0, 1.75, 0], "#f1eadc", { ...stoneOpts, roughness: 0.5 });
       }
 
       if (roomKey === "main" || roomKey === "left" || roomKey === "right") {
-        addBox(group, [4.4, 0.55, 1.05], [0, 0.26, 2.8], "#263a35");
-        addBox(group, [0.3, 0.8, 0.3], [-1.7, -0.22, 2.8], "#1d2926");
-        addBox(group, [0.3, 0.8, 0.3], [1.7, -0.22, 2.8], "#1d2926");
+        // Bench: wood (floor PBR set) tinted.
+        const wood = pbrSet("floor", 1);
+        const woodOpts = { map: wood.map, normalMap: wood.normalMap, roughnessMap: wood.roughnessMap, roughness: 0.6 };
+        addBox(group, [4.4, 0.55, 1.05], [0, 0.26, 2.8], "#263a35", woodOpts);
+        addBox(group, [0.3, 0.8, 0.3], [-1.7, -0.22, 2.8], "#1d2926", woodOpts);
+        addBox(group, [0.3, 0.8, 0.3], [1.7, -0.22, 2.8], "#1d2926", woodOpts);
 
         // Pipe lamp in main gallery (first wing only)
         if (roomKey === "main" && wingIndex === 0) {
@@ -1041,7 +1047,21 @@ export default function VirtualRoomPage() {
     const sharedTextureLoader = new THREE.TextureLoader();
     // Shared PolyHaven PBR sets (diff/normal/rough) keyed by name and loaded
     // once, so every wall/floor/prop reuses the same GPU textures.
-    const pbrSetCache = new Map<string, { map: THREE.Texture; normalMap: THREE.Texture; roughnessMap: THREE.Texture }>();
+    const pbrSetCache = new Map<string, { map: THREE.Texture; normalMap: THREE.Texture; roughnessMap: THREE.Texture; fallback: string }>();
+
+    // PBR texture sets by logical name -> files in public/textures/. Floor and
+    // ceiling use the AmbientCG sets dropped into public/textures/; the rest use
+    // the downloaded PolyHaven 1k sets. `fallback` is the neutral colour shown
+    // if a file is missing (the loader warns).
+    const PBR_FILES: Record<string, { diff: string; nor: string; rough: string; fallback: string }> = {
+      wall: { diff: "/textures/pbr/wall_diff_1k.jpg", nor: "/textures/pbr/wall_nor_1k.jpg", rough: "/textures/pbr/wall_rough_1k.jpg", fallback: "#cdc4b5" },
+      floor: { diff: "/textures/WoodFloor040_2K-JPG_Color.jpg", nor: "/textures/WoodFloor040_2K-JPG_NormalGL.jpg", rough: "/textures/WoodFloor040_2K-JPG_Roughness.jpg", fallback: "#6a5f51" },
+      ceiling: { diff: "/textures/OfficeCeiling005_2K-JPG_Color.jpg", nor: "/textures/OfficeCeiling005_2K-JPG_NormalGL.jpg", rough: "/textures/OfficeCeiling005_2K-JPG_Roughness.jpg", fallback: "#e8e4dc" },
+      pavement: { diff: "/textures/pbr/pavement_diff_1k.jpg", nor: "/textures/pbr/pavement_nor_1k.jpg", rough: "/textures/pbr/pavement_rough_1k.jpg", fallback: "#9a9286" },
+      bark: { diff: "/textures/pbr/bark_diff_1k.jpg", nor: "/textures/pbr/bark_nor_1k.jpg", rough: "/textures/pbr/bark_rough_1k.jpg", fallback: "#6e5236" },
+      metal: { diff: "/textures/pbr/metal_diff_1k.jpg", nor: "/textures/pbr/metal_nor_1k.jpg", rough: "/textures/pbr/metal_rough_1k.jpg", fallback: "#5a5a5e" },
+      grass_rock: { diff: "/textures/pbr/grass_rock_diff_1k.jpg", nor: "/textures/pbr/grass_rock_nor_1k.jpg", rough: "/textures/pbr/grass_rock_rough_1k.jpg", fallback: "#8f9f6a" },
+    };
 
     function loadPBRMaterial(
       basePath: string,
@@ -1085,15 +1105,13 @@ export default function VirtualRoomPage() {
     function pbrSet(name: string, repeat: number) {
       const cached = pbrSetCache.get(name);
       if (cached) return cached;
-      const make = (suffix: string, srgb: boolean) => {
-        const texture = sharedTextureLoader.load(
-          `/textures/pbr/${name}_${suffix}_1k.jpg`,
-          undefined,
-          undefined,
-          () => {
-            /* leave the material's flat fallback colour in place */
-          }
-        );
+      const files = PBR_FILES[name];
+      const make = (path: string, srgb: boolean) => {
+        const texture = sharedTextureLoader.load(path, undefined, undefined, () => {
+          // Missing file -> the imageless texture renders as the material's flat
+          // fallback colour; warn so it can be spotted.
+          console.warn("[virtual-room] texture missing, using fallback colour:", path);
+        });
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(repeat, repeat);
@@ -1101,17 +1119,22 @@ export default function VirtualRoomPage() {
         if (srgb) texture.colorSpace = THREE.SRGBColorSpace;
         return texture;
       };
-      const set = { map: make("diff", true), normalMap: make("nor", false), roughnessMap: make("rough", false) };
+      const set = {
+        map: make(files.diff, true),
+        normalMap: make(files.nor, false),
+        roughnessMap: make(files.rough, false),
+        fallback: files.fallback,
+      };
       pbrSetCache.set(name, set);
       return set;
     }
 
-    // Build a MeshStandardMaterial from a shared PBR set. `color` tints the
-    // diffuse map, which keeps each room's colour identity while adding texture.
+    // Build a lit MeshStandardMaterial from a shared PBR set. `color` tints the
+    // diffuse map (keeps room colour identity); defaults to the set's fallback.
     function pbrMaterial(name: string, repeat: number, opts?: { color?: string; roughness?: number; metalness?: number }) {
       const set = pbrSet(name, repeat);
       return new THREE.MeshStandardMaterial({
-        color: opts?.color ?? "#ffffff",
+        color: opts?.color ?? set.fallback,
         roughness: opts?.roughness ?? 0.9,
         metalness: opts?.metalness ?? 0,
         map: set.map,
@@ -1160,8 +1183,9 @@ export default function VirtualRoomPage() {
         roughnessMap: pavementSet.roughnessMap,
       });
       const borderMaterial = new THREE.MeshStandardMaterial({ color: "#8B7355", roughness: 0.88 });
-      const sandstoneMaterial = new THREE.MeshStandardMaterial({ color: "#C4A882", roughness: 0.82, metalness: 0 });
-      const ledgeMaterial = new THREE.MeshStandardMaterial({ color: "#B09070", roughness: 0.78 });
+      // Exterior / entrance walls: plaster PBR set tinted sandstone.
+      const sandstoneMaterial = pbrMaterial("wall", 4, { color: "#C4A882", roughness: 0.85 });
+      const ledgeMaterial = pbrMaterial("wall", 3, { color: "#B09070", roughness: 0.8 });
 
       // --- OutdoorWorld: terrain and approach ---
       // Ground plane is only on the OUTDOOR side of the facade (z > -12),
