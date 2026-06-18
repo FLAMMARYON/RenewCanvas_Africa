@@ -537,22 +537,24 @@ export default function VirtualRoomPage() {
   const loadRoomTexturesRef = useRef<(room: RoomKey, wing: number) => void>(() => {});
   const [wing, setWing] = useState(0);
   const [room, setRoom] = useState<RoomKey>("entrance");
-  const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
+  // Artwork the camera is currently near (Task 7 proximity info card).
+  const [nearbyArtwork, setNearbyArtwork] = useState<Artwork | null>(null);
   const narration = useNarration();
   const narrationEnabled = narration.enabled;
   const narrationSpeak = narration.speak;
 
-  // Speak the selected artwork's details when narration is on (language-matched).
+  // Speak the nearby artwork's details when narration is on (language-matched).
   useEffect(() => {
-    if (!selectedArtwork || !narrationEnabled) return;
+    if (!nearbyArtwork || !narrationEnabled) return;
     const parts = [
-      selectedArtwork.title,
-      selectedArtwork.ownerType !== "renewcanvas" ? t("virtualRoom.narrationByArtist", { artist: selectedArtwork.artist }) : "",
-      selectedArtwork.materials.length ? t("virtualRoom.narrationMadeFrom", { materials: selectedArtwork.materials.join(", ") }) : "",
-      t("virtualRoom.narrationWasteDiverted", { kg: selectedArtwork.kgDiverted }),
+      nearbyArtwork.title,
+      nearbyArtwork.ownerType !== "renewcanvas" ? t("virtualRoom.narrationByArtist", { artist: nearbyArtwork.artist }) : "",
+      nearbyArtwork.materials.length ? t("virtualRoom.narrationMadeFrom", { materials: nearbyArtwork.materials.join(", ") }) : "",
+      t("virtualRoom.narrationWasteDiverted", { kg: nearbyArtwork.kgDiverted }),
     ].filter(Boolean);
     narrationSpeak(parts.join(". "));
-  }, [selectedArtwork, narrationEnabled, narrationSpeak, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nearbyArtwork, narrationEnabled, narrationSpeak, t]);
   const [mapOpen, setMapOpen] = useState(true);
   const [infoOpen, setInfoOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
@@ -560,8 +562,6 @@ export default function VirtualRoomPage() {
   const [shareMessage, setShareMessage] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [pointerLocked, setPointerLocked] = useState(false);
-  // Artwork the camera is currently near (Task 7 proximity info card).
-  const [nearbyArtwork, setNearbyArtwork] = useState<Artwork | null>(null);
 
   const artworks = useMemo<Artwork[]>(
     () => (galleryData.status === "success" ? flattenGalleryRooms(galleryData.data.rooms) : []),
@@ -627,6 +627,8 @@ export default function VirtualRoomPage() {
     // Wall meshes the player collides with (Task 6); their world Box3 is
     // computed once after the build.
     const wallColliders: THREE.Object3D[] = [];
+    // Artwork groups + their data, for proximity detection (Task 7).
+    const artworkObjects: Array<{ object: THREE.Object3D; artwork: Artwork }> = [];
     // HDRI environment handles (disposed on cleanup); null until/unless loaded.
     let hdrEnvTexture: THREE.Texture | null = null;
     let hdrSkyTexture: THREE.Texture | null = null;
@@ -1055,15 +1057,18 @@ export default function VirtualRoomPage() {
       categoryPlaque.renderOrder = 10;
       group.add(categoryPlaque);
 
+      // Task 7: structured userData for raycast/click-to-buy + proximity.
       group.userData = {
         type: "artwork",
-        artwork: {
-          ...artwork,
-          curationExplanation: t("virtualRoom.curationExplanation", { title: artwork.title, room: roomLabel(roomKey) }),
-          curationRoomTitle: roomLabel(roomKey),
-        },
+        artworkId: artwork.id,
+        title: artwork.title,
+        artistName: artwork.artist,
+        priceRWF: artwork.price,
+        ownerType: artwork.ownerType,
+        url: artwork.image,
       };
       clickablesRef.current.push(group);
+      artworkObjects.push({ object: group, artwork });
     }
 
     function disposeObject(object: THREE.Object3D) {
@@ -2033,7 +2038,7 @@ export default function VirtualRoomPage() {
 
       if (data?.type === "artwork") {
         // Buy: route to checkout for this artwork (shown for all artworks).
-        window.location.href = `/checkout?artworkId=${encodeURIComponent(data.artwork.id)}`;
+        window.location.href = `/checkout?artworkId=${encodeURIComponent(data.artworkId)}`;
         return;
       }
       // Otherwise: lock the pointer and start walking around.
@@ -2116,6 +2121,7 @@ export default function VirtualRoomPage() {
     // Removed interior state check - we always start in exterior mode
     // Both scenes are built on load, camera starts outside
 
+    let lastNearbyId: string | null = null;
     const clock = new THREE.Clock();
     renderer.setAnimationLoop(() => {
       const delta = clock.getDelta();
@@ -2168,6 +2174,22 @@ export default function VirtualRoomPage() {
         }
         // Load even if the room key didn't change (covers the very first entry).
         loadTexturesForActiveRoom(nearestKey, nearestWing);
+      }
+
+      // Task 7: proximity info card — nearest artwork within ~8 units.
+      let near: Artwork | null = null;
+      let nearD = 8 * 8;
+      for (const entry of artworkObjects) {
+        const d = camera.position.distanceToSquared(entry.object.position);
+        if (d < nearD) {
+          nearD = d;
+          near = entry.artwork;
+        }
+      }
+      const nearId = near?.id ?? null;
+      if (nearId !== lastNearbyId) {
+        lastNearbyId = nearId;
+        setNearbyArtwork(near);
       }
 
       if (sceneStateRef.current === "exterior") {
@@ -2227,7 +2249,7 @@ export default function VirtualRoomPage() {
         id: savedRoomIdRef.current ?? undefined,
         name: t("virtualRoom.visitName", { room: roomLabel(room) }),
         isPublic,
-        viewedArtworkIds: selectedArtwork ? [selectedArtwork.id] : [],
+        viewedArtworkIds: nearbyArtwork ? [nearbyArtwork.id] : [],
         roomState: {
           activeRoom: room,
           wing,
@@ -2259,7 +2281,7 @@ export default function VirtualRoomPage() {
         body: JSON.stringify({
           id: savedRoomIdRef.current ?? undefined,
           name: t("virtualRoom.sharedVisitName", { room: roomLabel(room) }),
-          viewedArtworkIds: selectedArtwork ? [selectedArtwork.id] : [],
+          viewedArtworkIds: nearbyArtwork ? [nearbyArtwork.id] : [],
           roomState: {
             activeRoom: room,
             wing,
@@ -2495,70 +2517,34 @@ export default function VirtualRoomPage() {
         </ul>
       </section>
 
-      {selectedArtwork && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm" onClick={() => setSelectedArtwork(null)}>
-          <div className="relative grid max-h-[85vh] w-full max-w-2xl overflow-hidden rounded-xl bg-[#15191c] shadow-2xl md:grid-cols-2" onClick={(event) => event.stopPropagation()}>
-            <button type="button" onClick={() => setSelectedArtwork(null)} className="absolute right-2 top-2 z-10 rounded-full bg-black/50 p-1.5 hover:bg-black/70" title={t("virtualRoom.close")}>
-              <X className="h-4 w-4" />
-            </button>
-            <div className="h-48 bg-black overflow-hidden flex items-center justify-center md:h-auto md:max-h-[85vh]">
-              {selectedArtwork.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={selectedArtwork.image} alt={selectedArtwork.title} className="w-full h-full object-contain" />
-              ) : (
-                <div
-                  className="flex h-full w-full items-center justify-center p-4 text-center text-sm font-medium text-white/80"
-                  style={{ backgroundColor: selectedArtwork.fallbackColor }}
-                >
-                  {selectedArtwork.title}
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col max-h-[85vh] overflow-y-auto p-4 sm:p-5">
-              <div className="flex-1">
-                <p className="mb-1 text-xs font-medium text-teal-300">{t("virtualRoom.onViewInMuseum")}</p>
-                <h2 className="text-xl font-bold leading-tight">{selectedArtwork.title}</h2>
-                {selectedArtwork.ownerType !== "renewcanvas" && (
-                  <p className="mt-1 text-sm text-white/65">{t("virtualRoom.byArtist", { artist: selectedArtwork.artist })}</p>
-                )}
-                <div className="mt-4 space-y-3 text-sm">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                    <span className="text-white/55">{t("virtualRoom.price")}</span>
-                    <span className="font-bold text-amber-300">{selectedArtwork.price.toLocaleString()} RWF</span>
-                  </div>
-                  <div className="border-b border-white/10 pb-2">
-                    <span className="text-white/55">{t("virtualRoom.materials")}</span>
-                    <div className="mt-1.5 flex flex-wrap gap-1.5">
-                      {selectedArtwork.materials.map((material) => (
-                        <span key={material} className="rounded-full bg-teal-400/15 px-2 py-0.5 text-xs text-teal-200">{material}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                    <span className="text-white/55">{t("virtualRoom.impact")}</span>
-                    <span className="font-semibold text-green-300">{t("virtualRoom.kgDiverted", { kg: selectedArtwork.kgDiverted })}</span>
-                  </div>
-                  {selectedArtwork.curationExplanation && (
-                    <div className="border-b border-white/10 pb-2">
-                      <span className="text-white/55">{t("virtualRoom.curatedRoom")}</span>
-                      <p className="mt-1 font-semibold text-teal-200">{selectedArtwork.curationRoomTitle}</p>
-                      <p className="mt-0.5 text-xs text-white/70">{selectedArtwork.curationExplanation}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                <Link href={`/artwork/${selectedArtwork.id}`} className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-sm font-semibold hover:bg-teal-700">
-                  <Maximize2 className="h-4 w-4" />
-                  {t("virtualRoom.viewDetails")}
-                </Link>
-                <Link href={`/checkout?artworkId=${encodeURIComponent(selectedArtwork.id)}`} className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-400">
-                  <ShoppingBag className="h-4 w-4" />
-                  {t("virtualRoom.buyNow")}
-                </Link>
-              </div>
-            </div>
+      {/* Task 7: proximity info card — appears when the camera is within ~8
+          units of an artwork. Title; artist (hidden for RenewCanvas-owned);
+          RWF price; View Details + Buy. Release the pointer (Space) to click. */}
+      {nearbyArtwork && (
+        <div className="pointer-events-auto fixed bottom-24 left-1/2 z-50 w-[min(92vw,380px)] -translate-x-1/2 rounded-xl border border-white/10 bg-black/80 p-4 text-white shadow-2xl backdrop-blur-md">
+          <p className="mb-0.5 text-xs font-medium text-teal-300">{t("virtualRoom.onViewInMuseum")}</p>
+          <h2 className="text-lg font-bold leading-tight">{nearbyArtwork.title}</h2>
+          {nearbyArtwork.ownerType !== "renewcanvas" && (
+            <p className="mt-0.5 text-sm text-white/65">{t("virtualRoom.byArtist", { artist: nearbyArtwork.artist })}</p>
+          )}
+          <p className="mt-2 text-base font-bold text-amber-300">{nearbyArtwork.price.toLocaleString()} RWF</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Link href={`/artwork/${nearbyArtwork.id}`} className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-2 text-sm font-semibold hover:bg-teal-700">
+              <Maximize2 className="h-4 w-4" />
+              {t("virtualRoom.viewDetails")}
+            </Link>
+            <Link href={`/checkout?artworkId=${encodeURIComponent(nearbyArtwork.id)}`} className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-black hover:bg-amber-400">
+              <ShoppingBag className="h-4 w-4" />
+              {t("virtualRoom.buyNow")}
+            </Link>
           </div>
+        </div>
+      )}
+
+      {/* Pointer-lock hint overlay (Task 6): shown while the pointer is free. */}
+      {!pointerLocked && (
+        <div className="pointer-events-none fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full border border-white/15 bg-black/70 px-4 py-2 text-center text-xs text-white/80 backdrop-blur">
+          {t("virtualRoom.clickToExplore", { defaultValue: "Click to explore · WASD / arrows to move · Space to release the mouse" })}
         </div>
       )}
     </div>
