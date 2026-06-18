@@ -1540,8 +1540,10 @@ export default function VirtualRoomPage() {
         }
       });
 
-      // Floating elements: drifting pollen / seeds (single Points draw call).
-      const PARTICLE_CAP = 220;
+      // Floating elements: faint drifting pollen / seeds (single Points draw
+      // call). Kept small and low-opacity so it reads as airborne motes, not
+      // glowing orbs that could be mistaken for creatures.
+      const PARTICLE_CAP = 200;
       const positions = new Float32Array(PARTICLE_CAP * 3);
       const speeds = new Float32Array(PARTICLE_CAP);
       for (let i = 0; i < PARTICLE_CAP; i += 1) {
@@ -1555,10 +1557,10 @@ export default function VirtualRoomPage() {
       const particles = new THREE.Points(
         particleGeo,
         new THREE.PointsMaterial({
-          color: isDay ? "#fdf3c4" : "#9fd0ff",
-          size: 0.12,
+          color: isDay ? "#ede4c8" : "#8fb6d8",
+          size: 0.07,
           transparent: true,
-          opacity: isDay ? 0.7 : 0.85,
+          opacity: isDay ? 0.4 : 0.55,
           sizeAttenuation: true,
           depthWrite: false,
         })
@@ -1575,48 +1577,73 @@ export default function VirtualRoomPage() {
         posAttr.needsUpdate = true;
       });
 
-      // Creatures: birds circling overhead (shared geometry + material).
-      const BIRD_CAP = 5;
-      const birdMat = new THREE.MeshStandardMaterial({ color: "#2c2c30", side: THREE.DoubleSide, roughness: 0.7 });
-      const wingGeo = new THREE.PlaneGeometry(1.2, 0.4);
-      const bodyGeo = new THREE.ConeGeometry(0.12, 0.8, 6);
-      const birds: Array<{ group: THREE.Group; radius: number; speed: number; phase: number; baseY: number; wings: THREE.Mesh[] }> = [];
+      // Creatures: birds with a real silhouette (elongated body, head, tail and
+      // two tapered wings that flap about the forward axis). They wheel lower
+      // and closer, banking into their turns, so they clearly read as birds.
+      const BIRD_CAP = 6;
+      const birdMat = new THREE.MeshStandardMaterial({ color: "#1f2127", side: THREE.DoubleSide, roughness: 0.85 });
+      const birdBodyGeo = new THREE.SphereGeometry(0.16, 10, 8); // scaled per part
+      // Tapered wing triangle extending toward -Z (mirror for the right wing).
+      const wingGeo = new THREE.BufferGeometry();
+      wingGeo.setAttribute(
+        "position",
+        new THREE.BufferAttribute(new Float32Array([0.22, 0, 0, -0.32, 0, 0, -0.05, 0, -1.5]), 3)
+      );
+      wingGeo.computeVertexNormals();
+      const tailGeo = new THREE.BufferGeometry();
+      tailGeo.setAttribute(
+        "position",
+        new THREE.BufferAttribute(new Float32Array([-0.3, 0, 0.18, -0.3, 0, -0.18, -0.78, 0, 0]), 3)
+      );
+      tailGeo.computeVertexNormals();
+      const birds: Array<{ group: THREE.Group; leftPivot: THREE.Group; rightPivot: THREE.Group; radius: number; speed: number; phase: number; baseY: number; flapSpeed: number }> = [];
       for (let i = 0; i < BIRD_CAP; i += 1) {
         const group = new THREE.Group();
-        const body = new THREE.Mesh(bodyGeo, birdMat);
-        body.rotation.x = Math.PI / 2;
-        const leftWing = new THREE.Mesh(wingGeo, birdMat);
-        leftWing.position.set(-0.6, 0, 0);
+        const body = new THREE.Mesh(birdBodyGeo, birdMat);
+        body.scale.set(2.6, 1, 1);
+        const head = new THREE.Mesh(birdBodyGeo, birdMat);
+        head.scale.setScalar(0.65);
+        head.position.set(0.42, 0.04, 0);
+        const tail = new THREE.Mesh(tailGeo, birdMat);
+        const leftPivot = new THREE.Group();
+        leftPivot.add(new THREE.Mesh(wingGeo, birdMat));
+        const rightPivot = new THREE.Group();
         const rightWing = new THREE.Mesh(wingGeo, birdMat);
-        rightWing.position.set(0.6, 0, 0);
-        group.add(body, leftWing, rightWing);
+        rightWing.scale.z = -1; // mirror to +Z
+        rightPivot.add(rightWing);
+        group.add(body, head, tail, leftPivot, rightPivot);
+        group.scale.setScalar(0.85 + Math.random() * 0.7);
         outdoorWorld.add(group);
         birds.push({
           group,
-          radius: 18 + i * 5,
-          speed: 0.18 + Math.random() * 0.12,
+          leftPivot,
+          rightPivot,
+          radius: 14 + i * 4,
+          speed: 0.16 + Math.random() * 0.1,
           phase: Math.random() * Math.PI * 2,
-          baseY: 20 + i * 2,
-          wings: [leftWing, rightWing],
+          baseY: 11 + i * 1.8,
+          flapSpeed: 5 + Math.random() * 3,
         });
       }
       animators.push((elapsed) => {
         for (const bird of birds) {
-          const angle = elapsed * bird.speed + bird.phase;
-          bird.group.position.set(Math.cos(angle) * bird.radius, bird.baseY + Math.sin(angle * 2) * 1.5, 10 + Math.sin(angle) * bird.radius);
-          bird.group.rotation.y = -angle;
-          const flap = Math.sin(elapsed * 9 + bird.phase) * 0.6;
-          bird.wings[0].rotation.z = flap;
-          bird.wings[1].rotation.z = -flap;
+          const a = elapsed * bird.speed + bird.phase;
+          bird.group.position.set(Math.cos(a) * bird.radius, bird.baseY + Math.sin(a * 2) * 1.2, 8 + Math.sin(a) * bird.radius);
+          bird.group.rotation.y = -a - Math.PI / 2; // face the travel tangent
+          bird.group.rotation.z = 0.2; // gentle bank into the turn
+          const flap = Math.sin(elapsed * bird.flapSpeed + bird.phase) * 0.7;
+          bird.leftPivot.rotation.x = flap;
+          bird.rightPivot.rotation.x = -flap;
         }
       });
 
-      // Creatures: butterflies fluttering near the ground (brand teal/orange).
+      // Creatures: butterflies fluttering near the ground (brand teal/orange,
+      // only faintly emissive so they don't look like floating lights).
       const BUTTERFLY_CAP = 8;
       const flutterGeo = new THREE.PlaneGeometry(0.32, 0.42);
       const flutterMats = [
-        new THREE.MeshStandardMaterial({ color: BRAND_TEAL, side: THREE.DoubleSide, roughness: 0.5, emissive: BRAND_TEAL, emissiveIntensity: 0.15 }),
-        new THREE.MeshStandardMaterial({ color: BRAND_ORANGE, side: THREE.DoubleSide, roughness: 0.5, emissive: BRAND_ORANGE, emissiveIntensity: 0.15 }),
+        new THREE.MeshStandardMaterial({ color: BRAND_TEAL, side: THREE.DoubleSide, roughness: 0.6, emissive: BRAND_TEAL, emissiveIntensity: 0.04 }),
+        new THREE.MeshStandardMaterial({ color: BRAND_ORANGE, side: THREE.DoubleSide, roughness: 0.6, emissive: BRAND_ORANGE, emissiveIntensity: 0.04 }),
       ];
       const butterflies: Array<{ group: THREE.Group; cx: number; cz: number; r: number; speed: number; phase: number; wings: THREE.Mesh[] }> = [];
       for (let i = 0; i < BUTTERFLY_CAP; i += 1) {
