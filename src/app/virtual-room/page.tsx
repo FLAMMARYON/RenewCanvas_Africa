@@ -63,9 +63,15 @@ type WallPlacement = {
 // more pieces than its room's walls can show. Each wing replicates the whole
 // (grounded, connected) building, so this caps geometry/draw-calls.
 const MAX_WINGS = 6;
-const WING_SPACING = 76;
-const ROOM_W = 14;
-const ROOM_D = 16;
+// Wings are spaced past the full spine length so a duplicated wing never
+// overlaps the previous one.
+const WING_SPACING = 150;
+const SPINE_SPACING = 32; // z gap between rooms along the entrance->corridor spine
+const WING_X = 30; // x of the left/right rooms either side of the main room
+const ROOM_W = 16; // BASE room footprint — rooms grow from here up to the max
+const ROOM_D = 18;
+const MAX_ROOM_W = 26; // growth cap (kept inside the grid cell so rooms never overlap)
+const MAX_ROOM_D = 26;
 const WALL_H = 5.2;
 const CAMERA_Y = 1.72;
 const FRAME_W = 2.35;
@@ -82,13 +88,16 @@ const BRAND_DARK = "#101417";
 // Each room is ROOM_D=16 deep, so a station at z=-20 has its south wall at
 // z=-12 (aligned with the façade boundary). Outdoor world stays at z > -12;
 // indoor rooms live at z < -12. Glass doors at z=-12 are the only boundary.
+// Grid centres spaced for the MAX room size so rooms never overlap as they
+// grow; smaller rooms simply leave a longer connecting corridor. Entrance is
+// fixed at base size so its south wall stays on the façade boundary (z = -12).
 const roomStations: Station[] = [
-  { key: "entrance", label: "Entrance Lobby", x: 0, z: -20, heading: 0 },
-  { key: "main", label: "Painting Room", x: 0, z: -38, heading: 0 },
-  { key: "left", label: "Wearables Room", x: -17, z: -38, heading: -90 },
-  { key: "right", label: "Living Space Room", x: 17, z: -38, heading: 90 },
-  { key: "court", label: "Sculpture Room", x: 0, z: -56, heading: 0 },
-  { key: "corridor", label: "Mixed Media Room", x: 0, z: -74, heading: 0 },
+  { key: "entrance", label: "Entrance Lobby", x: 0, z: -21, heading: 0 },
+  { key: "main", label: "Painting Room", x: 0, z: -21 - SPINE_SPACING, heading: 0 },
+  { key: "left", label: "Wearables Room", x: -WING_X, z: -21 - SPINE_SPACING, heading: -90 },
+  { key: "right", label: "Living Space Room", x: WING_X, z: -21 - SPINE_SPACING, heading: 90 },
+  { key: "court", label: "Sculpture Room", x: 0, z: -21 - SPINE_SPACING * 2, heading: 0 },
+  { key: "corridor", label: "Mixed Media Room", x: 0, z: -21 - SPINE_SPACING * 3, heading: 0 },
 ];
 
 const roomColors: Record<RoomKey, { wall: string; trim: string; rail: string; floor: string }> = {
@@ -164,9 +173,10 @@ function getArtworkPlacements(items: Artwork[]): ArtworkPlacement[] {
     byRoom.set(roomKey, list);
   });
 
+  const dims = computeRoomDims(items);
   const placements: ArtworkPlacement[] = [];
   byRoom.forEach((list, roomKey) => {
-    const slots = wallSlotsForRoom(roomKey);
+    const slots = wallSlotsForRoom(roomKey, dims[roomKey]);
     const capacity = Math.max(1, slots.length);
     list.forEach((artwork, index) => {
       placements.push({
@@ -174,7 +184,7 @@ function getArtworkPlacements(items: Artwork[]): ArtworkPlacement[] {
         roomKey,
         slotIndex: index,
         wingIndex: Math.floor(index / capacity),
-        slot: slots[index % capacity] ?? { x: 0, z: -ROOM_D / 2 + FRAME_DEPTH / 2 + 0.16, rotY: 0 },
+        slot: slots[index % capacity] ?? { x: 0, z: -dims[roomKey].d / 2 + FRAME_DEPTH / 2 + 0.16, rotY: 0 },
         curationRoomTitle: stationFor(roomKey, 0).label,
         curationGrouping: artwork.category,
         curationExplanation: `${artwork.title} is grouped by category in the ${stationFor(roomKey, 0).label}.`,
@@ -191,6 +201,41 @@ function roomForArtworkCategory(category: string): RoomKey {
   if (category === "Jewelry" || category === "Fashion") return "left";
   if (category === "Home Decor" || category === "Furniture") return "right";
   return "corridor";
+}
+
+type RoomDims = { w: number; d: number };
+
+// Each art room grows with the number of pieces routed to it (capped), so a
+// busy category gets a bigger room instead of immediately spilling into a new
+// wing. The entrance lobby is fixed (it holds no art and seams to the façade).
+// Deterministic from the artwork list, so the placement maths and the built
+// geometry always agree.
+function computeRoomDims(items: Artwork[]): Record<RoomKey, RoomDims> {
+  const counts: Record<RoomKey, number> = { entrance: 0, main: 0, left: 0, right: 0, court: 0, corridor: 0 };
+  items.forEach((artwork) => {
+    counts[roomForArtworkCategory(artwork.category)] += 1;
+  });
+  const dims = {} as Record<RoomKey, RoomDims>;
+  (Object.keys(counts) as RoomKey[]).forEach((key) => {
+    if (key === "entrance") {
+      dims[key] = { w: ROOM_W, d: ROOM_D };
+      return;
+    }
+    // Grow ~2 units (both axes) for every ~5 pieces beyond the first 6, capped.
+    const steps = Math.min(Math.max(0, Math.ceil((counts[key] - 6) / 5)), (MAX_ROOM_W - ROOM_W) / 2);
+    dims[key] = { w: Math.min(ROOM_W + steps * 2, MAX_ROOM_W), d: Math.min(ROOM_D + steps * 2, MAX_ROOM_D) };
+  });
+  return dims;
+}
+
+// Scale a door hotspot's base local position to a room's actual wall so the
+// marker stays in the doorway as the room grows.
+function doorLocal(base: [number, number, number], dims: RoomDims): [number, number, number] {
+  const [bx, by, bz] = base;
+  if (Math.abs(bz) >= Math.abs(bx)) {
+    return [bx, by, Math.sign(bz || 1) * (dims.d / 2 - 1.2)];
+  }
+  return [Math.sign(bx) * (dims.w / 2 - 1.2), by, bz];
 }
 
 // Single source of truth for which walls of each room are solid vs. carry a
@@ -240,7 +285,7 @@ function regionsForWall(kind: "solid" | "door", halfSpan: number, doorHalf: numb
 
 // All hangable wall slots for a room: every solid wall plus the segments
 // beside each doorway, frames flush against the wall facing the room.
-function wallSlotsForRoom(roomKey: RoomKey): WallPlacement[] {
+function wallSlotsForRoom(roomKey: RoomKey, dims: RoomDims): WallPlacement[] {
   const inset = FRAME_DEPTH / 2 + 0.16;
   const walls = roomWalls[roomKey];
   const skip = skipArtWalls[roomKey] ?? [];
@@ -250,15 +295,15 @@ function wallSlotsForRoom(roomKey: RoomKey): WallPlacement[] {
     if (skip.includes(side)) return;
     const kind = walls[side];
     if (side === "north" || side === "south") {
-      const z = side === "north" ? -ROOM_D / 2 + inset : ROOM_D / 2 - inset;
+      const z = side === "north" ? -dims.d / 2 + inset : dims.d / 2 - inset;
       const rotY = side === "north" ? 0 : Math.PI;
-      regionsForWall(kind, ROOM_W / 2, DOOR_HALF_NS).forEach(([a, b]) =>
+      regionsForWall(kind, dims.w / 2, DOOR_HALF_NS).forEach(([a, b]) =>
         fitFramesInRegion(a, b).forEach((x) => placements.push({ x, z, rotY }))
       );
     } else {
-      const x = side === "west" ? -ROOM_W / 2 + inset : ROOM_W / 2 - inset;
+      const x = side === "west" ? -dims.w / 2 + inset : dims.w / 2 - inset;
       const rotY = side === "west" ? Math.PI / 2 : -Math.PI / 2;
-      regionsForWall(kind, ROOM_D / 2, DOOR_HALF_EW).forEach(([a, b]) =>
+      regionsForWall(kind, dims.d / 2, DOOR_HALF_EW).forEach(([a, b]) =>
         fitFramesInRegion(a, b).forEach((z) => placements.push({ x, z, rotY }))
       );
     }
@@ -658,42 +703,47 @@ export default function VirtualRoomPage() {
       return { map: wall.map, normalMap: wall.normalMap, roughnessMap: wall.roughnessMap, roughness: 0.95 } as const;
     };
 
-    function addWallSegments(group: THREE.Group, z: number, color: string, doorCenter?: number) {
+    function addWallSegments(group: THREE.Group, z: number, color: string, width: number, doorCenter?: number) {
       const gap = doorCenter === undefined ? 0 : 3.5;
-      const leftWidth = doorCenter === undefined ? ROOM_W : Math.max(0, doorCenter + ROOM_W / 2 - gap / 2);
-      const rightWidth = doorCenter === undefined ? 0 : Math.max(0, ROOM_W / 2 - doorCenter - gap / 2);
+      const leftWidth = doorCenter === undefined ? width : Math.max(0, doorCenter + width / 2 - gap / 2);
+      const rightWidth = doorCenter === undefined ? 0 : Math.max(0, width / 2 - doorCenter - gap / 2);
       const tex = wallPanelOpts();
 
       if (doorCenter === undefined) {
-        addBox(group, [ROOM_W, WALL_H, 0.24], [0, WALL_H / 2, z], color, tex);
+        addBox(group, [width, WALL_H, 0.24], [0, WALL_H / 2, z], color, tex);
         return;
       }
 
-      if (leftWidth > 0.4) addBox(group, [leftWidth, WALL_H, 0.24], [-ROOM_W / 2 + leftWidth / 2, WALL_H / 2, z], color, tex);
-      if (rightWidth > 0.4) addBox(group, [rightWidth, WALL_H, 0.24], [ROOM_W / 2 - rightWidth / 2, WALL_H / 2, z], color, tex);
+      if (leftWidth > 0.4) addBox(group, [leftWidth, WALL_H, 0.24], [-width / 2 + leftWidth / 2, WALL_H / 2, z], color, tex);
+      if (rightWidth > 0.4) addBox(group, [rightWidth, WALL_H, 0.24], [width / 2 - rightWidth / 2, WALL_H / 2, z], color, tex);
       addBox(group, [gap + 0.8, 1.25, 0.3], [doorCenter, 4.58, z], "#4a3728");
       addBox(group, [0.28, 4, 0.34], [doorCenter - gap / 2, 2, z], "#4a3728");
       addBox(group, [0.28, 4, 0.34], [doorCenter + gap / 2, 2, z], "#4a3728");
     }
 
-    function addSideWall(group: THREE.Group, x: number, color: string, doorZ?: number) {
+    function addSideWall(group: THREE.Group, x: number, color: string, depth: number, doorZ?: number) {
       const gap = doorZ === undefined ? 0 : 3.8;
       const tex = wallPanelOpts();
       if (doorZ === undefined) {
-        addBox(group, [0.24, WALL_H, ROOM_D], [x, WALL_H / 2, 0], color, tex);
+        addBox(group, [0.24, WALL_H, depth], [x, WALL_H / 2, 0], color, tex);
         return;
       }
 
-      const front = Math.max(0, doorZ + ROOM_D / 2 - gap / 2);
-      const back = Math.max(0, ROOM_D / 2 - doorZ - gap / 2);
-      if (front > 0.4) addBox(group, [0.24, WALL_H, front], [x, WALL_H / 2, -ROOM_D / 2 + front / 2], color, tex);
-      if (back > 0.4) addBox(group, [0.24, WALL_H, back], [x, WALL_H / 2, ROOM_D / 2 - back / 2], color, tex);
+      const front = Math.max(0, doorZ + depth / 2 - gap / 2);
+      const back = Math.max(0, depth / 2 - doorZ - gap / 2);
+      if (front > 0.4) addBox(group, [0.24, WALL_H, front], [x, WALL_H / 2, -depth / 2 + front / 2], color, tex);
+      if (back > 0.4) addBox(group, [0.24, WALL_H, back], [x, WALL_H / 2, depth / 2 - back / 2], color, tex);
       addBox(group, [0.32, 1.25, gap + 0.8], [x, 4.58, doorZ], "#4a3728");
       addBox(group, [0.32, 4, 0.28], [x, 2, doorZ - gap / 2], "#4a3728");
       addBox(group, [0.32, 4, 0.28], [x, 2, doorZ + gap / 2], "#4a3728");
     }
 
-    function addRoom(roomKey: RoomKey, wingIndex: number) {
+    function addRoom(roomKey: RoomKey, wingIndex: number, dims: RoomDims) {
+      // Per-room footprint (rooms grow with content). Shadowing the module
+      // ROOM_W/ROOM_D lets the rest of this function stay unchanged while using
+      // the actual room size.
+      const ROOM_W = dims.w;
+      const ROOM_D = dims.d;
       const station = stationFor(roomKey, wingIndex);
       const palette = roomColors[roomKey];
       const group = new THREE.Group();
@@ -722,10 +772,10 @@ export default function VirtualRoomPage() {
       const westDoor = roomKey === "main" ? 0 : roomKey === "left" ? 0 : undefined;
       const eastDoor = roomKey === "main" ? 0 : roomKey === "right" ? 0 : undefined;
 
-      addWallSegments(group, -ROOM_D / 2, palette.wall, hasNorth ? 0 : undefined);
-      addWallSegments(group, ROOM_D / 2, palette.wall, hasSouth || roomKey === "entrance" ? 0 : undefined);
-      addSideWall(group, -ROOM_W / 2, palette.wall, westDoor);
-      addSideWall(group, ROOM_W / 2, palette.wall, eastDoor);
+      addWallSegments(group, -ROOM_D / 2, palette.wall, ROOM_W, hasNorth ? 0 : undefined);
+      addWallSegments(group, ROOM_D / 2, palette.wall, ROOM_W, hasSouth || roomKey === "entrance" ? 0 : undefined);
+      addSideWall(group, -ROOM_W / 2, palette.wall, ROOM_D, westDoor);
+      addSideWall(group, ROOM_W / 2, palette.wall, ROOM_D, eastDoor);
 
       addBox(group, [ROOM_W + 0.1, 0.16, 0.18], [0, 3.55, -ROOM_D / 2 + 0.05], palette.rail);
       addBox(group, [ROOM_W + 0.1, 0.16, 0.18], [0, 1.05, -ROOM_D / 2 + 0.05], palette.rail);
@@ -898,12 +948,15 @@ export default function VirtualRoomPage() {
       }
     }
 
-    function addDoorHotspot(fromRoom: RoomKey, wingIndex: number, target: DoorRuntimeTarget) {
+    function addDoorHotspot(fromRoom: RoomKey, wingIndex: number, target: DoorRuntimeTarget, dims: RoomDims) {
       const from = stationFor(fromRoom, wingIndex);
+      // Scale the marker to the room's actual wall so it stays in the doorway
+      // as the room grows.
+      const local = doorLocal(target.localPosition, dims);
       const geometry = new THREE.CircleGeometry(0.9, 48);
       const material = new THREE.MeshBasicMaterial({ color: BRAND_ORANGE, transparent: true, opacity: 0.42, side: THREE.DoubleSide });
       const hotspot = new THREE.Mesh(geometry, material);
-      hotspot.position.set(from.x + target.localPosition[0], target.localPosition[1], from.z + target.localPosition[2]);
+      hotspot.position.set(from.x + local[0], local[1], from.z + local[2]);
       hotspot.rotation.x = -Math.PI / 2;
       hotspot.userData = { type: "door", target, wing: wingIndex };
       scene.add(hotspot);
@@ -915,7 +968,7 @@ export default function VirtualRoomPage() {
         new THREE.PlaneGeometry(2.2, 0.82),
         new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide })
       );
-      label.position.set(from.x + target.localPosition[0], 2.1, from.z + target.localPosition[2]);
+      label.position.set(from.x + local[0], 2.1, from.z + local[2]);
       label.lookAt(camera.position.x, 2.1, camera.position.z);
       scene.add(label);
     }
@@ -1706,7 +1759,7 @@ export default function VirtualRoomPage() {
     // Build a short enclosed corridor (floor + ceiling + two side walls) that
     // bridges the gap between two rooms' facing doorways, so you walk room ->
     // corridor -> room on continuous floor with no open-air gap on the sides.
-    function addConnector(from: Station, to: Station, axis: "x" | "z") {
+    function addConnector(from: Station, to: Station, axis: "x" | "z", fromDims: RoomDims, toDims: RoomDims) {
       const group = new THREE.Group();
       world.add(group);
       const floor = pbrSet("floor", 2);
@@ -1718,8 +1771,8 @@ export default function VirtualRoomPage() {
       const ceilingColor = "#e8e4dc";
 
       if (axis === "z") {
-        const za = from.z + Math.sign(to.z - from.z) * (ROOM_D / 2);
-        const zb = to.z + Math.sign(from.z - to.z) * (ROOM_D / 2);
+        const za = from.z + Math.sign(to.z - from.z) * (fromDims.d / 2);
+        const zb = to.z + Math.sign(from.z - to.z) * (toDims.d / 2);
         const zc = (za + zb) / 2;
         const length = Math.abs(zb - za) + 0.2;
         const xc = from.x;
@@ -1729,8 +1782,8 @@ export default function VirtualRoomPage() {
         addBox(group, [0.2, WALL_H, length], [xc - half, WALL_H / 2, zc], wallColor, wallOpts);
         addBox(group, [0.2, WALL_H, length], [xc + half, WALL_H / 2, zc], wallColor, wallOpts);
       } else {
-        const xa = from.x + Math.sign(to.x - from.x) * (ROOM_W / 2);
-        const xb = to.x + Math.sign(from.x - to.x) * (ROOM_W / 2);
+        const xa = from.x + Math.sign(to.x - from.x) * (fromDims.w / 2);
+        const xb = to.x + Math.sign(from.x - to.x) * (toDims.w / 2);
         const xc = (xa + xb) / 2;
         const length = Math.abs(xb - xa) + 0.2;
         const zc = from.z;
@@ -1745,17 +1798,21 @@ export default function VirtualRoomPage() {
     // Solid land beneath the entire interior footprint (all wings) so no room,
     // wall or walkway is ever left floating over empty space.
     function addFoundation(wingCount: number) {
-      const zNear = -10;
-      const zFar = -82 - (wingCount - 1) * WING_SPACING - 6;
+      const zNear = -8;
+      const corridorZ = stationFor("corridor", wingCount - 1).z;
+      const zFar = corridorZ - MAX_ROOM_D / 2 - 8;
       const depth = Math.abs(zNear - zFar);
-      addBox(world, [66, 0.6, depth], [0, -0.32, (zNear + zFar) / 2], "#37312a", { roughness: 0.96 });
+      // Wide enough to sit under the left/right rooms (x = ±WING_X, up to half
+      // the max width beyond that) with margin.
+      const width = (WING_X + MAX_ROOM_D / 2) * 2 + 12;
+      addBox(world, [width, 0.6, depth], [0, -0.32, (zNear + zFar) / 2], "#37312a", { roughness: 0.96 });
     }
 
     // Close the corridor's far doorway on the LAST wing so it opens onto a wall,
     // not the void — every doorway then leads somewhere real.
-    function capCorridorNorth(wingIndex: number) {
+    function capCorridorNorth(wingIndex: number, dims: RoomDims) {
       const station = stationFor("corridor", wingIndex);
-      addBox(world, [ROOM_W, WALL_H, 0.26], [station.x, WALL_H / 2, station.z - ROOM_D / 2], "#cfc5b6");
+      addBox(world, [dims.w, WALL_H, 0.26], [station.x, WALL_H / 2, station.z - dims.d / 2], "#cfc5b6");
     }
 
     let builtWings = 1;
@@ -1764,6 +1821,9 @@ export default function VirtualRoomPage() {
       clickablesRef.current = [];
 
       const placements = getArtworkPlacements(artworks);
+      // Per-room sizes (rooms grow with their content); same deterministic
+      // computation the placement maths used, so geometry and slots agree.
+      const roomDims = computeRoomDims(artworks);
       // Build exactly as many wings as the fullest room needs (clamped), so a
       // large collection always has a real wall to hang on — never floating in
       // empty space — without replicating the building more than necessary.
@@ -1778,45 +1838,41 @@ export default function VirtualRoomPage() {
       addFoundation(wingCount);
 
       for (let wingIndex = 0; wingIndex < wingCount; wingIndex += 1) {
-        roomStations.forEach((station) => addRoom(station.key, wingIndex));
+        roomStations.forEach((station) => addRoom(station.key, wingIndex, roomDims[station.key]));
 
         roomStations.forEach((station) => {
           doorRuntimeTargets[station.key].forEach((target) => {
-            addDoorHotspot(station.key, wingIndex, target);
+            addDoorHotspot(station.key, wingIndex, target, roomDims[station.key]);
           });
         });
 
         // Enclosed walkways between adjacent rooms — no open-air gaps.
         connectors.forEach(({ from, to, axis }) =>
-          addConnector(stationFor(from, wingIndex), stationFor(to, wingIndex), axis)
+          addConnector(stationFor(from, wingIndex), stationFor(to, wingIndex), axis, roomDims[from], roomDims[to])
         );
 
         // Only when more than one wing exists: reachable doorways linking the
         // corridor of one wing to the entrance of the next (and back), bridged
         // by a real corridor, so every hung piece can actually be walked to.
         if (wingIndex < wingCount - 1) {
-          addDoorHotspot("corridor", wingIndex, {
-            label: "Next Gallery Wing",
-            room: "entrance",
-            heading: 0,
-            wingOffset: 1,
-            fromRoom: "corridor",
-            localPosition: [0, 0.06, -6.8],
-          });
-          addConnector(stationFor("corridor", wingIndex), stationFor("entrance", wingIndex + 1), "z");
+          addDoorHotspot(
+            "corridor",
+            wingIndex,
+            { label: "Next Gallery Wing", room: "entrance", heading: 0, wingOffset: 1, fromRoom: "corridor", localPosition: [0, 0.06, -6.8] },
+            roomDims.corridor
+          );
+          addConnector(stationFor("corridor", wingIndex), stationFor("entrance", wingIndex + 1), "z", roomDims.corridor, roomDims.entrance);
         } else {
           // Last wing: the corridor's far doorway is sealed into a back wall.
-          capCorridorNorth(wingIndex);
+          capCorridorNorth(wingIndex, roomDims.corridor);
         }
         if (wingIndex > 0) {
-          addDoorHotspot("entrance", wingIndex, {
-            label: "Previous Gallery Wing",
-            room: "corridor",
-            heading: 180,
-            wingOffset: -1,
-            fromRoom: "entrance",
-            localPosition: [0, 0.06, 6.8],
-          });
+          addDoorHotspot(
+            "entrance",
+            wingIndex,
+            { label: "Previous Gallery Wing", room: "corridor", heading: 180, wingOffset: -1, fromRoom: "entrance", localPosition: [0, 0.06, 6.8] },
+            roomDims.entrance
+          );
         }
       }
 
@@ -2100,10 +2156,10 @@ export default function VirtualRoomPage() {
           targetRef.current.x += moveX;
           targetRef.current.z += moveZ;
 
-          // Collision bounds — span every built wing so the far wings stay
-          // reachable; the last room sits at z = -74 - (wing * WING_SPACING).
-          const zFloor = -(74 + (builtWings - 1) * WING_SPACING) - 14;
-          targetRef.current.x = Math.max(-25, Math.min(25, targetRef.current.x));
+          // Collision bounds — span every built wing (the corridor of the last
+          // wing is the deepest room) and reach the left/right rooms at ±WING_X.
+          const zFloor = -(21 + SPINE_SPACING * 3 + MAX_ROOM_D / 2 + 10) - (builtWings - 1) * WING_SPACING;
+          targetRef.current.x = Math.max(-47, Math.min(47, targetRef.current.x));
           targetRef.current.z = Math.max(zFloor, Math.min(22, targetRef.current.z));
         }
 
@@ -2362,8 +2418,8 @@ export default function VirtualRoomPage() {
             <div className="absolute right-[15%] top-[39%] h-[20%] w-[25%] rounded-full border border-[#6b573f]/60 bg-white/45" />
             {roomStations.map((station) => {
               const active = station.key === room;
-              const left = 50 + (station.x / 36) * 42;
-              const top = 52 + ((station.z - 8) / -62) * 72;
+              const left = 50 + (station.x / 40) * 42;
+              const top = 15 + ((station.z + 21) / -96) * 73;
 
               return (
                 <button
