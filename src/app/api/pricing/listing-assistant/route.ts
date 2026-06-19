@@ -50,9 +50,14 @@ export async function POST(request: Request) {
     );
   }
 
-  // Check for Anthropic API key using config system
+  // Check for Anthropic API key using the config system, but fall back to the
+  // raw env var if the broader config failed to parse (an unrelated malformed
+  // env var must NOT disable the AI assistant when the key itself is present).
   const configResult = readBackendConfig();
-  const anthropicApiKey = configResult.ok ? configResult.config.anthropicApiKey : undefined;
+  const anthropicApiKey =
+    (configResult.ok ? configResult.config.anthropicApiKey : undefined) ||
+    process.env.ANTHROPIC_API_KEY?.trim() ||
+    undefined;
 
   if (!anthropicApiKey) {
     writeLog(
@@ -161,13 +166,19 @@ export async function POST(request: Request) {
       })
     );
 
+    // Surface the REAL underlying error instead of a generic "temporarily
+    // unavailable" message. Previously the true cause (e.g. a retired model
+    // string returning 404, or a bad/missing API key) was masked here, making
+    // the failure undiagnosable from the client. `detail` carries the upstream
+    // message verbatim; `error` is a readable summary for the toast.
     return NextResponse.json(
       {
-        error: "AI service temporarily unavailable. Please try again later.",
+        error: `AI request failed: ${errorMessage}`,
+        detail: errorMessage,
         requestId,
       },
       {
-        status: 500,
+        status: 502,
         headers: {
           "x-request-id": requestId,
           "x-ratelimit-limit": String(rateLimit.limit),

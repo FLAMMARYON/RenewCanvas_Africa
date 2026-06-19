@@ -3,13 +3,9 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import {
   Bell,
-  Building2,
-  CreditCard,
   Globe,
-  Lock,
   Mail,
   Phone,
-  Shield,
   Smartphone,
   Trash2,
   User,
@@ -29,7 +25,6 @@ interface NotificationSettings {
   emailArtworkStatus: boolean;
   emailPayoutUpdates: boolean;
   emailAuctionBids: boolean;
-  emailNewsletter: boolean;
   pushNewOrders: boolean;
   pushCommissionRequests: boolean;
   pushPayoutProcessed: boolean;
@@ -59,7 +54,6 @@ export default function ArtistSettingsPage() {
     emailArtworkStatus: true,
     emailPayoutUpdates: true,
     emailAuctionBids: true,
-    emailNewsletter: true,
     pushNewOrders: true,
     pushCommissionRequests: true,
     pushPayoutProcessed: true,
@@ -113,18 +107,22 @@ export default function ArtistSettingsPage() {
       })
       .catch(() => {});
 
-    // Load payout details from the profile (source of truth).
+    // Load payout details from the profile (source of truth). MoMo-only now.
     fetch("/api/profile")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         const p = data?.profile;
         if (!p) return;
+        const savedNumber = typeof p.payoutAccountNumber === "string" ? p.payoutAccountNumber : "";
+        // The phone the artist provided at signup is persisted on the profile.
+        const signupPhone = typeof p.phone === "string" ? p.phone : "";
         setPayouts((prev) => ({
           ...prev,
-          payoutMethod: typeof p.payoutMethod === "string" && p.payoutMethod ? p.payoutMethod : prev.payoutMethod,
-          bankName: typeof p.payoutBankName === "string" ? p.payoutBankName : prev.bankName,
-          accountNumber: typeof p.payoutAccountNumber === "string" ? p.payoutAccountNumber : prev.accountNumber,
+          payoutMethod: "mobile_money",
           accountName: typeof p.payoutAccountName === "string" ? p.payoutAccountName : prev.accountName,
+          // Default the MoMo number to the saved payout number, else the
+          // signup phone, so it's pre-filled from their registration data.
+          mobileNumber: savedNumber || signupPhone || prev.mobileNumber,
         }));
       })
       .catch(() => {});
@@ -136,15 +134,15 @@ export default function ArtistSettingsPage() {
 
     try {
       // Notification toggles persist immediately on change; this button saves
-      // payout details to the profile (source of truth).
+      // payout details to the profile (source of truth). MoMo-only.
       const payoutRes = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          payoutMethod: payouts.payoutMethod,
-          payoutBankName: payouts.bankName,
-          payoutAccountNumber: payouts.payoutMethod === "mobile_money" ? payouts.mobileNumber : payouts.accountNumber,
+          payoutMethod: "mobile_money",
+          payoutBankName: "",
+          payoutAccountNumber: payouts.mobileNumber,
           payoutAccountName: payouts.accountName,
         }),
       });
@@ -319,12 +317,6 @@ function NotificationsTab({
             label={t("artistDashboard.settings.emailAuctionBidsLabel")}
             description={t("artistDashboard.settings.emailAuctionBidsDesc")}
           />
-          <Toggle
-            checked={notifications.emailNewsletter}
-            onChange={(checked) => onToggle("emailNewsletter", checked)}
-            label={t("artistDashboard.settings.emailNewsletterLabel")}
-            description={t("artistDashboard.settings.emailNewsletterDesc")}
-          />
         </div>
       </div>
 
@@ -374,117 +366,45 @@ function PayoutsTab({
           <h3 className="text-lg font-semibold text-gray-900">{t("artistDashboard.settings.payoutMethod")}</h3>
         </div>
 
-        <div className="flex gap-4 mb-6">
-          <button
-            type="button"
-            onClick={() => setPayouts((prev) => ({ ...prev, payoutMethod: "mobile_money" }))}
-            className={`flex-1 p-4 rounded-lg border-2 transition-colors ${
-              payouts.payoutMethod === "mobile_money"
-                ? "border-teal-600 bg-teal-50"
-                : "border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            <Phone className={`w-6 h-6 mb-2 ${payouts.payoutMethod === "mobile_money" ? "text-teal-600" : "text-gray-400"}`} />
-            <p className="font-medium text-gray-900">{t("artistDashboard.settings.mobileMoney")}</p>
-            <p className="text-sm text-gray-500">{t("artistDashboard.settings.mobileMoneyProviders")}</p>
-          </button>
-          <button
-            type="button"
-            onClick={() => setPayouts((prev) => ({ ...prev, payoutMethod: "bank" }))}
-            className={`flex-1 p-4 rounded-lg border-2 transition-colors ${
-              payouts.payoutMethod === "bank"
-                ? "border-teal-600 bg-teal-50"
-                : "border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            <Building2 className={`w-6 h-6 mb-2 ${payouts.payoutMethod === "bank" ? "text-teal-600" : "text-gray-400"}`} />
-            <p className="font-medium text-gray-900">{t("artistDashboard.settings.bankTransfer")}</p>
-            <p className="text-sm text-gray-500">{t("artistDashboard.settings.bankTransferDesc")}</p>
-          </button>
+        {/* MoMo-only: bank transfer removed entirely (item 8). Payouts go to the
+            artist's MTN Mobile Money number, pre-filled from their signup phone. */}
+        <div className="mb-6 flex items-center gap-3 rounded-lg border-2 border-teal-600 bg-teal-50 p-4">
+          <Phone className="h-6 w-6 text-teal-600" />
+          <div>
+            <p className="font-medium text-gray-900">{t("artistDashboard.settings.mobileMoney", { defaultValue: "MTN Mobile Money" })}</p>
+            <p className="text-sm text-gray-500">{t("artistDashboard.settings.momoOnlyNote", { defaultValue: "Payouts are sent to your MTN Mobile Money number." })}</p>
+          </div>
         </div>
 
-        {payouts.payoutMethod === "mobile_money" && (
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="mobileProvider" className="block text-sm font-medium text-gray-700 mb-2">
-                {t("artistDashboard.settings.mobileProvider")}
-              </label>
-              <select
-                id="mobileProvider"
-                value={payouts.mobileProvider}
-                onChange={(e) => setPayouts((prev) => ({ ...prev, mobileProvider: e.target.value }))}
-                className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              >
-                <option value="mtn">MTN Mobile Money</option>
-                <option value="airtel">Airtel Money</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="mobileNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                {t("artistDashboard.settings.mobileNumber")}
-              </label>
-              <input
-                type="tel"
-                id="mobileNumber"
-                value={payouts.mobileNumber}
-                onChange={(e) => setPayouts((prev) => ({ ...prev, mobileNumber: e.target.value }))}
-                placeholder="+250 7XX XXX XXX"
-                className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="accountName" className="block text-sm font-medium text-gray-700 mb-2">
+              {t("artistDashboard.settings.accountHolderName")}
+            </label>
+            <input
+              type="text"
+              id="accountName"
+              value={payouts.accountName}
+              onChange={(e) => setPayouts((prev) => ({ ...prev, accountName: e.target.value }))}
+              placeholder={t("artistDashboard.settings.accountHolderNamePlaceholder")}
+              className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
           </div>
-        )}
-
-        {payouts.payoutMethod === "bank" && (
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="bankName" className="block text-sm font-medium text-gray-700 mb-2">
-                {t("artistDashboard.settings.bankName")}
-              </label>
-              <select
-                id="bankName"
-                value={payouts.bankName}
-                onChange={(e) => setPayouts((prev) => ({ ...prev, bankName: e.target.value }))}
-                className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              >
-                <option value="">{t("artistDashboard.settings.selectBank")}</option>
-                <option value="bank_of_kigali">Bank of Kigali</option>
-                <option value="equity_bank">Equity Bank</option>
-                <option value="i_and_m_bank">I&M Bank</option>
-                <option value="kcb_bank">KCB Bank</option>
-                <option value="cogebanque">Cogebanque</option>
-                <option value="access_bank">Access Bank</option>
-                <option value="other">{t("artistDashboard.settings.bankOther")}</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="accountName" className="block text-sm font-medium text-gray-700 mb-2">
-                {t("artistDashboard.settings.accountHolderName")}
-              </label>
-              <input
-                type="text"
-                id="accountName"
-                value={payouts.accountName}
-                onChange={(e) => setPayouts((prev) => ({ ...prev, accountName: e.target.value }))}
-                placeholder={t("artistDashboard.settings.accountHolderNamePlaceholder")}
-                className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="accountNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                {t("artistDashboard.settings.accountNumber")}
-              </label>
-              <input
-                type="text"
-                id="accountNumber"
-                value={payouts.accountNumber}
-                onChange={(e) => setPayouts((prev) => ({ ...prev, accountNumber: e.target.value }))}
-                placeholder={t("artistDashboard.settings.accountNumberPlaceholder")}
-                className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
+          <div>
+            <label htmlFor="mobileNumber" className="block text-sm font-medium text-gray-700 mb-2">
+              {t("artistDashboard.settings.mobileNumber")}
+            </label>
+            <input
+              type="tel"
+              id="mobileNumber"
+              value={payouts.mobileNumber}
+              onChange={(e) => setPayouts((prev) => ({ ...prev, mobileNumber: e.target.value }))}
+              placeholder="+250 7XX XXX XXX"
+              className="w-full max-w-sm rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">{t("artistDashboard.settings.momoNumberHint", { defaultValue: "Defaults to the phone number you used at signup. Update it if your MoMo number differs." })}</p>
           </div>
-        )}
+        </div>
       </div>
 
       <div className="p-4 rounded-lg border border-blue-200 bg-blue-50">

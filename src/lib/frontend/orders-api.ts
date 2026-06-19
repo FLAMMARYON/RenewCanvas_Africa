@@ -1,3 +1,12 @@
+/** Admin support contact shown in every order's expandable details. */
+export const ADMIN_CONTACT_PHONE = "+250798654776";
+
+/**
+ * Cancelled orders stay visible for this many days after their cancellation
+ * date, then drop off the orders pages automatically.
+ */
+export const CANCELLED_RETENTION_DAYS = 10;
+
 export type FrontendOrder = {
   id: string;
   buyerId: string | null;
@@ -11,6 +20,8 @@ export type FrontendOrder = {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+  /** ISO timestamp set when the order was cancelled (null otherwise). */
+  cancelledAt: string | null;
   buyer: { id: string; name: string; email: string } | null;
   buyerContact: { email: string | null; phone: string | null } | null;
   items: Array<{
@@ -51,6 +62,19 @@ export function artistPayout(order: FrontendOrder): number | null {
   return Math.round(artistSubtotal * (1 - PLATFORM_COMMISSION_RATE));
 }
 
+/**
+ * Whether an order should still be shown. Cancelled orders disappear once their
+ * cancellation date is older than CANCELLED_RETENTION_DAYS; everything else is
+ * always visible. Orders with no `cancelledAt` are kept (fail-open).
+ */
+export function isOrderVisible(order: FrontendOrder, now: number = Date.now()): boolean {
+  if (order.status !== "cancelled") return true;
+  if (!order.cancelledAt) return true;
+  const cancelledMs = Date.parse(order.cancelledAt);
+  if (Number.isNaN(cancelledMs)) return true;
+  return now - cancelledMs <= CANCELLED_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+}
+
 export async function createOrder(payload: {
   artworkId: string;
   paymentMethod: string;
@@ -84,7 +108,7 @@ export async function readOrder(id: string) {
 
 type OrderActionResponse = { ok: boolean; id?: string; status?: string; message?: string };
 
-async function postOrderAction(orderId: string, action: "confirm-payment" | "disburse"): Promise<string> {
+async function postOrderAction(orderId: string, action: "confirm-payment" | "disburse" | "cancel"): Promise<string> {
   const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/${action}`, {
     method: "POST",
     credentials: "include",
@@ -102,4 +126,9 @@ export async function confirmOrderPayment(orderId: string): Promise<string> {
 /** Admin: record the artist disbursement (paid → artist_paid). */
 export async function disburseOrder(orderId: string): Promise<string> {
   return postOrderAction(orderId, "disburse");
+}
+
+/** Admin: cancel an order (→ cancelled, sets cancelledAt). */
+export async function cancelOrder(orderId: string): Promise<string> {
+  return postOrderAction(orderId, "cancel");
 }

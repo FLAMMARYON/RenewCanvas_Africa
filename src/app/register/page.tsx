@@ -17,6 +17,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation, Trans } from "react-i18next";
 import { dashboardPathForRole, registerAccount } from "@/lib/frontend/auth-api";
+import { saveProfile } from "@/lib/frontend/profile-api";
 import Navbar from "@/components/Navbar";
 
 type UserRole = "buyer" | "artist";
@@ -86,6 +87,16 @@ function RegisterForm() {
         password: formData.password,
         role,
       });
+      // Persist the phone provided at signup onto the new account's profile so
+      // it can pre-fill payout (MoMo) details later. Best-effort — never block
+      // the redirect on it.
+      if (formData.phone.trim()) {
+        try {
+          await saveProfile({ phone: formData.phone.trim() });
+        } catch {
+          /* non-fatal: the user can add their phone from the profile page */
+        }
+      }
       router.push(dashboardPathForRole(session.role));
     } catch (error) {
       setError(error instanceof Error ? error.message : t("auth.register.errFailed"));

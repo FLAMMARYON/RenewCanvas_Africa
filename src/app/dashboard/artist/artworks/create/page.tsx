@@ -24,9 +24,16 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { createArtwork } from "@/lib/frontend/artworks-api";
 import { readProfile } from "@/lib/frontend/profile-api";
-import { getListingSuggestions, type ListingAssistantResponse } from "@/lib/frontend/listing-assistant-api";
+import { getListingSuggestions, type ListingAssistantRequest, type ListingAssistantResponse } from "@/lib/frontend/listing-assistant-api";
 import { uploadArtworkImage, type UploadResult } from "@/lib/frontend/upload-api";
 import { artworkCategories, recyclableMaterials } from "@/lib/ml/schemas";
+import {
+  composeDimensions,
+  dimensionFieldsForCategory,
+  parseDimensions,
+  type DimensionFieldKey,
+  type DimensionValues,
+} from "@/lib/frontend/dimension-fields";
 
 // Use centralized schemas instead of hardcoded arrays
 const categories = [...artworkCategories];
@@ -64,6 +71,42 @@ const complexityHourCaps: Record<string, number> = {
   complex: 30,
   very_complex: 500,
 };
+
+// ---- AI listing-assistant draft cache (item 3) ----------------------------
+// The assistant is only ever called on an explicit "Suggest" click (never on
+// page load), and the result is cached per-input in localStorage so reopening
+// the draft with the same details reuses the answer instead of re-billing the
+// API. Keyed on the fields that actually shape the suggestion.
+const LISTING_CACHE_PREFIX = "renewcanvas:listing-assistant:";
+
+function listingCacheKey(input: ListingAssistantRequest): string {
+  const normalized = {
+    title: input.title.trim().toLowerCase(),
+    description: input.description.trim().toLowerCase(),
+    materials: [...input.materials].map((m) => m.toLowerCase()).sort().join("|"),
+    category: (input.category ?? "").toLowerCase(),
+    dimensions: (input.dimensions ?? "").toLowerCase(),
+    price: input.price,
+  };
+  return LISTING_CACHE_PREFIX + JSON.stringify(normalized);
+}
+
+function readListingCache(key: string): ListingAssistantResponse | null {
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as ListingAssistantResponse) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeListingCache(key: string, value: ListingAssistantResponse): void {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* ignore quota / private-mode errors — caching is best-effort */
+  }
+}
 
 export default function CreateArtworkPage() {
   const { t } = useTranslation();
@@ -103,6 +146,28 @@ export default function CreateArtworkPage() {
     hoursWorked: "",
     notes: "",
   });
+  // Structured dimension inputs. Which fields show depends on the selected
+  // category (see lib/frontend/dimension-fields). They compose into the single
+  // `formData.dimensions` string the rest of the app already uses.
+  const [dimensionParts, setDimensionParts] = useState<DimensionValues>({});
+  const dimensionFields = dimensionFieldsForCategory(formData.category);
+
+  const handleDimensionPartChange = (key: DimensionFieldKey, value: string) => {
+    const nextParts = { ...dimensionParts, [key]: value };
+    setDimensionParts(nextParts);
+    setFormData((current) => ({ ...current, dimensions: composeDimensions(current.category, nextParts) }));
+  };
+
+  const handleCategoryChange = (value: string) => {
+    // Reformat the dimensions string for the new category's field set, but only
+    // when structured parts exist — don't wipe an AI-applied dimension string.
+    const hasParts = Object.values(dimensionParts).some((part) => part && part.trim());
+    setFormData((current) => ({
+      ...current,
+      category: value,
+      dimensions: hasParts ? composeDimensions(value, dimensionParts) : current.dimensions,
+    }));
+  };
 
   // Toast lives ~4s, then clears itself.
   useEffect(() => {
@@ -326,20 +391,31 @@ export default function CreateArtworkPage() {
       return;
     }
 
+    const requestInput: ListingAssistantRequest = {
+      title: formData.title,
+      description: formData.description,
+      materials: selectedMaterials.length > 0 ? selectedMaterials : ["Recycled materials"],
+      price: Number(formData.price) || 25000,
+      category: formData.category || undefined,
+      dimensions: formData.dimensions || undefined,
+    };
+
+    // Reuse a cached suggestion for identical inputs — no API call, no re-bill.
+    const cacheKey = listingCacheKey(requestInput);
+    const cached = readListingCache(cacheKey);
+    if (cached) {
+      setAiListingSuggestions(cached);
+      showToast(t("artistDashboard.create.aiSuggestionsCached", { defaultValue: "Loaded saved AI suggestions for this draft." }));
+      return;
+    }
+
     setIsLoadingAiSuggestions(true);
     setFormError("");
 
     try {
-      const result = await getListingSuggestions({
-        title: formData.title,
-        description: formData.description,
-        materials: selectedMaterials.length > 0 ? selectedMaterials : ["Recycled materials"],
-        price: Number(formData.price) || 25000,
-        category: formData.category || undefined,
-        dimensions: formData.dimensions || undefined,
-      });
-
+      const result = await getListingSuggestions(requestInput);
       setAiListingSuggestions(result);
+      writeListingCache(cacheKey, result);
     } catch (error) {
       showToast(error instanceof Error ? error.message : t("artistDashboard.create.aiSuggestionsError"));
     } finally {
@@ -366,7 +442,11 @@ export default function CreateArtworkPage() {
   };
 
   const applyDimensionSuggestion = (value: string) => {
-    setFormData((current) => ({ ...current, dimensions: value }));
+    // Parse the suggestion back into structured parts so the inputs populate,
+    // then recompose for a consistent stored string.
+    const nextParts = parseDimensions(formData.category, value);
+    setDimensionParts(nextParts);
+    setFormData((current) => ({ ...current, dimensions: composeDimensions(current.category, nextParts) }));
     showToast(t("artistDashboard.create.dimensionsUpdated"));
   };
 
@@ -645,7 +725,7 @@ export default function CreateArtworkPage() {
                         <select
                           name="category"
                           value={formData.category}
-                          onChange={handleChange}
+                          onChange={(e) => handleCategoryChange(e.target.value)}
                           className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none appearance-none bg-white"
                           required
                         >
@@ -659,21 +739,39 @@ export default function CreateArtworkPage() {
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                       </div>
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {t("artistDashboard.create.dimensionsLabel")}
-                      </label>
-                      <input
-                        type="text"
-                        name="dimensions"
-                        value={formData.dimensions}
-                        onChange={handleChange}
-                        placeholder={t("artistDashboard.create.dimensionsPlaceholder")}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                        required
-                      />
+                  {/* Dimensions — the inputs shown depend on the selected category
+                      (2D: W×H, 3D: W×H×D, jewelry: a single size/length). Driven
+                      by the extensible config in lib/frontend/dimension-fields. */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t("artistDashboard.create.dimensionsLabel")}
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {dimensionFields.map((field) => (
+                        <div key={field.key}>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">
+                            {t(`artistDashboard.create.${field.labelKey}`, { defaultValue: field.defaultLabel })}
+                          </label>
+                          <input
+                            type={field.type}
+                            inputMode={field.type === "number" ? "decimal" : undefined}
+                            min={field.type === "number" ? "0" : undefined}
+                            step={field.type === "number" ? "0.1" : undefined}
+                            value={dimensionParts[field.key] ?? ""}
+                            onChange={(e) => handleDimensionPartChange(field.key, e.target.value)}
+                            placeholder={field.placeholder}
+                            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                          />
+                        </div>
+                      ))}
                     </div>
+                    {formData.dimensions && (
+                      <p className="mt-2 text-xs text-gray-500">
+                        {t("artistDashboard.create.dimensionsPreview", { defaultValue: "Saved as: {{value}}", value: formData.dimensions })}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

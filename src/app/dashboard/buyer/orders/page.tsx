@@ -1,22 +1,12 @@
 "use client";
 
 import DashboardLayout from "@/components/DashboardLayout";
-import { listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
-import { Calendar, CheckCircle, Clock, MapPin, Package, Recycle, Search, Shield, XCircle } from "lucide-react";
+import { ADMIN_CONTACT_PHONE, isOrderVisible, listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
+import { customerFacingOrderStatus, orderStatusMeta } from "@/lib/frontend/status-labels";
+import { Calendar, MapPin, Package, Phone, Recycle, Search, Shield } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const statusConfig = {
-  pending_payment: { label: "dashboard.orderStatus.pending_payment", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  paid: { label: "dashboard.orderStatus.paid", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
-  processing: { label: "dashboard.orderStatus.processing", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
-  shipped: { label: "dashboard.orderStatus.shipped", color: "text-purple-600", bgColor: "bg-purple-50", icon: Package },
-  delivered: { label: "dashboard.orderStatus.delivered", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  cancelled: { label: "dashboard.orderStatus.cancelled", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-  refunded: { label: "dashboard.orderStatus.refunded", color: "text-gray-600", bgColor: "bg-gray-100", icon: XCircle },
-  failed: { label: "dashboard.orderStatus.failed", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-};
 
 export default function BuyerOrdersPage() {
   const { t } = useTranslation();
@@ -46,17 +36,20 @@ export default function BuyerOrdersPage() {
   }, []);
 
   const filteredOrders = orders.filter((order) => {
+    if (!isOrderVisible(order)) return false; // hide cancelled orders older than 10 days
     const item = order.items[0];
     const search = `${order.id} ${item?.title ?? ""} ${item?.artistName ?? ""}`.toLowerCase();
-    return search.includes(searchQuery.toLowerCase()) && (statusFilter === "all" || order.status === statusFilter);
+    // Match on the customer-facing status so "Delivered" also covers disbursed orders.
+    return search.includes(searchQuery.toLowerCase()) && (statusFilter === "all" || customerFacingOrderStatus(order.status) === statusFilter);
   });
 
   const stats = useMemo(
     () => ({
       total: orders.length,
       pending: orders.filter((order) => order.status === "pending_payment").length,
-      active: orders.filter((order) => ["paid", "processing", "shipped"].includes(order.status)).length,
-      delivered: orders.filter((order) => order.status === "delivered").length,
+      active: orders.filter((order) => order.status === "paid").length,
+      // A disbursed (artist_paid) order is complete for the buyer → counts as Delivered.
+      delivered: orders.filter((order) => customerFacingOrderStatus(order.status) === "delivered").length,
     }),
     [orders]
   );
@@ -93,8 +86,6 @@ export default function BuyerOrdersPage() {
               <option value="all">{t("dashboard.buyer.orders.filterAll")}</option>
               <option value="pending_payment">{t("dashboard.orderStatus.pending_payment")}</option>
               <option value="paid">{t("dashboard.orderStatus.paid")}</option>
-              <option value="processing">{t("dashboard.orderStatus.processing")}</option>
-              <option value="shipped">{t("dashboard.orderStatus.shipped")}</option>
               <option value="delivered">{t("dashboard.orderStatus.delivered")}</option>
               <option value="cancelled">{t("dashboard.orderStatus.cancelled")}</option>
             </select>
@@ -104,7 +95,9 @@ export default function BuyerOrdersPage() {
         <div className="space-y-4">
           {filteredOrders.map((order) => {
             const item = order.items[0];
-            const status = statusConfig[order.status as keyof typeof statusConfig] ?? statusConfig.pending_payment;
+            // Shared status meta on the customer-facing status: a paid/disbursed
+            // order never reads "Pending Payment", and disbursed shows as Delivered.
+            const status = orderStatusMeta(customerFacingOrderStatus(order.status));
             const StatusIcon = status.icon;
             const isExpanded = expandedOrder === order.id;
             const delivery = order.deliveryAddress ?? {};
@@ -121,7 +114,7 @@ export default function BuyerOrdersPage() {
                           <span className="font-mono text-sm text-gray-500">{order.id}</span>
                           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${status.bgColor} ${status.color}`}>
                             <StatusIcon className="h-3 w-3" />
-                            {t(status.label)}
+                            {t(status.labelKey)}
                           </span>
                         </div>
                         <p className="font-medium text-gray-900">{item?.title ?? t("dashboard.artworkFallback")}</p>
@@ -141,6 +134,10 @@ export default function BuyerOrdersPage() {
                         <p className="flex items-center gap-2"><Calendar className="h-4 w-4" />{t("dashboard.buyer.orders.createdAt", { date: new Date(order.createdAt).toLocaleString() })}</p>
                         <p className="flex items-center gap-2 text-green-600"><Recycle className="h-4 w-4" />{t("dashboard.kgDiverted", { kg: item?.kgDiverted.toFixed(1) ?? "0.0" })}</p>
                         <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4" />{String(delivery.address ?? "")}, {String(delivery.city ?? "")}</p>
+                        <p className="flex items-center gap-2 text-gray-700">
+                          <Phone className="h-4 w-4 text-teal-600" />
+                          <span>{t("dashboard.buyer.orders.adminContact", { defaultValue: "Admin Contact" })}: <a href={`tel:${ADMIN_CONTACT_PHONE}`} className="font-medium text-teal-700 hover:underline">{ADMIN_CONTACT_PHONE}</a></span>
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Link href={`/order-confirmation?order=${encodeURIComponent(order.id)}`} className="block rounded-lg bg-teal-600 px-4 py-2.5 text-center text-sm font-medium text-white">{t("dashboard.buyer.orders.paymentInstructions")}</Link>

@@ -7,6 +7,13 @@
 
 export const LISTING_ASSISTANT_VERSION = "listing-assistant-v1";
 
+/**
+ * Model used for the listing assistant AND the pricing-justification helper.
+ * Haiku 4.5 is the cheapest/fastest current Claude model and is plenty for this
+ * short structured-JSON task. Keep this in one place so both callers stay in sync.
+ */
+export const LISTING_ASSISTANT_MODEL = "claude-haiku-4-5";
+
 export type ListingAssistantInput = {
   title: string;
   description: string;
@@ -309,8 +316,15 @@ export async function callListingAssistant(
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2048,
+      // claude-haiku-4-5: cheapest/fastest model, ample for this JSON listing
+      // task. The previous `claude-sonnet-4-20250514` was RETIRED on
+      // 2026-06-15, so every call 404'd — which surfaced to the user as the
+      // generic "AI service temporarily unavailable" (the real cause was masked
+      // by the route's catch block, now fixed to surface the true error).
+      model: LISTING_ASSISTANT_MODEL,
+      // Small cap: the improved description is bounded to ~500 words and the
+      // rest of the JSON is short, so ~1500 tokens is plenty and bounds cost.
+      max_tokens: 1500,
       messages: [
         {
           role: "user",

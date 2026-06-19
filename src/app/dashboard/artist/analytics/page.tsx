@@ -2,7 +2,8 @@
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api";
-import { listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
+import { listOrders, PLATFORM_COMMISSION_RATE, type FrontendOrder } from "@/lib/frontend/orders-api";
+import { isConfirmedRevenueStatus } from "@/lib/frontend/status-labels";
 import { readProfile } from "@/lib/frontend/profile-api";
 import {
   Eye,
@@ -80,23 +81,46 @@ export default function ArtistAnalyticsPage() {
   ];
 
   const monthlyData = useMemo<MonthlyData[]>(() => {
-    const months = new Map<string, MonthlyData>();
-    const monthKey = (date: string) => new Date(date).toLocaleString("en", { month: "short" });
+    // Keyed by YYYY-MM so the series is ordered chronologically (not by Map
+    // insertion order). All four metrics come from real records — no placeholders.
+    const months = new Map<string, MonthlyData & { sortKey: string }>();
+    const ensure = (dateString: string) => {
+      const date = new Date(dateString);
+      const sortKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      let entry = months.get(sortKey);
+      if (!entry) {
+        entry = {
+          sortKey,
+          month: date.toLocaleString("en", { month: "short", year: "2-digit" }),
+          views: 0,
+          favourites: 0,
+          sales: 0,
+          revenue: 0,
+        };
+        months.set(sortKey, entry);
+      }
+      return entry;
+    };
+    // Views + wishlist (favourites) attributed to each artwork's creation month.
     artworks.forEach((artwork) => {
-      const key = monthKey(artwork.createdAt);
-      const current = months.get(key) ?? { month: key, views: 0, favourites: 0, sales: 0, revenue: 0 };
-      current.views += artwork.viewCount;
-      current.favourites += artwork.favouriteCount;
-      months.set(key, current);
+      const entry = ensure(artwork.createdAt);
+      entry.views += artwork.viewCount;
+      entry.favourites += artwork.favouriteCount;
     });
+    // Orders that month (count) + money actually EARNED that month: the artist's
+    // 80% share of CONFIRMED (paid/disbursed) orders only — never pending/cancelled.
     orders.forEach((order) => {
-      const key = monthKey(order.createdAt);
-      const current = months.get(key) ?? { month: key, views: 0, favourites: 0, sales: 0, revenue: 0 };
-      current.sales += order.items.reduce((sum, item) => sum + item.quantity, 0);
-      current.revenue += order.items.reduce((sum, item) => sum + item.unitAmount * item.quantity, 0);
-      months.set(key, current);
+      const entry = ensure(order.createdAt);
+      entry.sales += 1;
+      if (isConfirmedRevenueStatus(order.status)) {
+        entry.revenue += order.items
+          .filter((item) => item.ownerType === "artist")
+          .reduce((sum, item) => sum + item.unitAmount * item.quantity * (1 - PLATFORM_COMMISSION_RATE), 0);
+      }
     });
-    return Array.from(months.values()).slice(-12);
+    return Array.from(months.values())
+      .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+      .slice(-12);
   }, [artworks, orders]);
 
   const topArtworks = useMemo(
@@ -168,10 +192,10 @@ export default function ArtistAnalyticsPage() {
                   <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-gradient-to-r from-teal-500 to-teal-400 rounded-full transition-all" style={{ width: `${(month.views / maxMonthlyViews) * 100}%` }} />
                   </div>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                    <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{month.favourites}</span>
-                    <span className="flex items-center gap-1"><ShoppingBag className="w-3 h-3" />{month.sales}</span>
-                    <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{month.revenue.toLocaleString()}</span>
+                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-500">
+                    <span className="flex items-center gap-1" title={t("artistDashboard.analytics.wishlistMetric", { defaultValue: "Wishlist saves" })}><Heart className="w-3 h-3" />{month.favourites}</span>
+                    <span className="flex items-center gap-1" title={t("artistDashboard.analytics.ordersMetric", { defaultValue: "Orders" })}><ShoppingBag className="w-3 h-3" />{month.sales}</span>
+                    <span className="font-medium text-teal-700" title={t("artistDashboard.analytics.earnedMetric", { defaultValue: "Earned (RWF)" })}>{Math.round(month.revenue).toLocaleString()} RWF</span>
                   </div>
                 </div>
               ))}

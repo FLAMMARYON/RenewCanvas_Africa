@@ -2,6 +2,7 @@
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { readProfile, saveProfile } from "@/lib/frontend/profile-api";
+import { emitProfileUpdated } from "@/lib/frontend/profile-events";
 import { CheckCircle, Mail, Phone, Save, Shield, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -69,6 +70,8 @@ export default function AdminProfilePage() {
         title: profile.title,
       });
       setSaveSuccess(true);
+      // Refresh the navbar/header name live after a profile save.
+      emitProfileUpdated();
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : t("admin.profile.saveError"));

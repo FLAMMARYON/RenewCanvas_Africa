@@ -18,6 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { readProfile, saveProfile } from "@/lib/frontend/profile-api";
+import { emitProfileUpdated } from "@/lib/frontend/profile-events";
 
 const initialProfile = {
   firstName: "",
@@ -77,6 +78,8 @@ export default function BuyerProfilePage() {
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.ok) throw new Error(body.message || t("dashboard.buyer.profile.uploadError"));
       setAvatarUrl(body.avatarUrl);
+      // Refresh the navbar/header avatar everywhere it shows.
+      emitProfileUpdated();
     } catch (err) {
       setStatusMessage(err instanceof Error ? err.message : t("dashboard.buyer.profile.uploadError"));
     } finally {
@@ -202,6 +205,8 @@ export default function BuyerProfilePage() {
         },
       });
       setSaveSuccess(true);
+      // Refresh the navbar/header name (and avatar) live after a profile save.
+      emitProfileUpdated();
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : t("dashboard.buyer.profile.saveError"));

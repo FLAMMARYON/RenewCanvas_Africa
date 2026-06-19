@@ -1,9 +1,9 @@
 "use client";
 
 import DashboardLayout from "@/components/DashboardLayout";
-import { artistPayout, confirmOrderPayment, disburseOrder, listOrders, PLATFORM_COMMISSION_RATE, type FrontendOrder } from "@/lib/frontend/orders-api";
+import { ADMIN_CONTACT_PHONE, artistPayout, cancelOrder, confirmOrderPayment, disburseOrder, isOrderVisible, listOrders, PLATFORM_COMMISSION_RATE, type FrontendOrder } from "@/lib/frontend/orders-api";
 import { orderStatusMeta, isConfirmedRevenueStatus } from "@/lib/frontend/status-labels";
-import { Banknote, Calendar, CheckCircle, DollarSign, Mail, Package, Search, User } from "lucide-react";
+import { Banknote, Calendar, CheckCircle, DollarSign, Mail, Package, Phone, Search, User, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,12 +23,29 @@ export default function AdminOrdersPage() {
       .catch((error) => setStatusMessage(error instanceof Error ? error.message : t("admin.orders.loadError")));
   }, []);
 
-  const runOrderAction = async (orderId: string, action: "confirm" | "disburse") => {
+  const runOrderAction = async (orderId: string, action: "confirm" | "disburse" | "cancel") => {
     setBusyOrderId(orderId);
     setStatusMessage("");
     try {
-      const newStatus = action === "confirm" ? await confirmOrderPayment(orderId) : await disburseOrder(orderId);
-      setOrders((current) => current.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)));
+      const newStatus =
+        action === "confirm"
+          ? await confirmOrderPayment(orderId)
+          : action === "disburse"
+          ? await disburseOrder(orderId)
+          : await cancelOrder(orderId);
+      setOrders((current) =>
+        current.map((order) =>
+          order.id === orderId
+            ? {
+                ...order,
+                status: newStatus,
+                // Stamp the cancellation date locally so the 10-day expiry clock
+                // starts immediately (the server persists it on the next reload).
+                cancelledAt: newStatus === "cancelled" ? new Date().toISOString() : order.cancelledAt,
+              }
+            : order
+        )
+      );
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : t("admin.orders.actionError"));
     } finally {
@@ -37,6 +54,7 @@ export default function AdminOrdersPage() {
   };
 
   const filteredOrders = orders.filter((order) => {
+    if (!isOrderVisible(order)) return false; // hide cancelled orders older than 10 days
     const item = order.items[0];
     const delivery = order.deliveryAddress ?? {};
     const search = `${order.id} ${item?.title ?? ""} ${item?.artistName ?? ""} ${order.buyer?.name ?? ""} ${order.buyer?.email ?? ""} ${String(delivery.fullName ?? "")}`.toLowerCase();
@@ -87,8 +105,6 @@ export default function AdminOrdersPage() {
               <option value="all">{t("admin.orders.filterAllStatus")}</option>
               <option value="pending_payment">{t("statusLabels.pendingPayment")}</option>
               <option value="paid">{t("statusLabels.paid")}</option>
-              <option value="processing">{t("statusLabels.processing")}</option>
-              <option value="shipped">{t("statusLabels.shipped")}</option>
               <option value="delivered">{t("statusLabels.delivered")}</option>
               <option value="artist_paid">{t("statusLabels.artistPaid")}</option>
               <option value="cancelled">{t("statusLabels.cancelled")}</option>
@@ -214,9 +230,24 @@ export default function AdminOrdersPage() {
                               {order.status === "artist_paid" ? t("admin.orders.artistDisbursed") : t("admin.orders.confirmArtistDisbursement")}
                             </button>
                             {order.status === "pending_payment" && <p className="text-xs text-gray-500">{t("admin.orders.disbursementHint")}</p>}
+                            {/* Cancel — allowed only before settlement (pending/paid). */}
+                            <button
+                              type="button"
+                              disabled={(order.status !== "pending_payment" && order.status !== "paid") || busyOrderId === order.id}
+                              onClick={() => runOrderAction(order.id, "cancel")}
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2 font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <XCircle className="h-4 w-4" />
+                              {order.status === "cancelled" ? t("admin.orders.orderCancelled", { defaultValue: "Order cancelled" }) : t("admin.orders.cancelOrder", { defaultValue: "Cancel order" })}
+                            </button>
                             <a href={`mailto:${order.buyer?.email ?? String(delivery.email ?? "")}`} className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-50">
                               <Mail className="h-4 w-4" />{t("admin.orders.emailBuyer")}
                             </a>
+                            {/* Admin support contact shown on every order. */}
+                            <p className="flex items-center gap-2 border-t border-gray-100 pt-3 text-gray-700">
+                              <Phone className="h-4 w-4 text-teal-600" />
+                              <span>{t("admin.orders.adminContact", { defaultValue: "Admin Contact" })}: <a href={`tel:${ADMIN_CONTACT_PHONE}`} className="font-medium text-teal-700 hover:underline">{ADMIN_CONTACT_PHONE}</a></span>
+                            </p>
                           </div>
                         </div>
                       </div>

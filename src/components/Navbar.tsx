@@ -9,9 +9,10 @@ import {
   User,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { onProfileUpdated } from "@/lib/frontend/profile-events";
 
 interface UserSession {
   id: string;
@@ -24,22 +25,46 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [session, setSession] = useState<UserSession | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
+  // Profile-sourced display data (avatar + display name). Kept separate from the
+  // auth session so a profile save updates the navbar avatar/name live.
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch session on mount
-  useEffect(() => {
-    fetch("/api/auth/session")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.user) {
-          setSession(data.user);
+  // Load the auth session (role/email/name) + the profile (avatar + display
+  // name). Re-runnable so the navbar refreshes after a profile save.
+  const loadUser = useCallback(async () => {
+    try {
+      const sessionRes = await fetch("/api/auth/session", { cache: "no-store" });
+      const sessionData = sessionRes.ok ? await sessionRes.json() : null;
+      if (sessionData?.user) {
+        setSession(sessionData.user);
+        // Avatar + display name live on the role profile, not the auth session.
+        const profileRes = await fetch("/api/profile", { credentials: "include", cache: "no-store" });
+        const profileData = profileRes.ok ? await profileRes.json() : null;
+        if (profileData?.ok) {
+          setAvatarUrl(typeof profileData.avatarUrl === "string" ? profileData.avatarUrl : null);
+          setProfileName(typeof profileData.displayName === "string" ? profileData.displayName : null);
         }
-      })
-      .catch(() => {})
-      .finally(() => setSessionLoading(false));
+      } else {
+        setSession(null);
+        setAvatarUrl(null);
+        setProfileName(null);
+      }
+    } catch {
+      /* leave existing state; navbar degrades to initials */
+    } finally {
+      setSessionLoading(false);
+    }
   }, []);
+
+  // Fetch on mount, and re-fetch whenever the user saves their profile.
+  useEffect(() => {
+    loadUser();
+    return onProfileUpdated(loadUser);
+  }, [loadUser]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -151,9 +176,17 @@ export default function Navbar() {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white font-semibold text-sm">
-                    {getInitials(session.name, session.email)}
-                  </div>
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={profileName || session.name || t("nav.user")}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white font-semibold text-sm">
+                      {getInitials(profileName ?? session.name, session.email)}
+                    </div>
+                  )}
                   <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -162,7 +195,7 @@ export default function Navbar() {
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50">
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="font-medium text-gray-900 truncate">
-                        {session.name || t("nav.user")}
+                        {profileName || session.name || t("nav.user")}
                       </p>
                       <p className="text-sm text-gray-500 truncate">{session.email}</p>
                       <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700 rounded capitalize">
@@ -261,11 +294,19 @@ export default function Navbar() {
             {session ? (
               <div className="pt-4 border-t border-gray-100">
                 <div className="flex items-center gap-3 py-2">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white font-semibold text-sm">
-                    {getInitials(session.name, session.email)}
-                  </div>
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={profileName || session.name || t("nav.user")}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white font-semibold text-sm">
+                      {getInitials(profileName ?? session.name, session.email)}
+                    </div>
+                  )}
                   <div>
-                    <p className="font-medium text-gray-900">{session.name || t("nav.user")}</p>
+                    <p className="font-medium text-gray-900">{profileName || session.name || t("nav.user")}</p>
                     <p className="text-sm text-gray-500">{session.email}</p>
                   </div>
                 </div>

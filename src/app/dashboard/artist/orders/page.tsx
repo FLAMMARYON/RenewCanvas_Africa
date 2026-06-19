@@ -1,22 +1,12 @@
 "use client";
 
 import DashboardLayout from "@/components/DashboardLayout";
-import { listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
-import { Calendar, CheckCircle, Clock, Package, Search, Shield, Truck, XCircle } from "lucide-react";
+import { ADMIN_CONTACT_PHONE, isOrderVisible, listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
+import { customerFacingOrderStatus, orderStatusMeta } from "@/lib/frontend/status-labels";
+import { Calendar, Package, Phone, Search, Shield } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-const statusConfig = {
-  pending_payment: { labelKey: "statusPendingPayment", color: "text-amber-600", bgColor: "bg-amber-50", icon: Clock },
-  paid: { labelKey: "statusPaid", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
-  processing: { labelKey: "statusProcessing", color: "text-blue-600", bgColor: "bg-blue-50", icon: CheckCircle },
-  shipped: { labelKey: "statusShipped", color: "text-purple-600", bgColor: "bg-purple-50", icon: Truck },
-  delivered: { labelKey: "statusDelivered", color: "text-green-600", bgColor: "bg-green-50", icon: CheckCircle },
-  cancelled: { labelKey: "statusCancelled", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-  refunded: { labelKey: "statusRefunded", color: "text-gray-600", bgColor: "bg-gray-100", icon: XCircle },
-  failed: { labelKey: "statusFailed", color: "text-red-600", bgColor: "bg-red-50", icon: XCircle },
-};
 
 export default function ArtistOrdersPage() {
   const { t } = useTranslation();
@@ -33,17 +23,21 @@ export default function ArtistOrdersPage() {
   }, []);
 
   const filteredOrders = orders.filter((order) => {
+    if (!isOrderVisible(order)) return false; // hide cancelled orders older than 10 days
     const item = order.items[0];
     const search = `${order.id} ${item?.title ?? ""} ${item?.ownerType ?? ""}`.toLowerCase();
-    return search.includes(searchQuery.toLowerCase()) && (statusFilter === "all" || order.status === statusFilter);
+    // Match on the customer-facing status so the "Delivered" filter also covers
+    // disbursed (artist_paid) orders, which display as Delivered.
+    return search.includes(searchQuery.toLowerCase()) && (statusFilter === "all" || customerFacingOrderStatus(order.status) === statusFilter);
   });
 
   const stats = useMemo(
     () => ({
       total: orders.length,
       pending: orders.filter((order) => order.status === "pending_payment").length,
-      active: orders.filter((order) => ["paid", "processing", "shipped"].includes(order.status)).length,
-      delivered: orders.filter((order) => order.status === "delivered").length,
+      active: orders.filter((order) => order.status === "paid").length,
+      // Disbursed (artist_paid) shows as Delivered for the artist, so count it here too.
+      delivered: orders.filter((order) => customerFacingOrderStatus(order.status) === "delivered").length,
       earnings: orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.unitAmount * item.quantity * 0.8, 0), 0),
     }),
     [orders]
@@ -84,8 +78,6 @@ export default function ArtistOrdersPage() {
               <option value="all">{t("artistDashboard.orders.filterAllStatus")}</option>
               <option value="pending_payment">{t("artistDashboard.orders.statusPendingPayment")}</option>
               <option value="paid">{t("artistDashboard.orders.statusPaid")}</option>
-              <option value="processing">{t("artistDashboard.orders.statusProcessing")}</option>
-              <option value="shipped">{t("artistDashboard.orders.statusShipped")}</option>
               <option value="delivered">{t("artistDashboard.orders.statusDelivered")}</option>
               <option value="cancelled">{t("artistDashboard.orders.statusCancelled")}</option>
             </select>
@@ -95,7 +87,10 @@ export default function ArtistOrdersPage() {
         <div className="space-y-4">
           {filteredOrders.map((order) => {
             const item = order.items[0];
-            const status = statusConfig[order.status as keyof typeof statusConfig] ?? statusConfig.pending_payment;
+            // Shared status meta on the customer-facing status: a paid/disbursed
+            // order is never mislabelled "Pending Payment", and disbursed shows
+            // as "Delivered".
+            const status = orderStatusMeta(customerFacingOrderStatus(order.status));
             const StatusIcon = status.icon;
             const isExpanded = expandedOrder === order.id;
             return (
@@ -111,7 +106,7 @@ export default function ArtistOrdersPage() {
                           <span className="font-mono text-sm text-gray-500">{order.id}</span>
                           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${status.bgColor} ${status.color}`}>
                             <StatusIcon className="h-3 w-3" />
-                            {t(`artistDashboard.orders.${status.labelKey}`)}
+                            {t(status.labelKey)}
                           </span>
                         </div>
                         <p className="font-medium text-gray-900">{item?.title ?? t("artistDashboard.orders.artworkFallback")}</p>
@@ -136,6 +131,10 @@ export default function ArtistOrdersPage() {
                         <p className="font-medium text-gray-900">{t("artistDashboard.orders.buyerContact")}</p>
                         <p>{t("artistDashboard.orders.emailLabel", { email: order.buyerContact?.email ?? "—" })}</p>
                         <p>{t("artistDashboard.orders.phoneLabel", { phone: order.buyerContact?.phone ?? "—" })}</p>
+                        <p className="flex items-center gap-2 border-t border-gray-100 pt-2 text-gray-700">
+                          <Phone className="h-4 w-4 text-teal-600" />
+                          <span>{t("artistDashboard.orders.adminContact", { defaultValue: "Admin Contact" })}: <a href={`tel:${ADMIN_CONTACT_PHONE}`} className="font-medium text-teal-700 hover:underline">{ADMIN_CONTACT_PHONE}</a></span>
+                        </p>
                         <p className="text-xs text-gray-500">{t("artistDashboard.orders.deliveryHandledByAdmin")}</p>
                         {item?.artworkSlug && (
                           <Link href={`/dashboard/artist/orders/artwork/${item.artworkSlug}`} className="mt-1 inline-flex rounded-lg bg-teal-600 px-4 py-2 text-white">

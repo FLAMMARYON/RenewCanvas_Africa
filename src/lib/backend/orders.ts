@@ -237,6 +237,13 @@ export function normalizeOrder(order: OrderRecord, viewerRole: AuthPublicUser["r
     notes: viewerRole === "artist" ? null : order.notes,
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
+    // TODO: the Order model has no dedicated `cancelledAt` column yet. A
+    // cancelled order's last write IS its cancellation (cancellation is the
+    // terminal admin action), so `updatedAt` is a safe stand-in for the
+    // cancellation date used to expire cancelled orders after 10 days. Add a
+    // real `cancelledAt` column + migration if cancelled orders ever get later
+    // edits.
+    cancelledAt: order.status === "cancelled" ? order.updatedAt.toISOString() : null,
     buyer: viewerRole === "artist" ? null : order.buyer ?? null,
     // Artists may see ONLY the buyer's email + phone (never the address).
     buyerContact:

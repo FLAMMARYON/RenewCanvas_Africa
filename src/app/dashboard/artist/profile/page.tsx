@@ -26,6 +26,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { readProfile, saveProfile } from "@/lib/frontend/profile-api";
+import { emitProfileUpdated } from "@/lib/frontend/profile-events";
 
 const initialProfile = {
   firstName: "",
@@ -139,6 +140,8 @@ export default function ArtistProfilePage() {
       if (!res.ok || !body.ok) throw new Error(body.message || t("artistDashboard.profile.errUploadPhoto"));
       setAvatarUrl(body.avatarUrl);
       setStatusMessage(t("artistDashboard.profile.photoUpdated"));
+      // Refresh the navbar/header avatar everywhere it shows.
+      emitProfileUpdated();
     } catch (err) {
       setStatusMessage(err instanceof Error ? err.message : t("artistDashboard.profile.errUploadPhoto"));
     } finally {
@@ -170,9 +173,12 @@ export default function ArtistProfilePage() {
           techniques: stringArrayValue(profileData.techniques),
           preferredMaterials: stringArrayValue(profileData.preferredMaterials),
           yearsExperience: numberValue(profileData.yearsExperience),
-          payoutMethod: stringValue(profileData.payoutMethod) || "MTN Mobile Money",
+          // MoMo-only now; ignore any legacy bank value stored before.
+          payoutMethod: "MTN Mobile Money",
           payoutAccountName: stringValue(profileData.payoutAccountName),
-          payoutAccountNumber: stringValue(profileData.payoutAccountNumber),
+          // Pre-fill the MoMo number from the saved payout number, else the
+          // phone the artist provided at signup (persisted on the profile).
+          payoutAccountNumber: stringValue(profileData.payoutAccountNumber) || stringValue(profileData.phone),
           payoutBankName: stringValue(profileData.payoutBankName),
           isVerified: stringValue(profileData.verificationStatus) === "approved",
           verificationStatus: stringValue(profileData.verificationStatus) || "not_submitted",
@@ -231,16 +237,19 @@ export default function ArtistProfilePage() {
         techniques: profile.techniques,
         preferredMaterials: profile.preferredMaterials,
         yearsExperience: profile.yearsExperience,
-        payoutMethod: profile.payoutMethod,
+        // MoMo-only: always persist MTN Mobile Money and clear any legacy bank name.
+        payoutMethod: "MTN Mobile Money",
         payoutAccountName: profile.payoutAccountName,
         payoutAccountNumber: profile.payoutAccountNumber,
-        payoutBankName: profile.payoutBankName,
+        payoutBankName: "",
       });
       setProfile((current) => ({
         ...current,
         completionPercentage: completionPercentage(current),
       }));
       setSaveSuccess(true);
+      // Refresh the navbar/header name (and avatar) live after a profile save.
+      emitProfileUpdated();
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : t("artistDashboard.profile.errSaveProfile"));
@@ -687,11 +696,11 @@ export default function ArtistProfilePage() {
                         onChange={(e) =>
                           handleInputChange("payoutMethod", e.target.value)
                         }
+                        aria-label={t("artistDashboard.profile.preferredPayoutMethod")}
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
                       >
+                        {/* MoMo-only — bank transfer removed entirely (item 8). */}
                         <option value="MTN Mobile Money">MTN Mobile Money</option>
-                        <option value="Airtel Money">Airtel Money</option>
-                        <option value="Bank Transfer">{t("artistDashboard.profile.payoutBankTransfer")}</option>
                       </select>
                     </div>
                     <div>
@@ -709,31 +718,20 @@ export default function ArtistProfilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t("artistDashboard.profile.mobileOrAccountNumber")}
+                        {t("artistDashboard.profile.momoNumber", { defaultValue: "MTN MoMo number" })}
                       </label>
                       <input
-                        type="text"
+                        type="tel"
                         value={profile.payoutAccountNumber}
                         onChange={(e) =>
                           handleInputChange("payoutAccountNumber", e.target.value)
                         }
+                        placeholder="+250 7XX XXX XXX"
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t("artistDashboard.profile.bankName")}{" "}
-                        <span className="text-gray-400">{t("artistDashboard.profile.bankNameHint")}</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={profile.payoutBankName}
-                        onChange={(e) =>
-                          handleInputChange("payoutBankName", e.target.value)
-                        }
-                        placeholder={t("artistDashboard.profile.bankNamePlaceholder")}
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        {t("artistDashboard.profile.momoNumberHint", { defaultValue: "Defaults to the phone number you used at signup." })}
+                      </p>
                     </div>
                   </div>
                 </div>

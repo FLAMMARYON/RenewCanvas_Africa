@@ -72,6 +72,17 @@ export function orderStatusMeta(status: string): StatusMeta {
 }
 
 /**
+ * Customer/artist-facing order status. The internal `artist_paid` (disbursed)
+ * settlement step is shown to both the artist and the buyer as "Delivered" — the
+ * order is complete from their perspective. Everything else maps 1:1. Pair with
+ * `orderStatusMeta` so a paid/disbursed order is never mislabelled "Pending
+ * Payment".
+ */
+export function customerFacingOrderStatus(status: string): string {
+  return status === "artist_paid" ? "delivered" : status;
+}
+
+/**
  * Order statuses that represent money actually received by RenewCanvas.
  * Revenue must be summed ONLY over these — pending/cancelled/refunded/failed
  * orders are excluded. `artist_paid` is still confirmed revenue (the buyer paid;

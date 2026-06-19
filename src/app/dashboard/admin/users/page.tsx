@@ -348,6 +348,22 @@ export default function AdminUsersPage() {
               <DetailRow label={t("admin.users.columnStatus")} value={t(`admin.users.${(statusConfig[detailUser.status as keyof typeof statusConfig] ?? statusConfig.active).labelKey}`)} />
               <DetailRow label={t("admin.users.columnActivity")} value={`${detailUser.artworksCount} artworks · ${detailUser.ordersCount} orders`} />
               <DetailRow label={t("admin.users.columnJoined")} value={new Date(detailUser.joinedAt).toLocaleDateString()} />
+              {detailUser.role === "artist" && (
+                <>
+                  <DetailRow
+                    label={t("admin.users.payoutMethod", { defaultValue: "Payout method" })}
+                    value={detailUser.payoutMethod || t("admin.users.payoutMomoDefault", { defaultValue: "MTN Mobile Money" })}
+                  />
+                  <DetailRow
+                    label={t("admin.users.payoutNumber", { defaultValue: "MoMo number" })}
+                    value={detailUser.payoutNumber || detailUser.phone || "-"}
+                  />
+                  <DetailRow
+                    label={t("admin.users.payoutAccountName", { defaultValue: "Payout name" })}
+                    value={detailUser.payoutAccountName || detailUser.name || "-"}
+                  />
+                </>
+              )}
             </div>
             <div className="mt-6 flex gap-3">
               <a href={`mailto:${detailUser.email}`} className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">

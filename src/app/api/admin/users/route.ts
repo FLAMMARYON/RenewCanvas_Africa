@@ -21,7 +21,13 @@ type UserRow = {
   role: string;
   status: string;
   createdAt: Date;
-  artistProfile: { phone: string | null; verificationStatus: string } | null;
+  artistProfile: {
+    phone: string | null;
+    verificationStatus: string;
+    payoutMethod: string | null;
+    payoutAccountName: string | null;
+    payoutAccountNumber: string | null;
+  } | null;
   buyerProfile: { phone: string | null } | null;
   _count: { artworks: number; orders: number };
 };
@@ -58,7 +64,15 @@ export async function GET(request: NextRequest) {
         role: true,
         status: true,
         createdAt: true,
-        artistProfile: { select: { phone: true, verificationStatus: true } },
+        artistProfile: {
+          select: {
+            phone: true,
+            verificationStatus: true,
+            payoutMethod: true,
+            payoutAccountName: true,
+            payoutAccountNumber: true,
+          },
+        },
         buyerProfile: { select: { phone: true } },
         _count: { select: { artworks: true, orders: true } },
       },
@@ -75,6 +89,11 @@ export async function GET(request: NextRequest) {
       joinedAt: user.createdAt.toISOString(),
       artworksCount: user._count.artworks,
       ordersCount: user._count.orders,
+      // Artist MoMo payout details so the admin can see each artist's updated
+      // payout info from the users view (item 8).
+      payoutMethod: user.artistProfile?.payoutMethod ?? null,
+      payoutAccountName: user.artistProfile?.payoutAccountName ?? null,
+      payoutNumber: user.artistProfile?.payoutAccountNumber ?? null,
     }));
 
     return NextResponse.json({ ok: true, users: rows });

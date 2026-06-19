@@ -2,7 +2,8 @@
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api";
-import { listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
+import { listOrders, PLATFORM_COMMISSION_RATE, type FrontendOrder } from "@/lib/frontend/orders-api";
+import { isConfirmedRevenueStatus } from "@/lib/frontend/status-labels";
 import { readProfile } from "@/lib/frontend/profile-api";
 import {
   Palette,
@@ -19,7 +20,6 @@ import {
   Recycle,
   DollarSign,
   BarChart3,
-  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -61,6 +61,21 @@ export default function ArtistDashboard() {
         setOrders(orderResult);
         if (earningsResult?.ok) {
           setEarnings({ earningsRwf: earningsResult.earningsRwf ?? 0, kgDiverted: earningsResult.kgDiverted ?? 0 });
+        } else {
+          // Fallback when the stored-earnings endpoint is unavailable: compute
+          // CONFIRMED earnings from confirmed/delivered orders (the artist's 80%
+          // share of their own line items). Never estimate from unsold catalog.
+          const confirmed = orderResult
+            .filter((order) => isConfirmedRevenueStatus(order.status))
+            .reduce(
+              (sum, order) =>
+                sum +
+                order.items
+                  .filter((item) => item.ownerType === "artist")
+                  .reduce((itemSum, item) => itemSum + item.unitAmount * item.quantity * (1 - PLATFORM_COMMISSION_RATE), 0),
+              0
+            );
+          setEarnings({ earningsRwf: Math.round(confirmed), kgDiverted: 0 });
         }
       } catch (loadError) {
         if (!active) return;
@@ -85,7 +100,8 @@ export default function ArtistDashboard() {
     [artworks, orders, t]
   );
 
-  // Earnings come from confirmed-payment running totals (you earn on a sale).
+  // Confirmed earnings: the artist's running total from admin-confirmed (paid /
+  // disbursed) orders — never an estimate from the unsold catalog.
   const totalEarnings = earnings.earningsRwf;
   // Waste diverted is a CATALOG metric — summed across every artwork created
   // (waste is diverted at creation, not at sale). Same source as the analytics
@@ -132,11 +148,11 @@ export default function ArtistDashboard() {
                 <DollarSign className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">{t("artistDashboard.estimatedEarnings")}</p>
+                <p className="text-sm text-gray-600">{t("artistDashboard.confirmedEarnings", { defaultValue: "Confirmed Earnings" })}</p>
                 <p className="text-2xl font-bold text-gray-900">{loading ? "-" : Math.round(totalEarnings).toLocaleString()} RWF</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600">{t("artistDashboard.estimatedEarningsDesc")}</p>
+            <p className="text-sm text-gray-600">{t("artistDashboard.confirmedEarningsDesc", { defaultValue: "Your 80% share of confirmed, paid-out sales (not an estimate)." })}</p>
           </div>
           <div className="bg-gradient-to-br from-teal-50 to-amber-50 rounded-xl p-6 border border-teal-100">
             <div className="flex items-center gap-3 mb-4">
@@ -239,15 +255,7 @@ export default function ArtistDashboard() {
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/dashboard/artist/artworks/create" className="group flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-teal-200 hover:shadow-md transition-all">
-            <div className="w-12 h-12 bg-teal-50 rounded-lg flex items-center justify-center group-hover:bg-teal-100 transition-colors"><Plus className="w-6 h-6 text-teal-600" /></div>
-            <div><p className="font-medium text-gray-900">{t("artistDashboard.quickNewArtwork")}</p><p className="text-sm text-gray-500">{t("artistDashboard.quickNewArtworkDesc")}</p></div>
-          </Link>
-          <Link href="/dashboard/artist/artworks/create?ai=true" className="group flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-md transition-all">
-            <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors"><Sparkles className="w-6 h-6 text-purple-600" /></div>
-            <div><p className="font-medium text-gray-900">{t("artistDashboard.quickAiPricing")}</p><p className="text-sm text-gray-500">{t("artistDashboard.quickAiPricingDesc")}</p></div>
-          </Link>
+        <div className="grid sm:grid-cols-2 gap-4">
           <Link href="/dashboard/artist/analytics" className="group flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all">
             <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors"><BarChart3 className="w-6 h-6 text-blue-600" /></div>
             <div><p className="font-medium text-gray-900">{t("artistDashboard.quickAnalytics")}</p><p className="text-sm text-gray-500">{t("artistDashboard.quickAnalyticsDesc")}</p></div>

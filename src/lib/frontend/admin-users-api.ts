@@ -9,6 +9,10 @@ export type AdminUser = {
   joinedAt: string;
   artworksCount: number;
   ordersCount: number;
+  // Artist MoMo payout details (null for buyers / not yet set).
+  payoutMethod: string | null;
+  payoutAccountName: string | null;
+  payoutNumber: string | null;
 };
 
 type ListResponse = { ok: boolean; users: AdminUser[]; message?: string };

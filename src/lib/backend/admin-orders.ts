@@ -101,3 +101,33 @@ export async function disburseOrderToArtists(db: PrismaClient, adminId: string, 
 
   return { id: order.id, status: "artist_paid" as const };
 }
+
+/**
+ * Cancel an order. Allowed from `pending_payment` or `paid` (a fully-disbursed
+ * `artist_paid` order is settled and not cancellable). The status change bumps
+ * `updatedAt`, which `normalizeOrder` exposes as the order's `cancelledAt` — the
+ * orders pages use that to drop cancelled orders 10 days after cancellation.
+ */
+export async function cancelOrder(db: PrismaClient, adminId: string, orderId: string) {
+  const order = await loadOrder(db, orderId);
+  if (order.status === "cancelled") {
+    throw new AuthError("already_cancelled", "This order is already cancelled.", 409);
+  }
+  if (order.status !== "pending_payment" && order.status !== "paid") {
+    throw new AuthError("order_not_cancellable", "Only pending or paid orders can be cancelled.", 409);
+  }
+
+  await db.$transaction(async (tx) => {
+    await tx.order.update({ where: { id: order.id }, data: { status: "cancelled" } });
+    // Release any reserved (not yet sold) artwork back to the marketplace.
+    await tx.artwork.updateMany({
+      where: { orderItems: { some: { orderId: order.id } }, status: "reserved" },
+      data: { status: "listed" },
+    });
+    await tx.auditLog.create({
+      data: { actorId: adminId, action: "admin.order.cancel", entity: "Order", entityId: order.id },
+    });
+  });
+
+  return { id: order.id, status: "cancelled" as const };
+}

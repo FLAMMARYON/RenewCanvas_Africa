@@ -33,6 +33,7 @@ import {
   type FrontendSession,
 } from "@/lib/frontend/auth-api";
 import AnimatedLogo from "@/components/AnimatedLogo";
+import { onProfileUpdated } from "@/lib/frontend/profile-events";
 import { useTranslation } from "react-i18next";
 
 type UserRole = "buyer" | "artist" | "admin";
@@ -137,11 +138,25 @@ export default function DashboardLayout({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [session, setSession] = useState<FrontendSession | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  // Avatar + display name come from the role profile (not the auth session) and
+  // refresh live when the user saves their profile.
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
   const navItems = navigationItems[role];
-  const displayName = session?.name || userName;
+  const displayName = profileName || session?.name || userName;
+
+  // Active-route matching uses the LONGEST matching nav href so a parent route
+  // (e.g. "/dashboard/artist/artworks") never stays highlighted while on a
+  // nested child route (e.g. ".../artworks/create"). Only the most specific
+  // nav item — the deepest prefix of the current path — is active.
+  const activeHref = navItems.reduce<string | null>((best, item) => {
+    const matches = pathname === item.href || pathname.startsWith(`${item.href}/`);
+    if (!matches) return best;
+    return best === null || item.href.length > best.length ? item.href : best;
+  }, null);
 
   useEffect(() => {
     let isCurrent = true;
@@ -179,6 +194,31 @@ export default function DashboardLayout({
       isCurrent = false;
     };
   }, [pathname, role, router]);
+
+  // Load the avatar + display name from the profile, and refresh whenever the
+  // user saves their profile so the header avatar/name update without a reload.
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadProfileHeader() {
+      try {
+        const res = await fetch("/api/profile", { credentials: "include", cache: "no-store" });
+        const data = res.ok ? await res.json() : null;
+        if (!isCurrent || !data?.ok) return;
+        setAvatarUrl(typeof data.avatarUrl === "string" ? data.avatarUrl : null);
+        setProfileName(typeof data.displayName === "string" ? data.displayName : null);
+      } catch {
+        /* header degrades to the generic icon + session name */
+      }
+    }
+
+    loadProfileHeader();
+    const unsubscribe = onProfileUpdated(loadProfileHeader);
+    return () => {
+      isCurrent = false;
+      unsubscribe();
+    };
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -250,7 +290,7 @@ export default function DashboardLayout({
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-3 pb-4">
           {navItems.map((item, index) => {
-            const isActive = pathname === item.href || (item.href !== `/dashboard/${role}` && pathname.startsWith(`${item.href}/`));
+            const isActive = item.href === activeHref;
             const previousGroup = navItems[index - 1]?.group;
             const showGroup = role === "admin" && item.group && item.group !== previousGroup;
             return (
@@ -328,9 +368,13 @@ export default function DashboardLayout({
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
-                <User className="w-4 h-4 text-[#007A68]" />
-              </div>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
+                  <User className="w-4 h-4 text-[#007A68]" />
+                </div>
+              )}
               <span className="hidden sm:block text-sm font-medium text-gray-700">
                 {displayName}
               </span>
