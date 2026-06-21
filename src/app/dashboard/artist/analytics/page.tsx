@@ -4,6 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api";
 import { listOrders, PLATFORM_COMMISSION_RATE, type FrontendOrder } from "@/lib/frontend/orders-api";
 import { isConfirmedRevenueStatus } from "@/lib/frontend/status-labels";
+import { artworkPerformanceScore } from "@/lib/ml/artwork-performance";
 import { readProfile } from "@/lib/frontend/profile-api";
 import {
   Eye,
@@ -137,7 +138,9 @@ export default function ArtistAnalyticsPage() {
             revenue: artworkOrders.reduce((sum, item) => sum + item.unitAmount * item.quantity, 0),
           };
         })
-        .sort((a, b) => b.views + b.favourites + b.orders - (a.views + a.favourites + a.orders))
+        // Shared performance score (views + favourites + orders) — the SAME
+        // metric the 3D gallery curation ranks by, so the two always agree.
+        .sort((a, b) => artworkPerformanceScore(b) - artworkPerformanceScore(a))
         .slice(0, 5),
     [artworks, orders]
   );

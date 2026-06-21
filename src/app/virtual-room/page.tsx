@@ -64,12 +64,8 @@ type WallPlacement = {
   rotY: number;
 };
 
-// Hard ceiling on duplicated "wings" used only when a single category holds
-// more pieces than its room's walls can show. Each wing replicates the whole
-// (grounded, connected) building, so this caps geometry/draw-calls.
-const MAX_WINGS = 6;
-// Wings are spaced past the full spine length so a duplicated wing never
-// overlaps the previous one.
+// The curated gallery is a single fixed wing (see buildMuseum). WING_SPACING is
+// retained only so the shared stationFor() math stays valid for wing 0.
 const WING_SPACING = 150;
 const SPINE_SPACING = 32; // z gap between rooms along the entrance->corridor spine
 const WING_X = 30; // x of the left/right rooms either side of the main room
@@ -167,9 +163,12 @@ function stationFor(room: RoomKey, wing: number) {
 }
 
 function getArtworkPlacements(items: Artwork[]): ArtworkPlacement[] {
-  // Task 2: fill each room's hardcoded slot table in order. Overflow beyond a
-  // room's slots is ignored (see TODO). Nothing floats or blocks a doorway —
-  // the table only lists real wall positions, beside (never across) doorways.
+  // Fill each room's fixed slot table in order. `items` is already curated
+  // server-side (only the top-ROOM_CAPACITY performers per category, in rank
+  // order), so the highest scorers take the lowest slot indices and the count
+  // per room never exceeds its slots. The `index >= slots.length` guard below
+  // is a defensive cap only. Nothing floats or blocks a doorway — the table only
+  // lists real wall positions, beside (never across) doorways.
   const byRoom = new Map<RoomKey, Artwork[]>();
   items.forEach((artwork) => {
     const roomKey = roomForArtworkCategory(artwork.category);
@@ -182,7 +181,7 @@ function getArtworkPlacements(items: Artwork[]): ArtworkPlacement[] {
   byRoom.forEach((list, roomKey) => {
     const slots = ROOM_SLOTS[roomKey];
     list.forEach((artwork, index) => {
-      if (index >= slots.length) return; // TODO: overflow — no free wall slot left in this room
+      if (index >= slots.length) return; // defensive: server already caps at ROOM_CAPACITY
       const slot = slots[index];
       placements.push({
         artwork,
@@ -1877,15 +1876,13 @@ export default function VirtualRoomPage() {
       // TEMP: print the room layout + connectivity for verification (Task 5).
       console.log("[virtual-room] room layout:", roomStations.map((s) => `${s.key}(x=${s.x}, z=${s.z})`).join("  |  "));
       console.log("[virtual-room] doorways: entrance<->main, main<->left, main<->right, main<->court, court<->corridor — every room reachable from the entrance.");
-      // Build exactly as many wings as the fullest room needs (clamped), so a
-      // large collection always has a real wall to hang on — never floating in
-      // empty space — without replicating the building more than necessary.
-      const neededWings = placements.reduce((max, placement) => Math.max(max, placement.wingIndex + 1), 1);
-      const wingCount = Math.min(Math.max(neededWings, 1), MAX_WINGS);
+      // Curated, fixed-capacity gallery: the server returns only the top
+      // ROOM_CAPACITY performers per category room, so every piece always fits
+      // its room's wall slots. The building is therefore ALWAYS a single wing —
+      // it is never replicated to fit more artworks. (Rooms are the fixed
+      // predefined set; nothing here scales with the artwork count.)
+      const wingCount = 1;
       builtWings = wingCount;
-      if (neededWings > MAX_WINGS) {
-        console.warn(`[virtual-room] ${neededWings} wings needed but capped at ${MAX_WINGS}; some overflow pieces reuse the last wing's walls.`);
-      }
 
       // Land first, so every room/wall/walkway built on top sits on ground.
       addFoundation(wingCount);

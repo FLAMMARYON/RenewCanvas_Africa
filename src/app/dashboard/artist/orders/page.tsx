@@ -77,7 +77,6 @@ export default function ArtistOrdersPage() {
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-4 py-2.5">
               <option value="all">{t("artistDashboard.orders.filterAllStatus")}</option>
               <option value="pending_payment">{t("artistDashboard.orders.statusPendingPayment")}</option>
-              <option value="paid">{t("artistDashboard.orders.statusPaid")}</option>
               <option value="delivered">{t("artistDashboard.orders.statusDelivered")}</option>
               <option value="cancelled">{t("artistDashboard.orders.statusCancelled")}</option>
             </select>

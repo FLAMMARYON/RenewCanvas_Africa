@@ -44,16 +44,14 @@ export type UseGalleryDataResult =
   | { status: "error"; error: string }
   | { status: "success"; data: GalleryData };
 
-const GALLERY_ROOMS = [
-  { id: "sculpture-room", name: "Sculpture Room", categories: ["Sculpture"] },
-  { id: "painting-room", name: "Painting Room", categories: ["Wall Art", "Painting"] },
-  { id: "wearables-room", name: "Wearables Room", categories: ["Jewelry", "Fashion"] },
-  { id: "living-space-room", name: "Living Space Room", categories: ["Home Decor", "Furniture"] },
-  { id: "mixed-media-room", name: "Mixed Media Room", categories: ["Mixed Media", "Other"] },
-] as const;
-
 /**
- * Fetches listed marketplace artworks and groups them into gallery rooms.
+ * Loads the CURATED gallery layout from the server.
+ *
+ * The server (`/api/gallery/layout`) returns a fixed, predefined set of rooms,
+ * each already filled with only the top-performing artworks of its category up
+ * to that room's capacity, ranked by the shared performance score. The client
+ * does NOT group, rank, or cap — it renders exactly what the server curated, so
+ * the gallery and the artist analytics share one source of truth.
  */
 export function useGalleryData(): UseGalleryDataResult {
   const [result, setResult] = useState<UseGalleryDataResult>({
@@ -65,19 +63,18 @@ export function useGalleryData(): UseGalleryDataResult {
 
     async function fetchData() {
       try {
-        // Request the full listed collection in one page (cap is 200 server-side).
-        // The gallery places every artwork on a wall, so it must not paginate.
-        const response = await fetch("/api/artworks?scope=marketplace&pageSize=200", { credentials: "include" });
+        const response = await fetch("/api/gallery/layout", { credentials: "include" });
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        const payload = (await response.json()) as { ok?: boolean; artworks?: GalleryArtwork[]; message?: string };
-        if (!payload.ok || !payload.artworks) {
-          throw new Error(payload.message ?? "Failed to fetch gallery data");
+        const payload = (await response.json()) as { rooms?: GalleryRoom[]; timestamp?: number; error?: string };
+        if (!payload.rooms) {
+          throw new Error(payload.error ?? "Failed to fetch gallery data");
         }
-        const data = groupArtworksByRoom(payload.artworks);
+
+        const data: GalleryData = { rooms: payload.rooms, timestamp: payload.timestamp ?? Date.now() };
 
         if (!cancelled) {
           setResult({ status: "success", data });
@@ -100,24 +97,4 @@ export function useGalleryData(): UseGalleryDataResult {
   }, []);
 
   return result;
-}
-
-function groupArtworksByRoom(artworks: GalleryArtwork[]): GalleryData {
-  const roomMap = new Map(GALLERY_ROOMS.map((room) => [room.id, { ...room, artworks: [] as GalleryArtwork[] }]));
-  artworks.forEach((artwork) => {
-    const room = GALLERY_ROOMS.find((candidate) => candidate.categories.includes(artwork.category as never));
-    roomMap.get(room?.id ?? "mixed-media-room")?.artworks.push(artwork);
-  });
-
-  return {
-    rooms: GALLERY_ROOMS.map((room) => {
-      const groupedRoom = roomMap.get(room.id);
-      return {
-        id: room.id,
-        name: room.name,
-        artworks: groupedRoom?.artworks ?? [],
-      };
-    }),
-    timestamp: Date.now(),
-  };
 }
