@@ -11,6 +11,7 @@ import {
   type ArtworkListQuery,
 } from "@/lib/backend/artworks";
 import { notifyAdmins } from "@/lib/backend/admin-notifications";
+import { expireStaleReservations } from "@/lib/backend/reservations";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Lazy safety check: flip any reservation past the 30-min window back to
+    // live before listing, so stale reservations never show even before cron runs.
+    await expireStaleReservations(db);
     const user = await readSessionUser(db, sessionToken);
     const result = await listArtworks(artworkDb, user, "marketplace", readListQuery(request));
     return NextResponse.json({

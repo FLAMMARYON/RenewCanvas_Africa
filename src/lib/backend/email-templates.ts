@@ -101,6 +101,80 @@ Transforming Plastic Waste into Sustainable Creative Value
   };
 }
 
+export type PaymentReceivedBuyerInput = {
+  buyerName: string;
+  orderId: string;
+  artworkTitle: string;
+  totalAmount: number;
+  currency: string;
+  siteUrl?: string;
+};
+
+export function paymentReceivedBuyerEmail(input: PaymentReceivedBuyerInput) {
+  const siteUrl = input.siteUrl || "https://renewcanvas.africa";
+  const formattedTotal = formatCurrency(input.totalAmount, input.currency);
+
+  return {
+    subject: `Payment Received - ${input.artworkTitle}`,
+    body: `Hi ${input.buyerName},
+
+Your order payment has been received.
+
+Order Details
+-------------
+Order ID: ${input.orderId}
+Artwork: ${input.artworkTitle}
+Total: ${formattedTotal}
+
+We're now preparing your order. You can track its status at:
+${siteUrl}/dashboard/buyer/orders
+
+Questions? Reply to this email or visit ${siteUrl}/contact
+
+---
+RenewCanvas Africa
+Transforming Plastic Waste into Sustainable Creative Value
+`,
+  };
+}
+
+export type PaymentConfirmedArtistInput = {
+  artistName: string;
+  buyerName: string;
+  orderId: string;
+  artworkTitle: string;
+  amount: number;
+  currency: string;
+  siteUrl?: string;
+};
+
+export function paymentConfirmedArtistEmail(input: PaymentConfirmedArtistInput) {
+  const siteUrl = input.siteUrl || "https://renewcanvas.africa";
+  const formattedAmount = formatCurrency(input.amount, input.currency);
+
+  return {
+    subject: `Payment Confirmed - "${input.artworkTitle}"`,
+    body: `Hi ${input.artistName},
+
+Payment for your order has been confirmed. Please prepare "${input.artworkTitle}" for delivery.
+
+Order Details
+-------------
+Order ID: ${input.orderId}
+Artwork: ${input.artworkTitle}
+Buyer: ${input.buyerName}
+Amount: ${formattedAmount}
+
+View order details and prepare for shipment:
+${siteUrl}/dashboard/artist/orders
+
+---
+RenewCanvas Africa
+Transforming Plastic Waste into Sustainable Creative Value
+`,
+  };
+}
+
 export function artworkDecisionEmail(input: ArtworkDecisionInput) {
   const siteUrl = input.siteUrl || "https://renewcanvas.africa";
 

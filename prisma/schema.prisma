@@ -186,6 +186,7 @@ model User {
   addresses     Address[]
   artworks      Artwork[]      @relation("ArtistArtworks")
   wishlistItems WishlistItem[]  @relation("BuyerWishlistItems")
+  artworkViews  ArtworkView[]   @relation("UserArtworkViews")
   pricingRecommendations PricingRecommendation[] @relation("ArtistPricingRecommendations")
   impactEstimates ImpactEstimate[] @relation("ArtistImpactEstimates")
   decidedVerificationReviews VerificationReview[] @relation("VerificationDecider")
@@ -368,6 +369,11 @@ model Artwork {
   rejectionReason String?
   submittedAt DateTime?
   reviewedAt  DateTime?
+  // Set when the artwork is reserved by a pending order. Reserved artworks are
+  // hidden from the marketplace + gallery for up to 30 minutes; if payment isn't
+  // confirmed within that window the reservation auto-cancels and the artwork
+  // returns to `listed` (reservedAt cleared). Also cleared on sold / cancel.
+  reservedAt  DateTime?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   tags        String[]      @default([])
@@ -379,6 +385,7 @@ model Artwork {
   images    ArtworkImage[]
   materials ArtworkMaterial[]
   wishlistItems WishlistItem[]
+  views     ArtworkView[]
   pricingRecommendations PricingRecommendation[]
   impactEstimates ImpactEstimate[]
   verificationReview VerificationReview?
@@ -403,6 +410,23 @@ model WishlistItem {
 
   @@unique([buyerId, artworkId])
   @@index([buyerId])
+  @@index([artworkId])
+}
+
+// One row per (user, artwork) the user has viewed. Used to make view counts
+// unique per buyer: viewCount only increments on a user's FIRST view of an
+// artwork. Anonymous views are not tracked here (they keep incrementing).
+model ArtworkView {
+  id        String   @id @default(cuid())
+  userId    String
+  artworkId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation("UserArtworkViews", fields: [userId], references: [id], onDelete: Cascade)
+  artwork Artwork @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, artworkId])
+  @@index([userId])
   @@index([artworkId])
 }
 

@@ -5,12 +5,14 @@ import { XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 /**
- * Post-payment cancellation request.
+ * Order cancellation.
  *
- * Once payment is in progress/confirmed an order can't be silently cancelled, so
- * the buyer submits a request that is stored (via /api/contact, type
- * "cancellation_request") and emailed to the support inbox + opted-in admins,
- * who action it manually. Pre-payment cancellation is just leaving checkout.
+ * A still-pending order is cancelled directly by the owning buyer via
+ * `/api/orders/[id]/cancel` (order → cancelled, the reserved artwork is released
+ * back to the marketplace + gallery). If that isn't possible — payment already
+ * confirmed, or the request isn't from the owning buyer — it falls back to a
+ * support request (stored via /api/contact, type "cancellation_request") that
+ * the team actions manually.
  */
 export function CancellationRequest({
   orderReference,
@@ -45,6 +47,20 @@ export function CancellationRequest({
 
     setSubmitting(true);
     try {
+      // First try to cancel the order directly (owning buyer, still pending).
+      const cancelResponse = await fetch(`/api/orders/${encodeURIComponent(orderReference)}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ reason }),
+      });
+      if (cancelResponse.ok) {
+        setStatus({ type: "success", message: t("orderConfirmation.cancelSuccess") });
+        return;
+      }
+
+      // Otherwise (already paid / not the owning buyer) fall back to a support
+      // request the team actions manually.
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

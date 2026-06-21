@@ -1,3 +1,4 @@
+import type { PrismaClient } from "@prisma/client";
 import { AuthError, type AuthPublicUser } from "./auth";
 
 export type OrderStatus =
@@ -142,7 +143,8 @@ export async function createOrder(
 
   const reserved = await db.artwork.updateMany({
     where: { id: artwork.id, status: { in: ["listed", "approved"] } },
-    data: { status: "reserved" },
+    // Stamp the reservation so the 30-minute auto-cancel window can be enforced.
+    data: { status: "reserved", reservedAt: new Date() },
   });
   if (reserved.count !== 1) {
     throw new AuthError("artwork_unavailable", "This artwork was just reserved by another buyer.", 409);
@@ -193,7 +195,7 @@ export async function createOrder(
   } catch (error) {
     await db.artwork.updateMany({
       where: { id: artwork.id, status: "reserved", orderItems: { none: {} } },
-      data: { status: "listed" },
+      data: { status: "listed", reservedAt: null },
     });
     throw error;
   }
@@ -208,6 +210,51 @@ export async function listOrders(db: OrderDatabase, user: AuthPublicUser) {
       : { items: { some: { artistId: user.id } } };
 
   return db.order.findMany({ where, include: orderInclude, orderBy: { createdAt: "desc" } });
+}
+
+/**
+ * Buyer-initiated cancellation, scoped to the authenticated owning buyer.
+ *
+ * Only a still-`pending_payment` order can be self-cancelled (before the money
+ * is confirmed received). The order is set to `cancelled` and any artwork it
+ * reserved is released back to `listed`. Already-cancelled is a no-op; a
+ * paid/settled order is rejected (the buyer must contact support).
+ */
+export async function cancelOwnOrder(db: PrismaClient, buyer: AuthPublicUser, orderId: string) {
+  if (buyer.role !== "buyer") {
+    throw new AuthError("forbidden", "Only buyers can cancel their orders.", 403);
+  }
+
+  const order = await db.order.findFirst({
+    where: { id: orderId, buyerId: buyer.id },
+    select: { id: true, status: true },
+  });
+  if (!order) throw new AuthError("order_not_found", "Order was not found.", 404);
+
+  if (order.status === "cancelled") {
+    return { id: order.id, status: "cancelled" as const };
+  }
+  if (order.status !== "pending_payment") {
+    throw new AuthError(
+      "order_not_cancellable",
+      "This order can no longer be cancelled here. Please contact support.",
+      409
+    );
+  }
+
+  await db.$transaction(async (tx) => {
+    await tx.order.update({ where: { id: order.id }, data: { status: "cancelled" } });
+    // Release the reserved artwork(s) back to the marketplace + gallery.
+    await tx.artwork.updateMany({
+      where: { orderItems: { some: { orderId: order.id } }, status: "reserved" },
+      data: { status: "listed", reservedAt: null },
+    });
+    await tx.auditLog.create({
+      data: { actorId: buyer.id, action: "order.cancel_request", entity: "Order", entityId: order.id },
+    });
+  });
+
+  return { id: order.id, status: "cancelled" as const };
 }
 
 export async function getOrder(db: OrderDatabase, user: AuthPublicUser, orderId: string) {

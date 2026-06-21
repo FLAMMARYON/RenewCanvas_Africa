@@ -18,7 +18,7 @@ import {
   XCircle,
   AlertCircle,
   Recycle,
-  DollarSign,
+  Wallet,
   BarChart3,
 } from "lucide-react";
 import Link from "next/link";
@@ -145,7 +145,7 @@ export default function ArtistDashboard() {
           <div className="bg-gradient-to-br from-green-50 to-teal-50 rounded-xl p-6 border border-green-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-green-600" />
+                <Wallet className="w-6 h-6 text-green-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">{t("artistDashboard.confirmedEarnings", { defaultValue: "Confirmed Earnings" })}</p>

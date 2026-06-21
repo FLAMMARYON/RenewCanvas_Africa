@@ -14,10 +14,14 @@ import {
   newOrderAlertEmail,
   artworkDecisionEmail,
   passwordResetEmail,
+  paymentReceivedBuyerEmail,
+  paymentConfirmedArtistEmail,
   type OrderConfirmationInput,
   type NewOrderAlertInput,
   type ArtworkDecisionInput,
   type PasswordResetInput,
+  type PaymentReceivedBuyerInput,
+  type PaymentConfirmedArtistInput,
 } from "./email-templates";
 import { requireBackendConfig } from "./config";
 
@@ -81,6 +85,67 @@ export async function sendNewOrderAlertEmail(
     userId: artistId,
     channel: "email",
     templateKey: "new_order_alert",
+    subject: template.subject,
+    body: template.body,
+    metadata: { orderId: input.orderId, artworkTitle: input.artworkTitle },
+    category: "orderUpdates",
+  });
+
+  if (notification.status === "queued") {
+    await dispatchQueuedNotifications(db, { limit: 1 });
+  }
+
+  return notification;
+}
+
+/**
+ * Notify the BUYER that their payment has been received (admin confirmed).
+ */
+export async function sendPaymentReceivedBuyerEmail(
+  db: NotificationServiceDatabase,
+  buyerId: string,
+  input: PaymentReceivedBuyerInput
+) {
+  const config = requireBackendConfig();
+  const template = paymentReceivedBuyerEmail({ ...input, siteUrl: config.siteUrl });
+
+  const notification = await queueNotification(db, {
+    userId: buyerId,
+    channel: "email",
+    templateKey: "payment_received",
+    subject: template.subject,
+    body: template.body,
+    metadata: { orderId: input.orderId, artworkTitle: input.artworkTitle },
+    category: "orderUpdates",
+  });
+
+  if (notification.status === "queued") {
+    await dispatchQueuedNotifications(db, { limit: 1 });
+  }
+
+  return notification;
+}
+
+/**
+ * Notify the ARTIST that payment for their order has been confirmed.
+ * Gated by the artist's `emailNewOrders` preference (same as new-order alerts).
+ */
+export async function sendPaymentConfirmedArtistEmail(
+  db: NotificationServiceDatabase,
+  artistId: string,
+  input: PaymentConfirmedArtistInput
+) {
+  if (!(await isNotificationEnabled(db as unknown as NotificationPrefsDatabase, artistId, "emailNewOrders"))) {
+    return { status: "skipped" as const, templateKey: "payment_confirmed_artist" };
+  }
+
+  const config = requireBackendConfig();
+  const template = paymentConfirmedArtistEmail({ ...input, siteUrl: config.siteUrl });
+
+  const notification = await queueNotification(db, {
+    userId: artistId,
+    channel: "email",
+    templateKey: "payment_confirmed_artist",
     subject: template.subject,
     body: template.body,
     metadata: { orderId: input.orderId, artworkTitle: input.artworkTitle },

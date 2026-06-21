@@ -48,7 +48,7 @@ export async function confirmOrderPayment(db: PrismaClient, adminId: string, ord
     await tx.order.update({ where: { id: order.id }, data: { status: "paid" } });
     await tx.artwork.updateMany({
       where: { orderItems: { some: { orderId: order.id } }, status: { in: ["reserved", "listed", "approved"] } },
-      data: { status: "sold" },
+      data: { status: "sold", reservedAt: null },
     });
     await tx.auditLog.create({
       data: { actorId: adminId, action: "admin.order.confirm_payment", entity: "Order", entityId: order.id },
@@ -122,7 +122,7 @@ export async function cancelOrder(db: PrismaClient, adminId: string, orderId: st
     // Release any reserved (not yet sold) artwork back to the marketplace.
     await tx.artwork.updateMany({
       where: { orderItems: { some: { orderId: order.id } }, status: "reserved" },
-      data: { status: "listed" },
+      data: { status: "listed", reservedAt: null },
     });
     await tx.auditLog.create({
       data: { actorId: adminId, action: "admin.order.cancel", entity: "Order", entityId: order.id },

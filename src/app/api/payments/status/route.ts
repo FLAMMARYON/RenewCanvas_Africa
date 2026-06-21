@@ -5,7 +5,7 @@ import { getDatabaseClient } from "@/lib/backend/db";
 import { getMoMoPaymentStatus } from "@/lib/backend/payment-providers";
 import { requireBackendConfig } from "@/lib/backend/config";
 import type { PaymentDatabase, PaymentStatus } from "@/lib/backend/payments";
-import { recordConfirmedOrderEarnings } from "@/lib/backend/earnings";
+import { notifyAdmins } from "@/lib/backend/admin-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -123,19 +123,16 @@ export async function GET(request: NextRequest) {
 
       // Update order status
       if (internalStatus === "paid") {
-        await (db as unknown as PaymentDatabase).order.update({
-          where: { id: payment.orderId },
-          data: { status: "paid" },
+        // The provider reports the buyer's payment succeeded — record the RECEIPT
+        // on the PaymentTransaction (above) but do NOT mark the order paid or the
+        // artwork sold. Every path to `paid` goes through the admin "Payment
+        // Confirmed" action; notify admins so they can confirm.
+        await notifyAdmins(db, {
+          templateKey: "admin_payment_received",
+          subject: "Payment received — awaiting confirmation",
+          body: `A payment was received for order ${payment.orderId}. Confirm it in Order Management to mark the order paid.`,
+          metadata: { orderId: payment.orderId, paymentId: payment.id },
         });
-
-        // Mark artworks as sold
-        await (db as unknown as PaymentDatabase).artwork.updateMany({
-          where: { orderItems: { some: { orderId: payment.orderId } }, status: "reserved" },
-          data: { status: "sold" },
-        });
-
-        // Add confirmed earnings to artist running totals (idempotent).
-        await recordConfirmedOrderEarnings(db, payment.orderId);
       } else if (internalStatus === "failed") {
         await (db as unknown as PaymentDatabase).order.update({
           where: { id: payment.orderId },

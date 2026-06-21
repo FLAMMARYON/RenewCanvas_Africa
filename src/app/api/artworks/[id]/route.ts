@@ -10,6 +10,7 @@ import {
   type ArtworkDatabase,
   type ArtworkInput,
 } from "@/lib/backend/artworks";
+import { expireStaleReservations } from "@/lib/backend/reservations";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const db = getDatabaseClient();
     const artworkDb = db as unknown as ArtworkDatabase;
+    // Lazy safety check: a reservation past the 30-min window is freed back to
+    // live before this read, so an expired-reserved piece is viewable again.
+    await expireStaleReservations(db);
     const user = await readSessionUser(db, readSessionCookie(request));
     const { id } = await context.params;
     const artwork = await getArtwork(artworkDb, user, id);

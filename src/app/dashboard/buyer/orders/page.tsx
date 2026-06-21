@@ -47,7 +47,6 @@ export default function BuyerOrdersPage() {
     () => ({
       total: orders.length,
       pending: orders.filter((order) => order.status === "pending_payment").length,
-      active: orders.filter((order) => order.status === "paid").length,
       // A disbursed (artist_paid) order is complete for the buyer → counts as Delivered.
       delivered: orders.filter((order) => customerFacingOrderStatus(order.status) === "delivered").length,
     }),
@@ -69,10 +68,9 @@ export default function BuyerOrdersPage() {
           <p className="text-sm text-blue-700">{t("dashboard.buyer.orders.infoBanner")}</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
           <Stat label={t("dashboard.buyer.orders.statTotal")} value={stats.total} />
           <Stat label={t("dashboard.buyer.orders.statPending")} value={stats.pending} tone="amber" />
-          <Stat label={t("dashboard.buyer.orders.statActive")} value={stats.active} tone="blue" />
           <Stat label={t("dashboard.buyer.orders.statDelivered")} value={stats.delivered} tone="green" />
         </div>
 

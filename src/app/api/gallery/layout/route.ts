@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDatabaseClient } from "@/lib/backend/db";
 import { GALLERY_ROOMS, roomIdForCategory } from "@/lib/gallery/rooms";
 import { artworkPerformanceScore } from "@/lib/ml/artwork-performance";
+import { expireStaleReservations } from "@/lib/backend/reservations";
 
 export const dynamic = "force-dynamic";
 
@@ -26,11 +27,14 @@ export async function GET() {
     }
 
     const db = getDatabaseClient();
+    // Lazy safety check: flip any reservation past the 30-min window back to live
+    // before curating, so stale reservations never show even before cron runs.
+    await expireStaleReservations(db);
     const artworks = await db.artwork.findMany({
-      // Eligibility: only listed/approved/reserved artworks appear in the gallery
-      // (same status filter the marketplace uses). RenewCanvas/admin-owned pieces
-      // are ranked exactly like artist pieces (no ownerType filter).
-      where: { status: { in: ["listed", "approved", "reserved"] } },
+      // Eligibility: only LIVE artworks appear in the gallery — reserved (within
+      // the 30-min window) and sold are hidden. Same status filter the
+      // marketplace uses. RenewCanvas/admin-owned pieces rank like artist pieces.
+      where: { status: { in: ["listed", "approved"] } },
       select: {
         id: true,
         slug: true,

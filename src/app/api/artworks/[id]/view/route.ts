@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { authErrorResponse } from "@/lib/backend/auth-route";
+import { readSessionUser } from "@/lib/backend/auth";
+import { authErrorResponse, readSessionCookie } from "@/lib/backend/auth-route";
 import { getDatabaseClient } from "@/lib/backend/db";
 import { recordArtworkView, type ArtworkDatabase } from "@/lib/backend/artworks";
 
@@ -9,12 +10,15 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-export async function POST(_request: NextRequest, context: RouteContext) {
+export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const db = getDatabaseClient();
     const artworkDb = db as unknown as ArtworkDatabase;
     const { id } = await context.params;
-    await recordArtworkView(artworkDb, id);
+    // Pass the logged-in user so the view counts only once per buyer; anonymous
+    // viewers keep the previous (always-increment) behaviour.
+    const user = await readSessionUser(db, readSessionCookie(request));
+    await recordArtworkView(artworkDb, id, user?.id ?? null);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

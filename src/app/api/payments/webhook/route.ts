@@ -4,7 +4,7 @@ import { authErrorResponse } from "@/lib/backend/auth-route";
 import { getDatabaseClient } from "@/lib/backend/db";
 import { createPaymentProviderClient, type ProviderWebhookEvent } from "@/lib/backend/payment-providers";
 import { reconcileProviderWebhook, verifyWebhookSignature, type PaymentDatabase, type PaymentProvider, type PaymentStatus } from "@/lib/backend/payments";
-import { recordConfirmedOrderEarnings } from "@/lib/backend/earnings";
+import { notifyAdmins } from "@/lib/backend/admin-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -48,9 +48,16 @@ export async function POST(request: NextRequest) {
         }
       : createPaymentProviderClient(provider).parseWebhook(body);
     const result = await reconcileProviderWebhook(db as unknown as PaymentDatabase, event as ProviderWebhookEvent);
-    // On confirmed payment, add the order's earnings to artist running totals (idempotent).
+    // The webhook records the payment RECEIPT only — it must never mark the order
+    // paid. Notify admins so they can confirm it via "Payment Confirmed" (the only
+    // path to `paid`). The order stays pending_payment until then.
     if (result.payment?.status === "paid" && result.payment.orderId) {
-      await recordConfirmedOrderEarnings(db, result.payment.orderId);
+      await notifyAdmins(db, {
+        templateKey: "admin_payment_received",
+        subject: "Payment received — awaiting confirmation",
+        body: `A payment was received for order ${result.payment.orderId} via the provider webhook. Confirm it in Order Management to mark the order paid.`,
+        metadata: { orderId: result.payment.orderId, paymentId: result.payment.id },
+      });
     }
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {

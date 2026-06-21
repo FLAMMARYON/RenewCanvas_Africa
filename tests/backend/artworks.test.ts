@@ -143,6 +143,14 @@ function createMemoryArtworkDatabase(): ArtworkDatabase {
         return { id: admin.id };
       },
     },
+    artworkView: {
+      async findUnique() {
+        return null;
+      },
+      async create() {
+        return { id: `view_${sequence++}` };
+      },
+    },
     artwork: {
       async create(args) {
         const now = new Date();

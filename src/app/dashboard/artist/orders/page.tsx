@@ -60,10 +60,9 @@ export default function ArtistOrdersPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <Stat label={t("artistDashboard.orders.statTotalOrders")} value={stats.total} />
           <Stat label={t("artistDashboard.orders.statPendingPayment")} value={stats.pending} tone="amber" />
-          <Stat label={t("artistDashboard.orders.statInProgress")} value={stats.active} tone="blue" />
           <Stat label={t("artistDashboard.orders.statDelivered")} value={stats.delivered} tone="green" />
           <Stat label={t("artistDashboard.orders.statEstimatedEarnings")} value={`${Math.round(stats.earnings).toLocaleString()} RWF`} tone="teal" />
         </div>

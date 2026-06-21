@@ -1,7 +1,7 @@
 "use client";
 
 import { readArtwork, recordArtworkView, type FrontendArtwork } from "@/lib/frontend/artworks-api";
-import { addToWishlist } from "@/lib/frontend/wishlist-api";
+import { addToWishlist, readWishlist, removeFromWishlist } from "@/lib/frontend/wishlist-api";
 import {
   Award,
   ChevronLeft,
@@ -29,6 +29,8 @@ export default function ArtworkDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [statusMessage, setStatusMessage] = useState("");
   const [saved, setSaved] = useState(false);
+  const [favouriteCount, setFavouriteCount] = useState(0);
+  const [savePending, setSavePending] = useState(false);
   const [toast, setToast] = useState("");
 
   useEffect(() => {
@@ -37,14 +39,30 @@ export default function ArtworkDetailPage() {
     return () => clearTimeout(id);
   }, [toast]);
 
+  // Toggle wishlist with an OPTIMISTIC update: fill/empty the heart and adjust
+  // the visible count immediately, then confirm against the server and revert on
+  // failure. The change is persisted server-side, so it survives a reload.
   const handleSave = async () => {
-    if (!artwork) return;
+    if (!artwork || savePending) return;
+    const next = !saved;
+    setSaved(next);
+    setFavouriteCount((count) => Math.max(0, count + (next ? 1 : -1)));
+    setSavePending(true);
     try {
-      await addToWishlist(artwork.id);
-      setSaved(true);
-      setToast("Saved to your wishlist");
+      if (next) {
+        await addToWishlist(artwork.id);
+        setToast("Saved to your wishlist");
+      } else {
+        await removeFromWishlist(artwork.id);
+        setToast("Removed from your wishlist");
+      }
     } catch (error) {
+      // Revert the optimistic change.
+      setSaved(!next);
+      setFavouriteCount((count) => Math.max(0, count + (next ? -1 : 1)));
       setToast(error instanceof Error ? error.message : "Sign in as a buyer to save artwork.");
+    } finally {
+      setSavePending(false);
     }
   };
 
@@ -58,12 +76,25 @@ export default function ArtworkDetailPage() {
   };
 
   useEffect(() => {
+    let active = true;
     readArtwork(params.id)
       .then((loaded) => {
+        if (!active) return;
         setArtwork(loaded);
+        setFavouriteCount(loaded.favouriteCount ?? 0);
         recordArtworkView(loaded.id);
+        // Reflect the current user's saved state from the database (the filled
+        // heart must survive a reload). Fails silently for guests/non-buyers.
+        readWishlist()
+          .then((items) => {
+            if (active) setSaved(items.some((item) => item.artwork.id === loaded.id));
+          })
+          .catch(() => {});
       })
       .catch((error) => setStatusMessage(error instanceof Error ? error.message : t("artwork.couldNotLoad")));
+    return () => {
+      active = false;
+    };
   }, [params.id, t]);
 
   if (statusMessage) {
@@ -205,12 +236,15 @@ export default function ArtworkDetailPage() {
                 <button
                   type="button"
                   onClick={handleSave}
-                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-6 py-4 ${
+                  disabled={savePending}
+                  aria-pressed={saved}
+                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-6 py-4 disabled:opacity-70 ${
                     saved ? "bg-rose-50 text-rose-600" : "bg-gray-100 text-gray-700"
                   }`}
                 >
                   <Heart className={`h-5 w-5 ${saved ? "fill-rose-600 text-rose-600" : ""}`} />
                   {t("artwork.save")}
+                  <span className="tabular-nums">{favouriteCount}</span>
                 </button>
                 <button
                   type="button"

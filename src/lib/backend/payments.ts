@@ -152,13 +152,11 @@ export async function reconcilePaymentWebhook(
     },
   });
 
-  if (status === "paid") {
-    await db.order.update({ where: { id: payment.orderId }, data: { status: "paid" } });
-    await db.artwork.updateMany({
-      where: { orderItems: { some: { orderId: payment.orderId } }, status: "reserved" },
-      data: { status: "sold" },
-    });
-  }
+  // NOTE: a "paid" provider event records the RECEIPT on the PaymentTransaction
+  // (status + paidAt, above) but must NOT mark the ORDER paid or the artwork
+  // sold — every path to `paid` goes through the admin "Payment Confirmed"
+  // action. The order stays `pending_payment` until an admin confirms. The
+  // webhook route notifies admins so they can confirm.
 
   await db.auditLog.create({
     data: {

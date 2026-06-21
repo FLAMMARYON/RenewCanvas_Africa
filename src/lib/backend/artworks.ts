@@ -121,6 +121,12 @@ export type ArtworkDatabase = {
     updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
     delete(args: { where: { id: string } }): Promise<ArtworkRecord>;
   };
+  artworkView: {
+    findUnique(args: {
+      where: { userId_artworkId: { userId: string; artworkId: string } };
+    }): Promise<{ id: string } | null>;
+    create(args: { data: { userId: string; artworkId: string } }): Promise<{ id: string }>;
+  };
   artworkImage: {
     deleteMany(args: { where: { artworkId: string } }): Promise<{ count: number }>;
     createMany(args: { data: Array<{ artworkId: string; url: string; altText: string; sortOrder: number }> }): Promise<{ count: number }>;
@@ -216,7 +222,10 @@ export async function listArtworks(
   const where: Record<string, unknown> = {};
 
   if (scope === "marketplace") {
-    where.status = { in: ["listed", "approved", "reserved"] };
+    // Live pieces only: reserved (within the 30-min window) and sold are hidden.
+    // Stale reservations are flipped back to `listed` by the lazy expiry check
+    // run in the marketplace/gallery routes before this query.
+    where.status = { in: ["listed", "approved"] };
   } else if (scope === "artist") {
     assertRole(viewer, "artist");
     where.artistId = viewer.id;
@@ -270,7 +279,7 @@ export async function getArtwork(
   return artwork;
 }
 
-export async function recordArtworkView(db: ArtworkDatabase, idOrSlug: string) {
+export async function recordArtworkView(db: ArtworkDatabase, idOrSlug: string, userId?: string | null) {
   const artwork = await db.artwork.findFirst({
     where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }], status: "listed" },
     include: includeArtwork,
@@ -278,6 +287,20 @@ export async function recordArtworkView(db: ArtworkDatabase, idOrSlug: string) {
 
   if (!artwork) {
     throw new AuthError("artwork_not_found", "Artwork was not found.", 404);
+  }
+
+  // View counts are unique per buyer: a logged-in user only ever counts once for
+  // a given artwork. Anonymous/guest views are not de-duplicated (unchanged).
+  if (userId) {
+    const existing = await db.artworkView.findUnique({
+      where: { userId_artworkId: { userId, artworkId: artwork.id } },
+    });
+    if (existing) return; // this user already viewed it — don't double-count
+    try {
+      await db.artworkView.create({ data: { userId, artworkId: artwork.id } });
+    } catch {
+      return; // unique-constraint race → already counted
+    }
   }
 
   await db.artwork.updateMany({

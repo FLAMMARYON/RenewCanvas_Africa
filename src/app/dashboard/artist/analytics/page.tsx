@@ -10,19 +10,31 @@ import {
   Eye,
   Heart,
   ShoppingBag,
-  DollarSign,
+  Wallet,
   Recycle,
   Calendar,
   Palette,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 type MonthlyData = { month: string; views: number; favourites: number; sales: number; revenue: number };
 
+// Brand chart colours (teal + amber), used for the grouped monthly-trends bars.
+const CHART_TEAL = "#0D9488";
+const CHART_AMBER = "#F59E0B";
+// Rolling monthly-trends window size.
+const MONTH_WINDOW_SIZE = 3;
+
 export default function ArtistAnalyticsPage() {
   const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState("30d");
+  // Which 3-month window of the monthly trends is shown. 0 = the most recent
+  // window; higher = older windows. Pure client-side paging over already-fetched
+  // monthlyData (no extra fetches).
+  const [monthWindowIndex, setMonthWindowIndex] = useState(0);
   const [userName, setUserName] = useState("Artist");
   const [artworks, setArtworks] = useState<FrontendArtwork[]>([]);
   const [orders, setOrders] = useState<FrontendOrder[]>([]);
@@ -76,7 +88,7 @@ export default function ArtistAnalyticsPage() {
   }, [artworks, orders]);
 
   const overviewStats = [
-    { label: t("artistDashboard.analytics.confirmedEarnings"), value: earnings.earningsRwf.toLocaleString(), unit: "RWF", icon: DollarSign, color: "text-green-600", bgColor: "bg-green-50" },
+    { label: t("artistDashboard.analytics.confirmedEarnings"), value: earnings.earningsRwf.toLocaleString(), unit: "RWF", icon: Wallet, color: "text-green-600", bgColor: "bg-green-50" },
     { label: t("artistDashboard.analytics.totalViews"), value: analytics.views.toLocaleString(), icon: Eye, color: "text-blue-600", bgColor: "bg-blue-50" },
     { label: t("artistDashboard.analytics.totalFavourites"), value: analytics.favourites.toLocaleString(), icon: Heart, color: "text-rose-600", bgColor: "bg-rose-50" },
   ];
@@ -145,7 +157,28 @@ export default function ArtistAnalyticsPage() {
     [artworks, orders]
   );
 
-  const maxMonthlyViews = Math.max(1, ...monthlyData.map((d) => d.views));
+  // Rolling 3-month window over monthlyData (already chronological). Windows are
+  // anchored to the most recent month and walked toward older months, so the
+  // default (index 0) is always the latest 3 months and the oldest window may be
+  // shorter when the total isn't a multiple of 3 — never empty.
+  const totalMonthWindows = Math.max(1, Math.ceil(monthlyData.length / MONTH_WINDOW_SIZE));
+  const maxMonthWindowIndex = totalMonthWindows - 1;
+  const safeMonthWindowIndex = Math.min(Math.max(monthWindowIndex, 0), maxMonthWindowIndex);
+  const monthWindowEnd = monthlyData.length - safeMonthWindowIndex * MONTH_WINDOW_SIZE;
+  const monthWindowStart = Math.max(0, monthWindowEnd - MONTH_WINDOW_SIZE);
+  const visibleMonths = monthlyData.slice(monthWindowStart, monthWindowEnd);
+  // "Prev" reveals older months; "Next" reveals newer months.
+  const canShowOlderMonths = monthlyData.length > 0 && safeMonthWindowIndex < maxMonthWindowIndex;
+  const canShowNewerMonths = safeMonthWindowIndex > 0;
+  // Bars are scaled against the largest view/favourite count in the visible window.
+  const monthWindowMax = Math.max(1, ...visibleMonths.map((month) => Math.max(month.views, month.favourites)));
+  const monthBarPct = (value: number) => (value / monthWindowMax) * 100;
+  const monthRangeLabel =
+    visibleMonths.length === 0
+      ? ""
+      : visibleMonths.length === 1
+      ? visibleMonths[0].month
+      : `${visibleMonths[0].month} – ${visibleMonths[visibleMonths.length - 1].month}`;
 
   return (
     <DashboardLayout role="artist" userName={userName}>
@@ -184,26 +217,84 @@ export default function ArtistAnalyticsPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h2 className="font-semibold text-gray-900 mb-6">{t("artistDashboard.analytics.monthlyTrends")}</h2>
-            <div className="space-y-4">
-              {monthlyData.map((month) => (
-                <div key={month.month}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-700">{month.month}</span>
-                    <span className="text-sm text-gray-500">{t("artistDashboard.analytics.viewsCount", { count: month.views })}</span>
-                  </div>
-                  <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-teal-500 to-teal-400 rounded-full transition-all" style={{ width: `${(month.views / maxMonthlyViews) * 100}%` }} />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-500">
-                    <span className="flex items-center gap-1" title={t("artistDashboard.analytics.wishlistMetric", { defaultValue: "Wishlist saves" })}><Heart className="w-3 h-3" />{month.favourites}</span>
-                    <span className="flex items-center gap-1" title={t("artistDashboard.analytics.ordersMetric", { defaultValue: "Orders" })}><ShoppingBag className="w-3 h-3" />{month.sales}</span>
-                    <span className="font-medium text-teal-700" title={t("artistDashboard.analytics.earnedMetric", { defaultValue: "Earned (RWF)" })}>{Math.round(month.revenue).toLocaleString()} RWF</span>
-                  </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h2 className="font-semibold text-gray-900">{t("artistDashboard.analytics.monthlyTrends")}</h2>
+              {visibleMonths.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMonthWindowIndex((index) => Math.min(index + 1, maxMonthWindowIndex))}
+                    disabled={!canShowOlderMonths}
+                    aria-label={t("artistDashboard.analytics.previousMonths", { defaultValue: "Previous months" })}
+                    className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="min-w-[7.5rem] text-center text-sm font-medium text-gray-700">{monthRangeLabel}</span>
+                  <button
+                    type="button"
+                    onClick={() => setMonthWindowIndex((index) => Math.max(index - 1, 0))}
+                    disabled={!canShowNewerMonths}
+                    aria-label={t("artistDashboard.analytics.nextMonths", { defaultValue: "Next months" })}
+                    className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
-              ))}
-              {!loading && monthlyData.length === 0 && <p className="text-sm text-gray-500">{t("artistDashboard.analytics.noMonthlyData")}</p>}
+              )}
             </div>
+
+            {/* Legend for the two grouped bars (teal = views, amber = wishlist). */}
+            <div className="flex items-center gap-4 mb-4 text-xs text-gray-500">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: CHART_TEAL }} />
+                {t("artistDashboard.analytics.totalViews")}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: CHART_AMBER }} />
+                {t("artistDashboard.analytics.totalFavourites")}
+              </span>
+            </div>
+
+            {visibleMonths.length > 0 ? (
+              <>
+                {/* Grouped vertical bars: each month is its own column with a teal
+                    (views) and an amber (wishlist) bar, side by side. */}
+                <div className="flex items-end justify-around gap-3 h-40">
+                  {visibleMonths.map((month) => (
+                    <div key={month.month} className="flex h-full flex-1 items-end justify-center gap-1.5">
+                      <div
+                        className="w-4 sm:w-6 rounded-t transition-all"
+                        title={`${t("artistDashboard.analytics.totalViews")}: ${month.views}`}
+                        style={{ height: `${monthBarPct(month.views)}%`, minHeight: month.views > 0 ? 3 : 0, backgroundColor: CHART_TEAL }}
+                      />
+                      <div
+                        className="w-4 sm:w-6 rounded-t transition-all"
+                        title={`${t("artistDashboard.analytics.totalFavourites")}: ${month.favourites}`}
+                        style={{ height: `${monthBarPct(month.favourites)}%`, minHeight: month.favourites > 0 ? 3 : 0, backgroundColor: CHART_AMBER }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Per-month captions keep the exact figures readable. */}
+                <div className="mt-3 flex justify-around gap-3 border-t border-gray-100 pt-3">
+                  {visibleMonths.map((month) => (
+                    <div key={month.month} className="flex-1 text-center">
+                      <p className="text-sm font-medium text-gray-700">{month.month}</p>
+                      <div className="mt-1 flex flex-col items-center gap-0.5 text-[11px] text-gray-500">
+                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{month.views}</span>
+                        <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{month.favourites}</span>
+                        <span className="flex items-center gap-1"><ShoppingBag className="w-3 h-3" />{month.sales}</span>
+                        <span className="font-medium text-teal-700">{Math.round(month.revenue).toLocaleString()} RWF</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              !loading && <p className="text-sm text-gray-500">{t("artistDashboard.analytics.noMonthlyData")}</p>
+            )}
           </div>
 
 
