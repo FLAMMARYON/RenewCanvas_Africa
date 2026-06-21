@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ArtworkCard } from "@/components/ArtworkCard";
 import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api";
+import { readWishlist } from "@/lib/frontend/wishlist-api";
 
 const PAGE_SIZE = 24;
 
@@ -20,6 +21,23 @@ export default function AllArtworksPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  // The current user's wishlisted artwork ids (from the DB) → filled red hearts.
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    readWishlist()
+      .then((items) => setSavedIds(new Set(items.map((item) => item.artwork.id))))
+      .catch(() => {});
+  }, []);
+
+  const handleSavedChange = (artworkId: string, saved: boolean) => {
+    setSavedIds((current) => {
+      const next = new Set(current);
+      if (saved) next.add(artworkId);
+      else next.delete(artworkId);
+      return next;
+    });
+  };
 
   // Same data source the marketplace uses.
   useEffect(() => {
@@ -105,7 +123,7 @@ export default function AllArtworksPage() {
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {artworks.map((artwork) => (
-                <ArtworkCard key={artwork.id} artwork={artwork} compact={false} onStatus={setStatusMessage} />
+                <ArtworkCard key={artwork.id} artwork={artwork} compact={false} onStatus={setStatusMessage} initialSaved={savedIds.has(artwork.id)} onSavedChange={handleSavedChange} />
               ))}
             </div>
 

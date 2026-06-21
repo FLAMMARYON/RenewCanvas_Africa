@@ -1,42 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Heart, Leaf, Package } from "lucide-react";
-import { addToWishlist } from "@/lib/frontend/wishlist-api";
+import { addToWishlist, removeFromWishlist } from "@/lib/frontend/wishlist-api";
 import type { FrontendArtwork } from "@/lib/frontend/artworks-api";
 
 /**
  * Shared artwork card used by the Marketplace and the All Artworks page.
  * Extracted verbatim from the marketplace so both surfaces render an identical
  * card (no style drift).
+ *
+ * `initialSaved` reflects the current user's wishlist state from the database,
+ * so an artwork already in their wishlist renders a filled red heart on load.
  */
 export function ArtworkCard({
   artwork,
   compact,
   onStatus,
+  initialSaved = false,
+  onSavedChange,
 }: {
   artwork: FrontendArtwork;
   compact: boolean;
   onStatus: (message: string) => void;
+  initialSaved?: boolean;
+  onSavedChange?: (artworkId: string, saved: boolean) => void;
 }) {
   const image = artwork.images[0];
-  // Optimistic wishlist state: heart fills and the count increments on click,
-  // before the API responds; we revert if the save fails.
-  const [saved, setSaved] = useState(false);
+  // Optimistic wishlist state: heart fills/empties and the count adjusts on
+  // click, before the API responds; we revert if the request fails.
+  const [saved, setSaved] = useState(initialSaved);
   const [favourites, setFavourites] = useState(artwork.favouriteCount);
+  const [pending, setPending] = useState(false);
+
+  // Reflect the database wishlist state once it loads (and any parent-set sync),
+  // without clobbering an in-flight optimistic toggle.
+  useEffect(() => {
+    setSaved(initialSaved);
+  }, [initialSaved]);
 
   const handleSave = async () => {
-    if (saved) return;
-    setSaved(true);
-    setFavourites((current) => current + 1);
+    if (pending) return;
+    const next = !saved;
+    setSaved(next);
+    setFavourites((current) => Math.max(0, current + (next ? 1 : -1)));
+    setPending(true);
     try {
-      await addToWishlist(artwork.id);
-      onStatus("Artwork saved to your wishlist.");
+      if (next) {
+        await addToWishlist(artwork.id);
+        onStatus("Artwork saved to your wishlist.");
+      } else {
+        await removeFromWishlist(artwork.id);
+        onStatus("Removed from your wishlist.");
+      }
+      onSavedChange?.(artwork.id, next);
     } catch (error) {
-      setSaved(false);
-      setFavourites((current) => current - 1);
+      // Revert the optimistic change.
+      setSaved(!next);
+      setFavourites((current) => Math.max(0, current + (next ? -1 : 1)));
       onStatus(error instanceof Error ? error.message : "Sign in as a buyer to save artwork.");
+    } finally {
+      setPending(false);
     }
   };
 
@@ -83,8 +108,10 @@ export function ArtworkCard({
           <button
             type="button"
             onClick={handleSave}
-            aria-label="Save to wishlist"
-            className={`flex items-center gap-1 rounded-lg px-2 py-1 text-sm hover:bg-rose-50 hover:text-rose-600 ${
+            disabled={pending}
+            aria-pressed={saved}
+            aria-label={saved ? "Remove from wishlist" : "Save to wishlist"}
+            className={`flex items-center gap-1 rounded-lg px-2 py-1 text-sm hover:bg-rose-50 hover:text-rose-600 disabled:opacity-70 ${
               saved ? "text-rose-600" : "text-gray-500"
             }`}
           >

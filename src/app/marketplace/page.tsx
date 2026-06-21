@@ -1,6 +1,7 @@
 "use client";
 
 import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api";
+import { readWishlist } from "@/lib/frontend/wishlist-api";
 import { artworkCategories } from "@/lib/ml/schemas";
 import { ArrowRight, Filter, Grid3X3, LayoutList, Recycle, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -23,6 +24,24 @@ export default function MarketplacePage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [statusMessage, setStatusMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  // The current user's wishlisted artwork ids (from the DB), so listing cards
+  // render a filled red heart for anything already saved. Empty for guests.
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    readWishlist()
+      .then((items) => setSavedIds(new Set(items.map((item) => item.artwork.id))))
+      .catch(() => {});
+  }, []);
+
+  const handleSavedChange = (artworkId: string, saved: boolean) => {
+    setSavedIds((current) => {
+      const next = new Set(current);
+      if (saved) next.add(artworkId);
+      else next.delete(artworkId);
+      return next;
+    });
+  };
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -208,7 +227,7 @@ export default function MarketplacePage() {
               <>
                 <div className={viewMode === "grid" ? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3" : "space-y-4"}>
                   {artworks.map((artwork) => (
-                    <ArtworkCard key={artwork.id} artwork={artwork} compact={viewMode === "list"} onStatus={setStatusMessage} />
+                    <ArtworkCard key={artwork.id} artwork={artwork} compact={viewMode === "list"} onStatus={setStatusMessage} initialSaved={savedIds.has(artwork.id)} onSavedChange={handleSavedChange} />
                   ))}
                 </div>
                 <div className="mt-8 flex justify-center">
