@@ -36,3 +36,15 @@ export async function setUserStatus(id: string, action: "suspend" | "activate"):
   if (!response.ok || !body.ok) throw new Error(body.message ?? "Could not update user.");
   return body.status ?? (action === "suspend" ? "suspended" : "active");
 }
+
+/** Send a single user an email via the Resend pipeline (admin only). */
+export async function emailUser(id: string, subject: string, message: string): Promise<void> {
+  const response = await fetch("/api/admin/users", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ id, subject, message }),
+  });
+  const body = (await response.json()) as { ok: boolean; message?: string };
+  if (!response.ok || !body.ok) throw new Error(body.message ?? "Could not send the email.");
+}

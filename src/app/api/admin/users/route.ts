@@ -3,6 +3,7 @@
  *
  * GET   /api/admin/users  - List real artists & buyers with live status + activity
  * PATCH /api/admin/users  - Suspend / activate a user (admin only)
+ * POST  /api/admin/users  - Send an email to a single user via Resend (admin only)
  *
  * Admin-scoped. Mirrors the auth + error-handling pattern used by the other
  * admin routes (see /api/admin/messages, /api/orders).
@@ -11,6 +12,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireRole } from "@/lib/backend/auth";
 import { authErrorResponse, readJsonBody, readSessionCookie } from "@/lib/backend/auth-route";
 import { getDatabaseClient } from "@/lib/backend/db";
+import { sendEmail } from "@/lib/backend/messaging-providers";
 
 export const dynamic = "force-dynamic";
 
@@ -135,6 +137,62 @@ export async function PATCH(request: NextRequest) {
     });
 
     return NextResponse.json({ ok: true, id: updated.id, status: updated.status });
+  } catch (error) {
+    return authErrorResponse(error);
+  }
+}
+
+/**
+ * Send a one-off email to a single user through the existing Resend pipeline
+ * (`sendEmail` → messaging-providers). Delivery is best-effort and NON-BLOCKING:
+ * a provider failure is logged server-side and returned as `ok:false` with a
+ * message — it never throws/500s, so the admin UI stays usable.
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const db = getDatabaseClient();
+    const admin = await requireRole(db, readSessionCookie(request), ["admin"]);
+
+    const body = (await readJsonBody(request)) as Partial<{ id: string; subject: string; message: string }>;
+    const id = typeof body.id === "string" ? body.id : "";
+    const subject = typeof body.subject === "string" ? body.subject.trim() : "";
+    const message = typeof body.message === "string" ? body.message.trim() : "";
+    if (!id || !subject || !message) {
+      return NextResponse.json({ ok: false, message: "A recipient, subject, and message are required." }, { status: 400 });
+    }
+
+    const target = await db.user.findUnique({ where: { id }, select: { id: true, email: true, role: true } });
+    if (!target || (target.role !== "artist" && target.role !== "buyer")) {
+      return NextResponse.json({ ok: false, message: "User was not found." }, { status: 404 });
+    }
+
+    // Best-effort send; isolate any provider failure so it never crashes the route.
+    let delivered = false;
+    let failureMessage: string | undefined;
+    try {
+      const result = await sendEmail({ to: target.email, subject, body: message });
+      delivered = result.status === "sent";
+      failureMessage = delivered ? undefined : result.errorMessage;
+    } catch (sendError) {
+      console.error("admin.user.email: delivery failed", { userId: id, error: sendError });
+      failureMessage = sendError instanceof Error ? sendError.message : "Email delivery failed.";
+    }
+
+    // Record the attempt regardless of outcome (auditability).
+    await db.auditLog.create({
+      data: {
+        actorId: admin.id,
+        action: "admin.user.email",
+        entity: "User",
+        entityId: id,
+        metadata: { subject, delivered },
+      },
+    });
+
+    if (!delivered) {
+      return NextResponse.json({ ok: false, delivered: false, message: failureMessage ?? "Email could not be sent." }, { status: 502 });
+    }
+    return NextResponse.json({ ok: true, delivered: true });
   } catch (error) {
     return authErrorResponse(error);
   }

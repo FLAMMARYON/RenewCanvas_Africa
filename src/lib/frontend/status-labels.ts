@@ -94,3 +94,34 @@ export const CONFIRMED_REVENUE_STATUSES = ["paid", "processing", "shipped", "del
 export function isConfirmedRevenueStatus(status: string): boolean {
   return (CONFIRMED_REVENUE_STATUSES as readonly string[]).includes(status);
 }
+
+/**
+ * Settlement implication for orders. Reaching `artist_paid` (the artist has been
+ * disbursed) means the order has, by definition, already been **paid** by the
+ * buyer AND **delivered** — `artist_paid` is the terminal state of the manual
+ * settlement workflow (pending_payment → paid → artist_paid), which never sets a
+ * separate `delivered` row. The transition is one-way: an order can only become
+ * `artist_paid` from `paid` (enforced in `disburseOrderToArtists`).
+ *
+ * Centralising the relationship here keeps admin — and any future view —
+ * consistent instead of scattering `=== "artist_paid"` checks across pages. The
+ * map lists, for each logical status, every concrete order status that satisfies
+ * it: `paid`/`delivered` therefore also include `artist_paid`, and selecting the
+ * `artist_paid` filter matches paid, delivered, and artist_paid.
+ */
+const ORDER_STATUS_SATISFIED_BY: Record<string, readonly string[]> = {
+  paid: ["paid", "artist_paid"],
+  delivered: ["delivered", "artist_paid"],
+  artist_paid: ["paid", "delivered", "artist_paid"],
+};
+
+/**
+ * Whether an order with `status` satisfies the logical `target` status — used by
+ * status filters and stat tallies so the `artist_paid ⇒ paid + delivered`
+ * implication is applied uniformly. Statuses with no implication mapping
+ * (pending_payment, cancelled, refunded, failed) fall back to strict equality.
+ */
+export function orderStatusSatisfies(status: string, target: string): boolean {
+  if (status === target) return true;
+  return ORDER_STATUS_SATISFIED_BY[target]?.includes(status) ?? false;
+}

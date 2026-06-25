@@ -4,7 +4,6 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { listArtworks, type FrontendArtwork } from "@/lib/frontend/artworks-api";
 import { fetchDetailedMetrics, formatMetric, type DetailedMetrics } from "@/lib/frontend/metrics-api";
 import { listOrders, type FrontendOrder } from "@/lib/frontend/orders-api";
-import { listVerificationItems, type VerificationItem } from "@/lib/frontend/verification-api";
 import { artworkStatusMeta, orderStatusMeta, isConfirmedRevenueStatus } from "@/lib/frontend/status-labels";
 import {
   Users,
@@ -24,7 +23,6 @@ export default function AdminDashboard() {
   const [artworks, setArtworks] = useState<FrontendArtwork[]>([]);
   const [orders, setOrders] = useState<FrontendOrder[]>([]);
   const [metrics, setMetrics] = useState<DetailedMetrics | null>(null);
-  const [verificationItems, setVerificationItems] = useState<VerificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -34,17 +32,15 @@ export default function AdminDashboard() {
       setLoading(true);
       setError("");
       try {
-        const [artworkResult, orderResult, metricResult, verificationResult] = await Promise.all([
+        const [artworkResult, orderResult, metricResult] = await Promise.all([
           listArtworks({ scope: "admin" }),
           listOrders(),
           fetchDetailedMetrics(),
-          listVerificationItems(),
         ]);
         if (!active) return;
         setArtworks(artworkResult.artworks);
         setOrders(orderResult);
         setMetrics(metricResult);
-        setVerificationItems(verificationResult);
       } catch (loadError) {
         if (!active) return;
         setError(loadError instanceof Error ? loadError.message : t("admin.overview.loadError"));
@@ -59,7 +55,12 @@ export default function AdminDashboard() {
   }, []);
 
   const pendingArtworkCount = artworks.filter((artwork) => ["submitted", "under_review"].includes(artwork.status)).length;
-  const pendingArtistCount = verificationItems.filter((item) => item.reviewStatus === "pending").length;
+  // Artist verification is a SEPARATE concern from artwork moderation. A pending
+  // artwork submission must never inflate this count (it feeds the Artwork
+  // Review card above). The dedicated artist-verification queue is not built yet,
+  // so there are no pending artist verifications to surface — wire this to that
+  // queue when the feature lands. Decoupled from the artwork verification queue.
+  const pendingArtistCount = 0;
   const pendingOrderCount = orders.filter((order) => order.status === "pending_payment").length;
   // Revenue counts ONLY confirmed payments (buyer → RenewCanvas). Pending /
   // cancelled / refunded / failed orders are excluded.

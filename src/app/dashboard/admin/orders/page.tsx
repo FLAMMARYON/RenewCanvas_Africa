@@ -2,7 +2,7 @@
 
 import DashboardLayout from "@/components/DashboardLayout";
 import { ADMIN_CONTACT_PHONE, artistPayout, cancelOrder, confirmOrderPayment, disburseOrder, isOrderVisible, listOrders, PLATFORM_COMMISSION_RATE, type FrontendOrder } from "@/lib/frontend/orders-api";
-import { orderStatusMeta, isConfirmedRevenueStatus } from "@/lib/frontend/status-labels";
+import { orderStatusMeta, isConfirmedRevenueStatus, orderStatusSatisfies } from "@/lib/frontend/status-labels";
 import { Banknote, Calendar, CheckCircle, DollarSign, Mail, Package, Phone, Search, User, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -58,15 +58,18 @@ export default function AdminOrdersPage() {
     const item = order.items[0];
     const delivery = order.deliveryAddress ?? {};
     const search = `${order.id} ${item?.title ?? ""} ${item?.artistName ?? ""} ${order.buyer?.name ?? ""} ${order.buyer?.email ?? ""} ${String(delivery.fullName ?? "")}`.toLowerCase();
-    return search.includes(searchQuery.toLowerCase()) && (statusFilter === "all" || order.status === statusFilter);
+    // Filter on the settlement implication: selecting "Artist Paid" matches
+    // paid / delivered / artist_paid, and an artist_paid order also satisfies
+    // the "Paid" and "Delivered" filters.
+    return search.includes(searchQuery.toLowerCase()) && (statusFilter === "all" || orderStatusSatisfies(order.status, statusFilter));
   });
 
   const stats = useMemo(
     () => ({
       total: orders.length,
       pending: orders.filter((order) => order.status === "pending_payment").length,
-      active: orders.filter((order) => ["paid", "processing", "shipped"].includes(order.status)).length,
-      delivered: orders.filter((order) => order.status === "delivered").length,
+      // artist_paid implies delivered, so a disbursed order counts as delivered too.
+      delivered: orders.filter((order) => orderStatusSatisfies(order.status, "delivered")).length,
       // Revenue + platform fees count ONLY confirmed payments (exclude pending/cancelled/refunded/failed).
       revenue: orders.filter((order) => isConfirmedRevenueStatus(order.status)).reduce((sum, order) => sum + order.totalAmount, 0),
       platformFees: orders
@@ -86,10 +89,9 @@ export default function AdminOrdersPage() {
 
         {statusMessage && <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{statusMessage}</div>}
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
           <Stat label={t("admin.orders.statTotalOrders")} value={stats.total} />
           <Stat label={t("admin.orders.statPendingPayment")} value={stats.pending} tone="amber" />
-          <Stat label={t("admin.orders.statInProgress")} value={stats.active} tone="blue" />
           <Stat label={t("admin.orders.statDelivered")} value={stats.delivered} tone="green" />
           <Stat label={t("admin.orders.statGrossRevenue")} value={`${Math.round(stats.revenue).toLocaleString()} RWF`} tone="teal" />
           <Stat label={t("admin.orders.statPlatformFees")} value={`${Math.round(stats.platformFees).toLocaleString()} RWF`} tone="teal" />
@@ -166,7 +168,9 @@ export default function AdminOrdersPage() {
                             <p className="mt-0.5 text-xs text-gray-500">
                               {t("admin.orders.artistPayoutEstimate")}:{" "}
                               <span className="font-medium text-teal-700">
-                                {payout === null ? "—" : `${payout.toLocaleString()} RWF`}
+                                {payout === null
+                                  ? t("admin.orders.payoutNotApplicableOwned", { defaultValue: "N/A — RenewCanvas-owned" })
+                                  : `${payout.toLocaleString()} RWF`}
                               </span>
                             </p>
                           );
@@ -191,7 +195,7 @@ export default function AdminOrdersPage() {
                             <Detail label={t("admin.orders.delivery")} value={`${order.deliveryAmount.toLocaleString()} RWF`} />
                             <Detail label={t("admin.orders.total")} value={`${order.totalAmount.toLocaleString()} RWF`} />
                             <Detail label={t("admin.orders.platformFeeEstimate")} value={`${Math.round(order.subtotalAmount * PLATFORM_COMMISSION_RATE).toLocaleString()} RWF`} />
-                            <Detail label={t("admin.orders.artistPayoutEstimate")} value={artistPayout(order) === null ? t("admin.orders.notApplicable") : `${artistPayout(order)!.toLocaleString()} RWF`} />
+                            <Detail label={t("admin.orders.artistPayoutEstimate")} value={artistPayout(order) === null ? t("admin.orders.payoutNotApplicableOwned", { defaultValue: "N/A — RenewCanvas-owned" }) : `${artistPayout(order)!.toLocaleString()} RWF`} />
                           </div>
                         </div>
 
