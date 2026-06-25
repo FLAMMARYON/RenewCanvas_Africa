@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/FLAMMARYON/RenewCanvas_Africa/actions/workflows/test.yml/badge.svg)](https://github.com/FLAMMARYON/RenewCanvas_Africa/actions/workflows/test.yml)
 
-**Live site → [renewcanvas.africa](https://renewcanvas.africa)**
+**Live site → [renewcanvas.page](https://renewcanvas.page)**
 
 A circular-art marketplace that turns plastic waste into sustainable creative value across Africa.
 
@@ -159,7 +159,7 @@ payment management, and an aggregate impact dashboard.
 
 ## Deployment
 
-The app is deployed on **Vercel** at **[renewcanvas.africa](https://renewcanvas.africa)**.
+The app is deployed on **Vercel** at **[renewcanvas.page](https://renewcanvas.page)**.
 
 1. Push to GitHub.
 2. Import the repository in [Vercel](https://vercel.com).
@@ -176,5 +176,5 @@ Proprietary — all rights reserved.
 
 ## Contact
 
-Visit [renewcanvas.africa](https://renewcanvas.africa) or email
+Visit [renewcanvas.page](https://renewcanvas.page) or email
 [hello.renewcanvas@gmail.com](mailto:hello.renewcanvas@gmail.com).
